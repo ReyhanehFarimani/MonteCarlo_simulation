@@ -2,7 +2,7 @@
 #include "initial.h"
 #include "logging.h"
 #include "input.h"
-
+#include "potential.h"
 int main(int argc, char *argv[]) {
     // Parse input from file and command line
     Input input("input.txt");
@@ -16,7 +16,15 @@ int main(int argc, char *argv[]) {
     double timeStep = input.getConstant("timeStep");
     int outputFrequency = static_cast<int>(input.getConstant("outputFrequency"));
     int equilibrationTime = static_cast<int>(input.getConstant("equilibrationTime"));
-    int simulationTime = static_cast<int>(input.getConstant("simulationTime"));
+    
+    // Retrieve the potential type from the input
+    std::string potentialName = input.getFilename("potentialType");
+    PotentialType potentialType = selectPotentialType(potentialName);
+    auto potentialFunction = getPotentialFunction(potentialType);
+
+    // Retrieve filenames from the input
+    std::string positionFile = input.getFilename("positionFile");
+    std::string dataFile = input.getFilename("dataFile");
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
 
