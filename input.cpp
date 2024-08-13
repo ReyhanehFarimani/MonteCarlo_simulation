@@ -18,13 +18,19 @@ void Input::parseInputFile(const std::string &filename) {
     while (std::getline(infile, line)) {
         std::istringstream iss(line);
         std::string key;
-        double value;
+        std::string value;
 
         if (!(iss >> key >> value)) {
             continue;  // Skip invalid lines
         }
 
-        constants[key] = value;
+        // Determine if the value is numeric or a string (e.g., a filename)
+        try {
+            double num_value = std::stod(value);
+            constants[key] = num_value;
+        } catch (std::invalid_argument&) {
+            filenames[key] = value;
+        }
     }
 }
 
@@ -34,8 +40,15 @@ void Input::parseCommandLineArgs(int argc, char *argv[]) {
 
         if (arg.find('=') != std::string::npos) {
             std::string key = arg.substr(0, arg.find('='));
-            double value = std::stod(arg.substr(arg.find('=') + 1));
-            constants[key] = value;
+            std::string value = arg.substr(arg.find('=') + 1);
+
+            // Determine if the value is numeric or a string (e.g., a filename)
+            try {
+                double num_value = std::stod(value);
+                constants[key] = num_value;
+            } catch (std::invalid_argument&) {
+                filenames[key] = value;
+            }
         }
     }
 }
@@ -49,6 +62,19 @@ double Input::getConstant(const std::string &key) const {
     }
 }
 
+std::string Input::getFilename(const std::string &key) const {
+    auto it = filenames.find(key);
+    if (it != filenames.end()) {
+        return it->second;
+    } else {
+        return "";  // Return empty string if the filename is not found
+    }
+}
+
 void Input::setConstant(const std::string &key, double value) {
     constants[key] = value;
+}
+
+void Input::setFilename(const std::string &key, const std::string &value) {
+    filenames[key] = value;
 }
