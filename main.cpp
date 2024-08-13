@@ -1,42 +1,50 @@
 #include <iostream>
 #include "initial.h"
 #include "logging.h"
+#include "input.h"
 
-int main() {
-    // Define the dimensions of the simulation box
-    double boxLengthX = 10.0;
-    double boxLengthY = 10.0;
+int main(int argc, char *argv[]) {
+    // Parse input from file and command line
+    Input input("input.txt");
+    input.parseCommandLineArgs(argc, argv);
+
+    // Retrieve constants from the input
+    double boxLengthX = input.getConstant("boxLengthX");
+    double boxLengthY = input.getConstant("boxLengthY");
+    int numParticles = static_cast<int>(input.getConstant("numParticles"));
+    bool randomPlacement = static_cast<bool>(input.getConstant("randomPlacement"));
+    double timeStep = input.getConstant("timeStep");
+    int outputFrequency = static_cast<int>(input.getConstant("outputFrequency"));
+    int equilibrationTime = static_cast<int>(input.getConstant("equilibrationTime"));
 
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
-
-    // Number of particles
-    int N = 100;
 
     // Create a vector to hold the particles
     std::vector<Particle> particles;
 
     // Initialize particles (randomly or in a grid)
-    bool randomPlacement = true;  // Set to false for grid placement
-    initializeParticles(particles, simBox, N, randomPlacement);
+    initializeParticles(particles, simBox, numParticles, randomPlacement);
 
     // Create a Logging object
     Logging logger("particle_positions.xyz", "simulation_data.dat");
 
-    // Apply periodic boundary conditions and log positions
-    for (int timestep = 0; timestep < 100; ++timestep) {
-        // (Simulation steps would go here)
+    // Simulation loop
+    for (int timestep = 0; timestep < 10000; ++timestep) {
+        // (Simulation steps would go here, updating particle positions etc.)
 
         // Apply PBC to all particles
         for (auto &particle : particles) {
             simBox.applyPBC(particle);
         }
 
-        // Log positions in XYZ format
-        logger.logPositions_xyz(particles);
+        // Skip logging during equilibration
+        if (timestep < equilibrationTime) continue;
 
-        // Optionally, log in dump format as well
-        // logger.logPositions_dump(particles);
+        // Log positions based on output frequency
+        else if (timestep % outputFrequency == 0) {
+            logger.logPositions_xyz(particles);
+        }
     }
 
     // Close the log files when done
