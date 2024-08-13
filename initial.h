@@ -69,4 +69,14 @@ public:
     double getLy() const;
 };
 
+/**
+ * @brief Initializes N particles in the simulation box.
+ * @param particles A vector to store the particles.
+ * @param box The simulation box where particles will be placed.
+ * @param N The number of particles to initialize.
+ * @param random If true, particles are placed randomly; if false, they are placed in a grid.
+ */
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true);
+
+
 #endif // INITIAL_H

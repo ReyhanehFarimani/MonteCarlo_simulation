@@ -35,3 +35,35 @@ double SimulationBox::getLx() const {
 double SimulationBox::getLy() const {
     return Ly;
 }
+
+
+
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random) {
+    particles.clear();  // Clear the vector before initializing new particles
+    particles.reserve(N);  // Reserve memory for N particles
+
+    if (random) {
+        srand(static_cast<unsigned>(time(0)));  // Seed the random number generator
+
+        for (int i = 0; i < N; ++i) {
+            double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
+            double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
+            particles.emplace_back(x, y);
+        }
+    } else {
+        // Place particles in a simple grid pattern
+        int gridSize = static_cast<int>(std::sqrt(N));
+        double spacingX = box.getLx() / gridSize;
+        double spacingY = box.getLy() / gridSize;
+
+        for (int i = 0; i < gridSize; ++i) {
+            for (int j = 0; j < gridSize; ++j) {
+                if (particles.size() < N) {
+                    double x = i * spacingX;
+                    double y = j * spacingY;
+                    particles.emplace_back(x, y);
+                }
+            }
+        }
+    }
+}
