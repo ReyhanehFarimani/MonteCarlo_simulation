@@ -1,4 +1,7 @@
 #include "initial.h"
+#include <cstdlib>  // For rand() and srand()
+#include <ctime>    // For time()
+
 
 // Particle class methods
 Particle::Particle(double x_init, double y_init)
