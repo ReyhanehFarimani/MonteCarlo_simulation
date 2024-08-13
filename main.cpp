@@ -16,7 +16,7 @@ int main(int argc, char *argv[]) {
     double timeStep = input.getConstant("timeStep");
     int outputFrequency = static_cast<int>(input.getConstant("outputFrequency"));
     int equilibrationTime = static_cast<int>(input.getConstant("equilibrationTime"));
-
+    int simulationTime = static_cast<int>(input.getConstant("simulationTime"));
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
 
@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     Logging logger("particle_positions.xyz", "simulation_data.dat");
 
     // Simulation loop
-    for (int timestep = 0; timestep < 10000; ++timestep) {
+    for (int timestep = 0; timestep < simulationTime + equilibrationTime; ++timestep) {
         // (Simulation steps would go here, updating particle positions etc.)
 
         // Apply PBC to all particles
