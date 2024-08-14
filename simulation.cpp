@@ -68,7 +68,20 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
         if (timestep >= equilibrationTime) {
             if (timestep % outputFrequency == 0) {
                 logger.logPositions_xyz(particles);
+                logger.logSimulationData(*this, timestep);
             }
         }
     }
+}
+
+double Simulation::getEnergy() const {
+    return calculateEnergy();
+}
+
+int Simulation::getNumParticles() const {
+    return numParticles;
+}
+
+double Simulation::getTemperature() const {
+    return temperature;
 }

@@ -1,4 +1,5 @@
 #include "logging.h"
+#include "simulation.h"
 #include <iomanip>  // For setting precision in output
 
 Logging::Logging(const std::string &filename_position, const std::string &filename_data)
@@ -47,6 +48,11 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles) {
                          << particle.x << " " << particle.y << "\n";
     }
     outFile_position << "\n";  // Separate each time step with a blank line
+}
+void Logging::logSimulationData(const Simulation &sim, int timestep){
+    outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
+            << ",\tEnergy:"<< sim.getEnergy() << ",\tTempreture" << sim.getTemperature() <<
+            ",\tNumberofParticles"<<sim.getNumParticles()<< "\n";
 }
 
 void Logging::close() {

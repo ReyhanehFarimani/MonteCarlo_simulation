@@ -56,6 +56,26 @@ public:
      * @param logger The logging object for output.
      */
     void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger);
+
+
+    /**
+     * @brief Gets the current energy of the system.
+     * @return The total energy of the system.
+     */
+    double getEnergy() const;
+
+    /**
+     * @brief Gets the number of particles in the simulation.
+     * @return The number of particles.
+     */
+    int getNumParticles() const;
+
+    /**
+     * @brief Gets the temperature in the simulation.
+     * @return Temperature.
+     */
+    double getTemperature() const;
+
 };
 
 #endif // SIMULATION_H

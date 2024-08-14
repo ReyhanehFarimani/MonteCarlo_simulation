@@ -4,6 +4,8 @@
 #include <fstream>
 #include <vector>
 #include "initial.h"  // Include the Particle class definition
+// Forward declaration of the Simulation class
+class Simulation;
 
 /**
  * @brief Manages logging of simulation data to files.
@@ -38,6 +40,13 @@ public:
      * @param particles The vector of particles whose positions will be logged in the dump format.
      */
     void logPositions_dump(const std::vector<Particle> &particles);
+
+    /**
+     * @brief Logs the simularion data like energy pressure, number of particles of the system to the data file.
+     * @param energy The total energy of the system.
+     * @param timestep The current timestep in the simulation.
+     */
+    void logSimulationData(const Simulation &sim, int timestep);
 
     /**
      * @brief Closes the log file.
