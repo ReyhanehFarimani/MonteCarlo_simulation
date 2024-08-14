@@ -1,8 +1,10 @@
 #include <iostream>
-#include "initial.h"
-#include "logging.h"
 #include "input.h"
+#include "logging.h"
 #include "potential.h"
+#include "simulation.h"
+#include "initial.h"
+
 int main(int argc, char *argv[]) {
     // Parse input from file and command line
     Input input("input.txt");
@@ -13,50 +15,29 @@ int main(int argc, char *argv[]) {
     double boxLengthY = input.getConstant("boxLengthY");
     int numParticles = static_cast<int>(input.getConstant("numParticles"));
     bool randomPlacement = static_cast<bool>(input.getConstant("randomPlacement"));
-    double timeStep = input.getConstant("timeStep");
+    double temperature = input.getConstant("temperature");
+    int numSteps = static_cast<int>(input.getConstant("numSteps"));
     int outputFrequency = static_cast<int>(input.getConstant("outputFrequency"));
     int equilibrationTime = static_cast<int>(input.getConstant("equilibrationTime"));
-    
+    double timeStep = input.getConstant("timeStep");
+    double r2cut = input.getConstant("r2cut");
+
     // Retrieve the potential type from the input
     std::string potentialName = input.getFilename("potentialType");
     PotentialType potentialType = selectPotentialType(potentialName);
-    auto potentialFunction = getPotentialFunction(potentialType);
 
-    // Retrieve filenames from the input
-    std::string positionFile = input.getFilename("positionFile");
-    std::string dataFile = input.getFilename("dataFile");
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
 
-    // Create a vector to hold the particles
-    std::vector<Particle> particles;
-
-    // Initialize particles (randomly or in a grid)
-    initializeParticles(particles, simBox, numParticles, randomPlacement);
-
     // Create a Logging object
-    Logging logger("particle_positions.xyz", "simulation_data.dat");
+    std::string positionFile = input.getFilename("positionFile");
+    std::string dataFile = input.getFilename("dataFile");
+    Logging logger(positionFile, dataFile);
 
-    // Simulation loop
-    for (int timestep = 0; timestep < simulationTime + equilibrationTime; ++timestep) {
-        // (Simulation steps would go here, updating particle positions etc.)
-
-        // Apply PBC to all particles
-        for (auto &particle : particles) {
-            simBox.applyPBC(particle);
-        }
-
-        // Skip logging during equilibration
-        if (timestep < equilibrationTime) continue;
-
-        // Log positions based on output frequency
-        else if (timestep % outputFrequency == 0) {
-            logger.logPositions_xyz(particles);
-        }
-    }
-
-    // Close the log files when done
-    logger.close();
+    // Create and run the simulation
+    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut);
+    simulation.initializeParticles(randomPlacement);
+    simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
 
     return 0;
 }
