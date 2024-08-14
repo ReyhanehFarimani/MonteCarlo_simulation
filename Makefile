@@ -2,32 +2,39 @@
 CXX = g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
-# Executable name
-EXEC = simulation
+# Executable name for tests
+TEST_EXEC = unit_tests
 
-# Source files
-SRCS = main.cpp initial.cpp input.cpp logging.cpp potential.cpp simulation.cpp
+# Source files for tests
+TEST_SRCS = unit_test/test_main.cpp unit_test/test_energy.cpp unit_test/test_pbc.cpp
 
-# Object files
+# Source files from the src directory
+SRCS = src/initial.cpp src/input.cpp src/logging.cpp src/potential.cpp src/simulation.cpp
+
+# Object files for tests
+TEST_OBJS = $(TEST_SRCS:.cpp=.o)
+
+# Object files from the src directory
 OBJS = $(SRCS:.cpp=.o)
 
-# Header files
-HEADERS = initial.h input.h logging.h potential.h simulation.h
+# Default target for unit tests
+tests: $(TEST_EXEC)
 
-# Default target
-all: $(EXEC)
-
-# Rule to link object files to create the executable
-$(EXEC): $(OBJS)
+# Rule to link object files for unit tests to create the test executable
+$(TEST_EXEC): $(TEST_OBJS) $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
-# Rule to compile .cpp files into .o files
-%.o: %.cpp $(HEADERS)
+# Rule to compile .cpp files in unit_test directory
+unit_test/%.o: unit_test/%.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
-# Clean rule to remove object files and the executable
+# Rule to compile .cpp files in src directory
+src/%.o: src/%.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Clean rule to remove object files and the test executable
 clean:
-	rm -f $(OBJS) $(EXEC)
+	rm -f $(TEST_OBJS) $(OBJS) $(TEST_EXEC)
 
 # Phony targets
-.PHONY: all clean
+.PHONY: tests clean
