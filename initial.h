@@ -54,8 +54,15 @@ public:
      * @param p2 The second particle.
      * @return The shortest distance between p1 and p2 under periodic boundary conditions.
      */
-    double minimumImageDistance(const Particle &p1, const Particle &p2) const;
+    double minimumImageDistanceSquared(const Particle &p1, const Particle &p2) const;
 
+    /**
+     * @brief Calculates the minimum image distance between two particles considering PBC.
+     * @param p1 The first particle.
+     * @param p2 The second particle.
+     * @return The shortest distance between p1 and p2 squared under periodic boundary conditions.
+     */
+    double minimumImageDistance(const Particle &p1, const Particle &p2) const;
     /**
      * @brief Gets the length of the simulation box in the x-direction.
      * @return The length in the x-direction.

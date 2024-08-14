@@ -30,7 +30,15 @@ double SimulationBox::minimumImageDistance(const Particle &p1, const Particle &p
 
     return std::sqrt(dx * dx + dy * dy);
 }
+double SimulationBox::minimumImageDistanceSquared(const Particle &p1, const Particle &p2) const {
+    double dx = p1.x - p2.x;
+    double dy = p1.y - p2.y;
 
+    dx -= Lx * std::round(dx / Lx);
+    dy -= Ly * std::round(dy / Ly);
+
+    return (dx * dx + dy * dy);
+}
 double SimulationBox::getLx() const {
     return Lx;
 }
