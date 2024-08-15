@@ -21,6 +21,7 @@ int main(int argc, char *argv[]) {
     int equilibrationTime = static_cast<int>(input.getConstant("equilibrationTime"));
     double timeStep = input.getConstant("timeStep");
     double r2cut = input.getConstant("r2cut");
+    SimulationType simtype = SimulationType::MonteCarloNVT;
 
     // Retrieve the potential type from the input
     std::string potentialName = input.getFilename("potentialType");
@@ -37,7 +38,7 @@ int main(int argc, char *argv[]) {
     // Create and run the simulation
     Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut);
     simulation.initializeParticles(randomPlacement);
-    simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
+    simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simtype);
 
     return 0;
 }
