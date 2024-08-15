@@ -22,6 +22,7 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, do
  */
 void Simulation::initializeParticles(bool randomPlacement) {
     ::initializeParticles(particles, box, numParticles, randomPlacement);
+    updateEnergy();
 }
 
 /**
@@ -37,6 +38,7 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
     } else {
         std::cerr << "Error: Particle index out of bounds." << std::endl;
     }
+    updateEnergy();
 }
 
 bool Simulation::monteCarloMove() {
@@ -122,7 +124,6 @@ void Simulation::updateEnergy() {
 void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType) {
     int acceptedMoves = 0;
     updateEnergy();
-    std::cout<<energy<<std::endl;
     for (int step = 0; step < numSteps; ++step) {
         if (simType == SimulationType::MonteCarloNVT) {
             if (monteCarloMove()) {
@@ -134,6 +135,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
         // Optionally log data
         if (step >= equilibrationTime && step % outputFrequency == 0) {
             logger.logPositions_xyz(particles);
+            updateEnergy();
             logger.logSimulationData(*this, step);
         }
     }
