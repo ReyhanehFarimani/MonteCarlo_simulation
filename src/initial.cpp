@@ -1,7 +1,7 @@
 #include "initial.h"
 #include <cstdlib>  // For rand() and srand()
 #include <ctime>    // For time()
-
+#include <iostream>
 
 // Particle class methods
 Particle::Particle(double x_init, double y_init)
@@ -36,7 +36,7 @@ double SimulationBox::minimumImageDistanceSquared(const Particle &p1, const Part
 
     dx -= Lx * std::round(dx / Lx);
     dy -= Ly * std::round(dy / Ly);
-
+    // debugging output
     return (dx * dx + dy * dy);
 }
 double SimulationBox::getLx() const {
@@ -67,11 +67,12 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
         double spacingX = box.getLx() / gridSize;
         double spacingY = box.getLy() / gridSize;
 
-        for (int i = 0; i < gridSize; ++i) {
-            for (int j = 0; j < gridSize; ++j) {
-                if (particles.size() < N) {
+        for (int i = 0; i < gridSize ; ++i) {
+            for (int j = 0; j < gridSize ; ++j) {
+                if (particles.size() < N  + 1) {
                     double x = i * spacingX;
                     double y = j * spacingY;
+                    std::cout<<x<<","<<y<<std::endl;
                     particles.emplace_back(x, y);
                 }
             }

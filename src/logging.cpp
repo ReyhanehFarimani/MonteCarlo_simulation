@@ -29,12 +29,12 @@ void Logging::logPositions_xyz(const std::vector<Particle> &particles) {
         throw std::runtime_error("Position log file is not open");
     }
 
-    outFile_position << particles.size() << "\n";
+    outFile_position << particles.size() + 1 << "\n";
     outFile_position << "Particle positions in xyz format\n";
 
-    for (const auto &particle : particles) {
+    for (int i = 0; i < particles.size() + 1; i++) {
         outFile_position << "P " << std::fixed << std::setprecision(5) 
-                         << particle.x << " " << particle.y << " 0.00000\n";
+                         << particles[i].x << " " << particles[i].y << " 0.00000\n";
     }
 }
 
