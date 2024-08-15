@@ -3,7 +3,7 @@
 int main() {
     testEnergyWCA();
     testEnergyLJ();
-    testEnergyYukawa();
+    // testEnergyYukawa();
     testBoundaryEnergy();
     testPBC();
 

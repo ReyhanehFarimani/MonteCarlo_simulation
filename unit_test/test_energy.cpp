@@ -12,14 +12,15 @@ void testBoundaryEnergy() {
     Simulation sim(box, PotentialType::LennardJones, 1.0, 2, 0.01, 2.5);
 
     std::vector<Particle> particles = {
-        Particle(0.1, 0.1),
-        Particle(9.9, 9.9)
+        Particle(9.0, 9.0),
+        Particle(0.0, 0.0)
     };
     sim.initializeParticles(false);
+    sim.setParticlePosition(0, particles[0].x, particles[0].y);
+    sim.setParticlePosition(1, particles[1].x, particles[1].y);
 
-    double expectedEnergy = lennardJonesPotential(box.minimumImageDistanceSquared(particles[0], particles[1]));
+    double expectedEnergy = -7.0/16.0;
     double calculatedEnergy = sim.getEnergy();
-
     if (fabs(expectedEnergy - calculatedEnergy) < 1e-5) {
         std::cout << "Boundary Energy Test Passed." << std::endl;
     } else {
@@ -34,11 +35,13 @@ void testEnergyLJ() {
 
     std::vector<Particle> particles = {
         Particle(1.0, 1.0),
-        Particle(2.0, 2.0)
+        Particle(1.5, 1.0)
     };
     sim.initializeParticles(false);
+    sim.setParticlePosition(0, particles[0].x, particles[0].y);
+    sim.setParticlePosition(1, particles[1].x, particles[1].y);
 
-    double expectedEnergy = lennardJonesPotential(box.minimumImageDistanceSquared(particles[0], particles[1]));
+    double expectedEnergy = 4 * 64 * 63;
     double calculatedEnergy = sim.getEnergy();
 
     if (fabs(expectedEnergy - calculatedEnergy) < 1e-5) {
@@ -56,6 +59,8 @@ void testEnergyYukawa() {
         Particle(2.0, 2.0)
     };
     sim.initializeParticles(false);
+    sim.setParticlePosition(0, particles[0].x, particles[0].y);
+    sim.setParticlePosition(1, particles[1].x, particles[1].y);
 
     double expectedEnergy = yukawaPotential(box.minimumImageDistanceSquared(particles[0], particles[1]));
     double calculatedEnergy = sim.getEnergy();
@@ -73,13 +78,14 @@ void testEnergyWCA() {
     
     std::vector<Particle> particles = {
         Particle(1.0, 1.0),
-        Particle(2.0, 2.0)
+        Particle(1.0, 1.25)
     };
     sim.initializeParticles(false); // Initialize particles at defined positions
+    sim.setParticlePosition(0, particles[0].x, particles[0].y);
+    sim.setParticlePosition(1, particles[1].x, particles[1].y);
 
-    double expectedEnergy = wcaPotential(box.minimumImageDistanceSquared(particles[0], particles[1]));
+    double expectedEnergy = 4 * (pow(4, 12) - pow(4, 6)) + 1;
     double calculatedEnergy = sim.getEnergy();
-
     if (fabs(expectedEnergy - calculatedEnergy) < 1e-5) {
         std::cout << "WCA Energy Test Passed." << std::endl;
     } else {

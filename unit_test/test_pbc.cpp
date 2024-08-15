@@ -8,10 +8,10 @@
 #include "test.h"
 
 void testPBC() {
-    SimulationBox box(10.0, 10.0);
-    Particle p(5.0, 5.0);
+    SimulationBox box(3.0, 3.0);
+    Particle p(1.0, 1.0);
 
-    for (int i = 0; i < 100000; ++i) {
+    for (int i = 0; i < 100000000 ; ++i) {
         double dx = (rand() / double(RAND_MAX) - 0.5) * 0.1; // Random small step
         double dy = (rand() / double(RAND_MAX) - 0.5) * 0.1;
 
