@@ -6,6 +6,7 @@ int main() {
     // testEnergyYukawa();
     testBoundaryEnergy();
     testPBC();
+    testMonteCarloEnergyReduction();
 
     return 0;
 }

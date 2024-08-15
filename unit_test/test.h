@@ -6,5 +6,5 @@ void testEnergyLJ();
 void testEnergyYukawa();
 void testBoundaryEnergy();
 void testPBC();
-
+void testMonteCarloEnergyReduction();
 #endif 
