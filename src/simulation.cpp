@@ -1,5 +1,5 @@
 #include "simulation.h"
-
+#include "iostream"
 /**
  * @brief Constructs a Simulation object with the specified parameters.
  * 
@@ -7,11 +7,11 @@
  * @param potentialType The type of potential used in the simulation.
  * @param temperature The temperature of the simulation.
  * @param numParticles The number of particles in the simulation.
- * @param timeStep The time step for the simulation.
+ * @param maxDisplacement The time step for the simulation.
  * @param r2cut The squared distance cutoff for potential calculations.
  */
-Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double timeStep, double r2cut)
-    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), timeStep(timeStep), r2cut(r2cut) {
+Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut)
+    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut) {
     particles.resize(numParticles);
 }
 
@@ -25,31 +25,90 @@ void Simulation::initializeParticles(bool randomPlacement) {
 }
 
 /**
+ * @brief Sets the position of a specific particle.
+ * @param index The index of the particle to modify.
+ * @param x The new x-coordinate of the particle.
+ * @param y The new y-coordinate of the particle.
+ */
+void Simulation::setParticlePosition(size_t index, double x, double y) {
+    if (index < particles.size() + 1) {
+        particles[index].x = x;
+        particles[index].y = y;
+    } else {
+        std::cerr << "Error: Particle index out of bounds." << std::endl;
+    }
+}
+
+bool Simulation::monteCarloMove() {
+
+    double oldEnergy = energy; // Energy before the move
+    // Randomly select a particle
+    size_t particleIndex = rand() % (particles.size() + 1);
+    Particle &p = particles[particleIndex];
+
+    // Store the old position
+    double oldX = p.x;
+    double oldY = p.y;
+
+    // Randomly displace the particle
+    double dx = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
+    double dy = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
+
+    p.updatePosition(dx, dy);
+    box.applyPBC(p);
+
+    // Calculate the energy difference
+    updateEnergy(); // Energy after the move
+    
+    double deltaE = energy - oldEnergy;
+    
+    // Decide whether to accept or reject the move
+    if (deltaE < 0 || exp(-deltaE / temperature) > (rand() / double(RAND_MAX))) {
+        // Accept the move
+        return true;
+    } else {
+        // Reject the move, restore the old position
+        p.x = oldX;
+        p.y = oldY;
+        energy = oldEnergy;
+        return false;
+    }
+}
+
+/**
  * @brief Calculates the total energy of the system.
  * 
  * @return The total energy of the system.
  */
-double Simulation::calculateEnergy() const {
-    double energy = 0.0;
-    for (size_t i = 0; i < particles.size(); ++i) {
-        for (size_t j = i + 1; j < particles.size(); ++j) {
+
+void Simulation::updateEnergy() {
+    energy = 0.0;
+    
+    for (size_t i = 0; i < particles.size() + 1; ++i) {
+        for (size_t j = i + 1; j < particles.size() + 1; ++j) {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
+            
             if (r2 < r2cut) {
+                double potential = 0.0;
                 switch (potentialType) {
                     case PotentialType::LennardJones:
-                        energy += lennardJonesPotential(r2);
+                        potential = lennardJonesPotential(r2);
+                        
                         break;
                     case PotentialType::WCA:
-                        energy += wcaPotential(r2);
+                        potential = wcaPotential(r2);
                         break;
                     case PotentialType::Yukawa:
-                        energy += yukawaPotential(r2);
+                        potential = yukawaPotential(r2);
                         break;
                 }
+                energy += potential;
+                
             }
         }
-    }
-    return energy;
+        
+    } // Update the energy member variable
+    
 }
 
 /**
@@ -60,22 +119,33 @@ double Simulation::calculateEnergy() const {
  * @param outputFrequency How often to log the results.
  * @param logger The logging object for output.
  */
-void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger) {
-    for (int timestep = 0; timestep < numSteps; ++timestep) {
-        // Perform necessary simulation steps (e.g., position update, force calculation)
-
-        // Skip logging during equilibration
-        if (timestep >= equilibrationTime) {
-            if (timestep % outputFrequency == 0) {
-                logger.logPositions_xyz(particles);
-                logger.logSimulationData(*this, timestep);
+void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType) {
+    int acceptedMoves = 0;
+    updateEnergy();
+    std::cout<<energy<<std::endl;
+    for (int step = 0; step < numSteps; ++step) {
+        if (simType == SimulationType::MonteCarloNVT) {
+            if (monteCarloMove()) {
+                acceptedMoves++;
             }
         }
+        // Other simulation types can be added here as additional conditions
+        
+        // Optionally log data
+        if (step >= equilibrationTime && step % outputFrequency == 0) {
+            logger.logPositions_xyz(particles);
+            logger.logSimulationData(*this, step);
+        }
+    }
+
+    if (simType == SimulationType::MonteCarloNVT) {
+        std::cout << "Monte Carlo NVT simulation completed with " 
+                  << acceptedMoves << " accepted moves out of " << numSteps << " steps." << std::endl;
     }
 }
 
 double Simulation::getEnergy() const {
-    return calculateEnergy();
+    return energy;
 }
 
 int Simulation::getNumParticles() const {
