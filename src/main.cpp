@@ -23,7 +23,7 @@ int main(int argc, char *argv[]) {
     unsigned int seed = input.getConstant("seed");
     const bool useCellList = input.getConstant("useCellList");
     const int cellListUpdateFrequency = input.getConstant("cellListUpdateFrequency");
-    
+
     SimulationType simtype = SimulationType::MonteCarloNVT;
 
     // Retrieve the potential type from the input
@@ -39,7 +39,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, seed);
+    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simtype);
 

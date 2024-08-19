@@ -44,7 +44,7 @@ public:
      * @param maxDisplacement 
      * @param r2cut The squared distance cutoff for potential calculations.
      */
-    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut,unsigned int seed);
+    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut,unsigned int seed, bool useCellList, int cellListUpdateFrequency);
 
     /**
      * @brief Initializes particles in the simulation box.

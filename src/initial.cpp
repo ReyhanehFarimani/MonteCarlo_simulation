@@ -73,7 +73,8 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
 
         for (int i = 0; i < gridSize ; ++i) {
             for (int j = 0; j < gridSize ; ++j) {
-                if (particles.size() < gridSize * gridSize + 1) {
+                if (particles.size() < gridSize * gridSize) {
+                    
                     double x = i * spacingX;
                     double y = j * spacingY;
                     // std::cout<<x<<","<<y<<std::endl;
