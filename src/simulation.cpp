@@ -31,6 +31,9 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, do
  */
 void Simulation::initializeParticles(bool randomPlacement) {
     ::initializeParticles(particles, box, numParticles, randomPlacement, seed);
+    if (useCellList) {
+        buildCellList();
+    }
     updateEnergy();
 }
 
@@ -48,6 +51,35 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
         std::cerr << "Error: Particle index out of bounds." << std::endl;
     }
     updateEnergy();
+}
+
+
+void Simulation::buildCellList() {
+    // Calculate the number of cells along each dimension
+    int numCellsX = static_cast<int>(box.getLx() / r2cut);
+    int numCellsY = static_cast<int>(box.getLy() / r2cut);
+
+    // Resize the cell list
+    cellList.resize(numCellsX * numCellsY);
+
+    // Clear previous cell list data
+    for (auto &cell : cellList) {
+        cell.clear();
+    }
+
+    // Assign particles to cells
+    for (size_t i = 0; i < particles.size(); ++i) {
+        int cellX = static_cast<int>(particles[i].x / r2cut);
+        int cellY = static_cast<int>(particles[i].y / r2cut);
+        int cellIndex = cellY * numCellsX + cellX;
+        cellList[cellIndex].push_back(i);
+    }
+}
+
+void Simulation::updateCellListIfNeeded(int step) {
+    if (useCellList && step % cellListUpdateFrequency == 0) {
+        buildCellList();
+    }
 }
 
 bool Simulation::monteCarloMove() {
@@ -137,6 +169,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 acceptedMoves++;
             }
         }
+        updateCellListIfNeeded(step);
         // Other simulation types can be added here as additional conditions
         
         // Optionally log data
@@ -165,7 +198,4 @@ double Simulation::getTemperature() const {
     return temperature;
 }
 
-void Simulation::setSeed(unsigned int newSeed) {
-    seed = newSeed;
-    srand(seed);
-}
+

@@ -25,6 +25,10 @@ private:
     double maxDisplacement;              ///< Max Displacement for the simulation
     double r2cut;                        ///< Squared distance cutoff for potential calculations
     unsigned int seed;                   ///< Seed for random number generation
+    bool useCellList;                   ///< bool use cell list option for optimized energy compution
+    int cellListUpdateFrequency;        ///< frquency of cell list updating.
+    std::vector<std::vector<int>> cellList; ///< A 2D vector for storing particle indices in each cell
+
 public:
     double energy;
 
@@ -99,10 +103,16 @@ public:
     void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType);
 
     /**
-     * @brief Set the seed for random number generation.
-     * @param seed The seed value.
+     * @brief Constructs the cell list based on current particle positions.
      */
-    void setSeed(unsigned int seed);
+    void buildCellList();
+
+    /**
+     * @brief Updates the cell list if necessary based on the current simulation step.
+     * @param step The current simulation step.
+     */
+    void updateCellListIfNeeded(int step);
+
 
 };
 

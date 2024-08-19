@@ -21,6 +21,9 @@ int main(int argc, char *argv[]) {
     double timeStep = input.getConstant("timeStep");
     double r2cut = input.getConstant("r2cut");
     unsigned int seed = input.getConstant("seed");
+    const bool useCellList = input.getConstant("useCellList");
+    const int cellListUpdateFrequency = input.getConstant("cellListUpdateFrequency");
+    
     SimulationType simtype = SimulationType::MonteCarloNVT;
 
     // Retrieve the potential type from the input
