@@ -24,17 +24,19 @@ Logging::~Logging() {
     }
 }
 
-void Logging::logPositions_xyz(const std::vector<Particle> &particles) {
-    if (!outFile_position.is_open()) {
-        throw std::runtime_error("Position log file is not open");
-    }
-
+void Logging::logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut) {
     outFile_position << particles.size() << "\n";
-    outFile_position << "Particle positions in xyz format\n";
+    outFile_position << "Cell index for each particle\n";
 
-    for (int i = 0; i < particles.size(); i++) {
-        outFile_position << "P " << std::fixed << std::setprecision(5) 
-                         << particles[i].x << " " << particles[i].y << " 0.00000\n";
+    int numCellsX = static_cast<int>(box.getLx() / r2cut);
+    int numCellsY = static_cast<int>(box.getLy() / r2cut);
+
+    for (const auto &particle : particles) {
+        int cellX = static_cast<int>(particle.x / r2cut);
+        int cellY = static_cast<int>(particle.y / r2cut);
+        int cellIndex = cellY * numCellsX + cellX;
+
+        outFile_position << cellIndex << " " << particle.x << " " << particle.y << "\n";
     }
 }
 

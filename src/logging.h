@@ -33,7 +33,7 @@ public:
      * @brief Logs the positions of all particles to the file.
      * @param particles The vector of particles whose positions will be logged in the xyz format.
      */
-    void logPositions_xyz(const std::vector<Particle> &particles);
+    void logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut);
 
     /**
      * @brief Logs the positions of all particles to the file.

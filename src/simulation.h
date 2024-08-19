@@ -116,10 +116,13 @@ public:
     void clearCellList();
 
     /**
-     * @brief Computes the total energy of the system using the linked list cell list.
-     * @return The total energy of the system.
+     * @brief Computes the interaction energy of a particle with particles in its cell and neighboring cells.
+     * @param particleIndex The index of the particle.
+     * @param x The x-coordinate of the particle.
+     * @param y The y-coordinate of the particle.
+     * @return The computed interaction energy.
      */
-    double computeEnergyWithLinkedListCellList() const;
+    double computeLocalEnergy(int particleIndex) const;
 
 
 };

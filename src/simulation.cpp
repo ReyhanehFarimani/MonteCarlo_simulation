@@ -58,8 +58,6 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
 
 
 bool Simulation::monteCarloMove() {
-
-    double oldEnergy = energy; // Energy before the move
     // Randomly select a particle
     size_t particleIndex = rand() % (particles.size() + 1);
     Particle &p = particles[particleIndex];
@@ -67,26 +65,38 @@ bool Simulation::monteCarloMove() {
     // Store the old position
     double oldX = p.x;
     double oldY = p.y;
+    // Calculate the initial local energy
+    double initialEnergy;
+    if (useCellList)
+        initialEnergy = computeLocalEnergy(particleIndex);
+    else
+        initialEnergy = energy;
+    // double test_e_new = computeEnergy();
     // Randomly displace the particle
     double dx = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
     double dy = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
     p.updatePosition(dx, dy);
     box.applyPBC(p);
 
+    // Calculate the new local energy
+    double newEnergy;
+    if (useCellList)
+        newEnergy = computeLocalEnergy(particleIndex);
+    else
+        newEnergy = computeEnergy();
+    // double test_e_old = computeEnergy();
     // Calculate the energy difference
-    energy = computeEnergy(); // Energy after the move
-    
-    double deltaE = energy - oldEnergy;
-    
+    double deltaE = newEnergy - initialEnergy;
+    // std::cout<<deltaE<<"   "<<test_e_old - test_e_new<<std::endl;
     // Decide whether to accept or reject the move
     if (deltaE < 0 || exp(-deltaE / temperature) > (rand() / double(RAND_MAX))) {
         // Accept the move
+        energy += deltaE;
         return true;
     } else {
         // Reject the move, restore the old position
         p.x = oldX;
         p.y = oldY;
-        energy = oldEnergy;
         return false;
     }
 }
@@ -139,8 +149,16 @@ double Simulation::computeEnergy() {
  */
 void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType) {
     int acceptedMoves = 0;
+    energy = computeEnergy();
     // Calculate energy at each step using the appropriate method
-    for (int step = 0; step < numSteps; ++step) {
+    for (int step = 0; step < numSteps + equilibrationTime; ++step) {
+        if (useCellList){
+        if (step%cellListUpdateFrequency == 0)
+        {
+            buildCellList();
+            energy = computeEnergy();
+        }
+        }
         if (simType == SimulationType::MonteCarloNVT) {
             if (monteCarloMove()) {
                 acceptedMoves++;
@@ -151,14 +169,17 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
         
         // Optionally log data
         if (step >= equilibrationTime && step % outputFrequency == 0) {
-            logger.logPositions_xyz(particles);
+            if (fabs(energy - computeEnergy())> 1){
+            std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
+            }   
+            logger.logPositions_xyz(particles, box, r2cut);
             logger.logSimulationData(*this, step);
         }
     }
 
     if (simType == SimulationType::MonteCarloNVT) {
         std::cout << "Monte Carlo NVT simulation completed with " 
-                  << acceptedMoves << " accepted moves out of " << numSteps << " steps." << std::endl;
+                  << acceptedMoves << " accepted moves out of " << (numSteps + equilibrationTime) << " steps." << std::endl;
     }
 }
 
@@ -204,4 +225,48 @@ void Simulation::buildCellList() {
         newNode->next = cellList[cellIndex];
         cellList[cellIndex] = newNode;
     }
+}
+
+double Simulation::computeLocalEnergy(int particleIndex) const {
+    double localEnergy = 0.0;
+    const Particle& p = particles[particleIndex];
+
+    // Get the current cell of the particle
+    int cellX = static_cast<int>(p.x / r2cut);
+    int cellY = static_cast<int>(p.y / r2cut);
+
+    int numCellsX = static_cast<int>(box.getLx() / r2cut);
+    int numCellsY = static_cast<int>(box.getLy() / r2cut);
+
+
+    // Iterate over neighboring cells
+    for (int offsetY = -2; offsetY <= 2; ++offsetY) {
+        int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+        for (int offsetX = -2; offsetX <= 2; ++offsetX) {
+            int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+            int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+
+            for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                if (node->particleIndex != particleIndex) {
+                    // std::cout<<node->particleIndex<<std::endl;
+                    double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
+                    if (r2 < r2cut) {
+                        switch (potentialType) {
+                            case PotentialType::LennardJones:
+                                localEnergy += lennardJonesPotential(r2);
+                                break;
+                            case PotentialType::WCA:
+                                localEnergy += wcaPotential(r2);
+                                break;
+                            case PotentialType::Yukawa:
+                                localEnergy += yukawaPotential(r2);
+                                break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    // std::cout<<localEnergy<<std::endl;
+    return localEnergy;
 }
