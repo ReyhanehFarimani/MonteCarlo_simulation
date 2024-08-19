@@ -60,5 +60,5 @@ void cell_test_NVT() {
     } else {
         std::cerr << "Test Failed: The simulation outputs differ." << std::endl;
     }
-
+    // std::system("rm position*");
 }
