@@ -24,7 +24,7 @@ private:
     int numParticles;                    ///< Number of particles in the simulation
     double maxDisplacement;              ///< Max Displacement for the simulation
     double r2cut;                        ///< Squared distance cutoff for potential calculations
-
+    unsigned int seed;                   ///< Seed for random number generation
 public:
     double energy;
 
@@ -40,7 +40,7 @@ public:
      * @param maxDisplacement 
      * @param r2cut The squared distance cutoff for potential calculations.
      */
-    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut);
+    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut,unsigned int seed);
 
     /**
      * @brief Initializes particles in the simulation box.
@@ -98,6 +98,11 @@ public:
      */
     void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType);
 
+    /**
+     * @brief Set the seed for random number generation.
+     * @param seed The seed value.
+     */
+    void setSeed(unsigned int seed);
 
 };
 

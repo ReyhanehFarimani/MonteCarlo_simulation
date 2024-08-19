@@ -8,7 +8,6 @@
 int main(int argc, char *argv[]) {
     // Parse input from file and command line
     Input input("input.txt");
-    input.parseCommandLineArgs(argc, argv);
 
     // Retrieve constants from the input
     double boxLengthX = input.getConstant("boxLengthX");
@@ -21,6 +20,7 @@ int main(int argc, char *argv[]) {
     int equilibrationTime = static_cast<int>(input.getConstant("equilibrationTime"));
     double timeStep = input.getConstant("timeStep");
     double r2cut = input.getConstant("r2cut");
+    unsigned int seed = input.getConstant("seed");
     SimulationType simtype = SimulationType::MonteCarloNVT;
 
     // Retrieve the potential type from the input
@@ -36,7 +36,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut);
+    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, seed);
     simulation.initializeParticles(randomPlacement);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simtype);
 

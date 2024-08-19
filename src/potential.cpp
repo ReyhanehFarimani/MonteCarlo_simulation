@@ -2,7 +2,7 @@
 #include <stdexcept>
 #include <string>
 #include <functional>
-
+#include <iostream>
 /**
  * @brief Calculates the Lennard-Jones potential energy.
  * 

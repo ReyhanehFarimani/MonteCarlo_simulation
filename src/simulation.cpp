@@ -1,5 +1,7 @@
 #include "simulation.h"
 #include "iostream"
+#include <cstdlib> // For srand() and rand()
+
 /**
  * @brief Constructs a Simulation object with the specified parameters.
  * 
@@ -10,9 +12,16 @@
  * @param maxDisplacement The time step for the simulation.
  * @param r2cut The squared distance cutoff for potential calculations.
  */
-Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut)
-    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut) {
+Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, unsigned int seed)
+    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut), energy(0.0), seed(seed) {
     particles.resize(numParticles);
+    if (seed != 0) {
+        srand(seed); // Seed the random number generator
+        
+    } else {
+        srand(static_cast<unsigned int>(time(nullptr))); // Use current time as seed
+    }
+    updateEnergy(); // Initialize the energy
 }
 
 /**
@@ -21,7 +30,7 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, do
  * @param randomPlacement If true, particles are placed randomly; otherwise, in a grid.
  */
 void Simulation::initializeParticles(bool randomPlacement) {
-    ::initializeParticles(particles, box, numParticles, randomPlacement);
+    ::initializeParticles(particles, box, numParticles, randomPlacement, seed);
     updateEnergy();
 }
 
@@ -51,11 +60,9 @@ bool Simulation::monteCarloMove() {
     // Store the old position
     double oldX = p.x;
     double oldY = p.y;
-
     // Randomly displace the particle
     double dx = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
     double dy = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
-
     p.updatePosition(dx, dy);
     box.applyPBC(p);
 
@@ -156,4 +163,9 @@ int Simulation::getNumParticles() const {
 
 double Simulation::getTemperature() const {
     return temperature;
+}
+
+void Simulation::setSeed(unsigned int newSeed) {
+    seed = newSeed;
+    srand(seed);
 }

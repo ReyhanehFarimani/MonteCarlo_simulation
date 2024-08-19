@@ -83,7 +83,7 @@ public:
  * @param N The number of particles to initialize.
  * @param random If true, particles are placed randomly; if false, they are placed in a grid.
  */
-void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true);
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true, unsigned int seed = 0);
 
 
 #endif // INITIAL_H

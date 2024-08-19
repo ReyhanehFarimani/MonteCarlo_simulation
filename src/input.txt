@@ -3,7 +3,7 @@ boxLengthX 10.0
 boxLengthY 10.0
 
 # Number of particles in the simulation
-numParticles 2
+numParticles 4
 
 # Particle initialization: 1 for random placement, 0 for grid placement
 randomPlacement 0
@@ -12,16 +12,16 @@ randomPlacement 0
 temperature 1.0
 
 # Number of simulation steps
-numSteps 10000
+numSteps 1
 
 # Time step for the simulation
-timeStep 0.01
+timeStep 1
 
 # Output frequency: how often to log the results
 outputFrequency 100
 
 # Equilibration time: number of steps before starting to log
-equilibrationTime 1000
+equilibrationTime 1
 
 # Cutoff squared distance for potential calculations
 r2cut 2.5

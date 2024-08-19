@@ -49,13 +49,17 @@ double SimulationBox::getLy() const {
 
 
 
-void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random) {
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random, unsigned int seed) {
     particles.clear();  // Clear the vector before initializing new particles
     particles.reserve(N);  // Reserve memory for N particles
 
     if (random) {
+        if (seed == 0){
         srand(static_cast<unsigned>(time(0)));  // Seed the random number generator
-
+        }
+        else{
+            srand(seed + 10);
+        }
         for (int i = 0; i < N; ++i) {
             double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
             double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
@@ -69,10 +73,10 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
 
         for (int i = 0; i < gridSize ; ++i) {
             for (int j = 0; j < gridSize ; ++j) {
-                if (particles.size() < N  + 1) {
+                if (particles.size() < gridSize * gridSize + 1) {
                     double x = i * spacingX;
                     double y = j * spacingY;
-                    std::cout<<x<<","<<y<<std::endl;
+                    // std::cout<<x<<","<<y<<std::endl;
                     particles.emplace_back(x, y);
                 }
             }
