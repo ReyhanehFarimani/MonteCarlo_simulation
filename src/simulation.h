@@ -5,6 +5,12 @@
 #include "initial.h"
 #include "potential.h"
 #include "logging.h"
+struct CellListNode {
+    int particleIndex;      ///< Index of the particle in the particles vector
+    CellListNode* next;     ///< Pointer to the next node in the linked list
+
+    CellListNode(int idx) : particleIndex(idx), next(nullptr) {}
+};
 
 enum class SimulationType {
     MonteCarloNVT,
@@ -27,7 +33,7 @@ private:
     unsigned int seed;                   ///< Seed for random number generation
     bool useCellList;                   ///< bool use cell list option for optimized energy compution
     int cellListUpdateFrequency;        ///< frquency of cell list updating.
-    std::vector<std::vector<int>> cellList; ///< A 2D vector for storing particle indices in each cell
+   std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
 
 public:
     double energy;
@@ -64,7 +70,7 @@ public:
      /**
      * @brief Calculates and updates the total energy of the system.
      */
-    void updateEnergy();
+    double computeEnergy();
 
 
 
@@ -102,16 +108,18 @@ public:
      */
     void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType);
 
-    /**
-     * @brief Constructs the cell list based on current particle positions.
-     */
     void buildCellList();
 
     /**
-     * @brief Updates the cell list if necessary based on the current simulation step.
-     * @param step The current simulation step.
+     * @brief Clears the current cell list.
      */
-    void updateCellListIfNeeded(int step);
+    void clearCellList();
+
+    /**
+     * @brief Computes the total energy of the system using the linked list cell list.
+     * @return The total energy of the system.
+     */
+    double computeEnergyWithLinkedListCellList() const;
 
 
 };

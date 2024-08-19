@@ -21,7 +21,7 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, do
     } else {
         srand(static_cast<unsigned int>(time(nullptr))); // Use current time as seed
     }
-    updateEnergy(); // Initialize the energy
+    energy = computeEnergy(); // Initialize the energy
 }
 
 /**
@@ -34,7 +34,7 @@ void Simulation::initializeParticles(bool randomPlacement) {
     if (useCellList) {
         buildCellList();
     }
-    updateEnergy();
+    energy = computeEnergy();
 }
 
 /**
@@ -50,37 +50,12 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
     } else {
         std::cerr << "Error: Particle index out of bounds." << std::endl;
     }
-    updateEnergy();
-}
-
-
-void Simulation::buildCellList() {
-    // Calculate the number of cells along each dimension
-    int numCellsX = static_cast<int>(box.getLx() / r2cut);
-    int numCellsY = static_cast<int>(box.getLy() / r2cut);
-
-    // Resize the cell list
-    cellList.resize(numCellsX * numCellsY);
-
-    // Clear previous cell list data
-    for (auto &cell : cellList) {
-        cell.clear();
-    }
-
-    // Assign particles to cells
-    for (size_t i = 0; i < particles.size(); ++i) {
-        int cellX = static_cast<int>(particles[i].x / r2cut);
-        int cellY = static_cast<int>(particles[i].y / r2cut);
-        int cellIndex = cellY * numCellsX + cellX;
-        cellList[cellIndex].push_back(i);
-    }
-}
-
-void Simulation::updateCellListIfNeeded(int step) {
-    if (useCellList && step % cellListUpdateFrequency == 0) {
+    if (useCellList) {
         buildCellList();
     }
+    energy = computeEnergy();
 }
+
 
 bool Simulation::monteCarloMove() {
 
@@ -99,7 +74,7 @@ bool Simulation::monteCarloMove() {
     box.applyPBC(p);
 
     // Calculate the energy difference
-    updateEnergy(); // Energy after the move
+    energy = computeEnergy(); // Energy after the move
     
     double deltaE = energy - oldEnergy;
     
@@ -122,8 +97,8 @@ bool Simulation::monteCarloMove() {
  * @return The total energy of the system.
  */
 
-void Simulation::updateEnergy() {
-    energy = 0.0;
+double Simulation::computeEnergy() {
+    double tmp_energy = 0.0;
     
     for (size_t i = 0; i < particles.size() + 1; ++i) {
         for (size_t j = i + 1; j < particles.size() + 1; ++j) {
@@ -143,14 +118,16 @@ void Simulation::updateEnergy() {
                         potential = yukawaPotential(r2);
                         break;
                 }
-                energy += potential;
+                tmp_energy += potential;
                 
             }
         }
         
-    } // Update the energy member variable
+    } 
+    return tmp_energy;
     
 }
+
 
 /**
  * @brief Runs the simulation for a specified number of steps.
@@ -162,20 +139,19 @@ void Simulation::updateEnergy() {
  */
 void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType) {
     int acceptedMoves = 0;
-    updateEnergy();
+    // Calculate energy at each step using the appropriate method
     for (int step = 0; step < numSteps; ++step) {
         if (simType == SimulationType::MonteCarloNVT) {
             if (monteCarloMove()) {
                 acceptedMoves++;
             }
         }
-        updateCellListIfNeeded(step);
+
         // Other simulation types can be added here as additional conditions
         
         // Optionally log data
         if (step >= equilibrationTime && step % outputFrequency == 0) {
             logger.logPositions_xyz(particles);
-            updateEnergy();
             logger.logSimulationData(*this, step);
         }
     }
@@ -199,3 +175,33 @@ double Simulation::getTemperature() const {
 }
 
 
+void Simulation::clearCellList() {
+    for (auto& cell : cellList) {
+        CellListNode* current = cell;
+        while (current != nullptr) {
+            CellListNode* toDelete = current;
+            current = current->next;
+            delete toDelete;
+        }
+        cell = nullptr;
+    }
+}
+
+void Simulation::buildCellList() {
+    clearCellList();  // Clear the previous cell list
+
+    int numCellsX = static_cast<int>(box.getLx() / r2cut);
+    int numCellsY = static_cast<int>(box.getLy() / r2cut);
+
+    cellList.resize(numCellsX * numCellsY, nullptr);
+
+    for (size_t i = 0; i < particles.size(); ++i) {
+        int cellX = static_cast<int>(particles[i].x / r2cut);
+        int cellY = static_cast<int>(particles[i].y / r2cut);
+        int cellIndex = cellY * numCellsX + cellX;
+
+        CellListNode* newNode = new CellListNode(i);
+        newNode->next = cellList[cellIndex];
+        cellList[cellIndex] = newNode;
+    }
+}
