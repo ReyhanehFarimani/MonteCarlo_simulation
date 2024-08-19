@@ -1,0 +1,105 @@
+\doxysection{Logging Class Reference}
+\hypertarget{class_logging}{}\label{class_logging}\index{Logging@{Logging}}
+
+
+Manages logging of simulation data to files.  
+
+
+
+
+{\ttfamily \#include $<$logging.\+h$>$}
+
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_logging_a8bc3ffbdb6a3b1f388b5730bf072d785}{Logging}} (const std\+::string \&filename\+\_\+position, const std\+::string \&filename\+\_\+data)
+\begin{DoxyCompactList}\small\item\em Constructs a \doxylink{class_logging}{Logging} object and opens the file for writing. \end{DoxyCompactList}\item 
+\Hypertarget{class_logging_af6a0971121f5b0d9d6ebfb4e69b20a4d}\label{class_logging_af6a0971121f5b0d9d6ebfb4e69b20a4d} 
+{\bfseries \texorpdfstring{$\sim$}{\string~}\+Logging} ()
+\begin{DoxyCompactList}\small\item\em Destructor to close the file when the \doxylink{class_logging}{Logging} object is destroyed. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_logging_a6dec714c2e71e82a77d2b46ed45a1aa7}{log\+Positions\+\_\+xyz}} (const std\+::vector$<$ \mbox{\hyperlink{class_particle}{Particle}} $>$ \&particles, const \mbox{\hyperlink{class_simulation_box}{Simulation\+Box}} \&box, double r2cut)
+\begin{DoxyCompactList}\small\item\em Logs the positions of all particles to the file. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_logging_a5d0c6fc1e02827505516ccf196d06859}{log\+Positions\+\_\+dump}} (const std\+::vector$<$ \mbox{\hyperlink{class_particle}{Particle}} $>$ \&particles)
+\begin{DoxyCompactList}\small\item\em Logs the positions of all particles to the file. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_logging_a54ccb4de3bfdb143b5b2f2e54b639c22}{log\+Simulation\+Data}} (const \mbox{\hyperlink{class_simulation}{Simulation}} \&sim, int timestep)
+\begin{DoxyCompactList}\small\item\em Logs the simularion data like energy pressure, number of particles of the system to the data file. \end{DoxyCompactList}\item 
+\Hypertarget{class_logging_a9f46edecca95833f3c7fc0e32be0184c}\label{class_logging_a9f46edecca95833f3c7fc0e32be0184c} 
+void {\bfseries close} ()
+\begin{DoxyCompactList}\small\item\em Closes the log file. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Manages logging of simulation data to files. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_logging_a8bc3ffbdb6a3b1f388b5730bf072d785}\index{Logging@{Logging}!Logging@{Logging}}
+\index{Logging@{Logging}!Logging@{Logging}}
+\doxysubsubsection{\texorpdfstring{Logging()}{Logging()}}
+{\footnotesize\ttfamily \label{class_logging_a8bc3ffbdb6a3b1f388b5730bf072d785} 
+Logging\+::\+Logging (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{filename\+\_\+position}{, }\item[{const std\+::string \&}]{filename\+\_\+data}{}\end{DoxyParamCaption})}
+
+
+
+Constructs a \doxylink{class_logging}{Logging} object and opens the file for writing. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em filename} & The name of the file where data will be logged. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_logging_a5d0c6fc1e02827505516ccf196d06859}\index{Logging@{Logging}!logPositions\_dump@{logPositions\_dump}}
+\index{logPositions\_dump@{logPositions\_dump}!Logging@{Logging}}
+\doxysubsubsection{\texorpdfstring{logPositions\_dump()}{logPositions\_dump()}}
+{\footnotesize\ttfamily \label{class_logging_a5d0c6fc1e02827505516ccf196d06859} 
+void Logging\+::log\+Positions\+\_\+dump (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{class_particle}{Particle}} $>$ \&}]{particles}{}\end{DoxyParamCaption})}
+
+
+
+Logs the positions of all particles to the file. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em particles} & The vector of particles whose positions will be logged in the dump format. \\
+\hline
+\end{DoxyParams}
+\Hypertarget{class_logging_a6dec714c2e71e82a77d2b46ed45a1aa7}\index{Logging@{Logging}!logPositions\_xyz@{logPositions\_xyz}}
+\index{logPositions\_xyz@{logPositions\_xyz}!Logging@{Logging}}
+\doxysubsubsection{\texorpdfstring{logPositions\_xyz()}{logPositions\_xyz()}}
+{\footnotesize\ttfamily \label{class_logging_a6dec714c2e71e82a77d2b46ed45a1aa7} 
+void Logging\+::log\+Positions\+\_\+xyz (\begin{DoxyParamCaption}\item[{const std\+::vector$<$ \mbox{\hyperlink{class_particle}{Particle}} $>$ \&}]{particles}{, }\item[{const \mbox{\hyperlink{class_simulation_box}{Simulation\+Box}} \&}]{box}{, }\item[{double}]{r2cut}{}\end{DoxyParamCaption})}
+
+
+
+Logs the positions of all particles to the file. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em particles} & The vector of particles whose positions will be logged in the xyz format. \\
+\hline
+\end{DoxyParams}
+\Hypertarget{class_logging_a54ccb4de3bfdb143b5b2f2e54b639c22}\index{Logging@{Logging}!logSimulationData@{logSimulationData}}
+\index{logSimulationData@{logSimulationData}!Logging@{Logging}}
+\doxysubsubsection{\texorpdfstring{logSimulationData()}{logSimulationData()}}
+{\footnotesize\ttfamily \label{class_logging_a54ccb4de3bfdb143b5b2f2e54b639c22} 
+void Logging\+::log\+Simulation\+Data (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_simulation}{Simulation}} \&}]{sim}{, }\item[{int}]{timestep}{}\end{DoxyParamCaption})}
+
+
+
+Logs the simularion data like energy pressure, number of particles of the system to the data file. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em energy} & The total energy of the system. \\
+\hline
+{\em timestep} & The current timestep in the simulation. \\
+\hline
+\end{DoxyParams}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/logging.\+h\item 
+src/logging.\+cpp\end{DoxyCompactItemize}

@@ -1,0 +1,28 @@
+\doxysection{potential.\+h}
+\hypertarget{potential_8h_source}{}\label{potential_8h_source}\index{src/potential.h@{src/potential.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ POTENTIAL\_H}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ POTENTIAL\_H}}
+\DoxyCodeLine{00003\ \textcolor{preprocessor}{\#include\ <string>}}
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <functional>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ <cmath>}}
+\DoxyCodeLine{00009\ \textcolor{keyword}{enum\ class}\ PotentialType\ \{}
+\DoxyCodeLine{00010\ \ \ \ \ LennardJones,\ \ }
+\DoxyCodeLine{00011\ \ \ \ \ WCA,\ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00012\ \ \ \ \ Yukawa\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00013\ \};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00021\ \textcolor{keywordtype}{double}\ lennardJonesPotential(\textcolor{keywordtype}{double}\ r2);}
+\DoxyCodeLine{00022\ }
+\DoxyCodeLine{00032\ \textcolor{keywordtype}{double}\ wcaPotential(\textcolor{keywordtype}{double}\ r2);}
+\DoxyCodeLine{00033\ }
+\DoxyCodeLine{00043\ \textcolor{keywordtype}{double}\ yukawaPotential(\textcolor{keywordtype}{double}\ r2);}
+\DoxyCodeLine{00044\ }
+\DoxyCodeLine{00051\ PotentialType\ selectPotentialType(\textcolor{keyword}{const}\ std::string\ \&potentialName);}
+\DoxyCodeLine{00052\ }
+\DoxyCodeLine{00059\ std::function<double(\textcolor{keywordtype}{double})>\ getPotentialFunction(PotentialType\ type);}
+\DoxyCodeLine{00060\ }
+\DoxyCodeLine{00061\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{//\ POTENTIAL\_H}}
+
+\end{DoxyCode}

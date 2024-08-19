@@ -1,0 +1,139 @@
+\doxysection{Simulation\+Box Class Reference}
+\hypertarget{class_simulation_box}{}\label{class_simulation_box}\index{SimulationBox@{SimulationBox}}
+
+
+Manages the 2D simulation box, including periodic boundary conditions.  
+
+
+
+
+{\ttfamily \#include $<$initial.\+h$>$}
+
+\doxysubsubsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\mbox{\hyperlink{class_simulation_box_a2102f6f2fe62d0c7081017105fa6edc6}{Simulation\+Box}} (double Lx, double Ly)
+\begin{DoxyCompactList}\small\item\em Constructs a \doxylink{class_simulation_box}{Simulation\+Box} with the given dimensions. \end{DoxyCompactList}\item 
+void \mbox{\hyperlink{class_simulation_box_a5bb605ef128303cff23e2192cd5cdf00}{apply\+PBC}} (\mbox{\hyperlink{class_particle}{Particle}} \&p) const
+\begin{DoxyCompactList}\small\item\em Applies periodic boundary conditions to a particle. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_simulation_box_a3e13147f0f97fc2b1e2ade112c43611a}{minimum\+Image\+Distance\+Squared}} (const \mbox{\hyperlink{class_particle}{Particle}} \&p1, const \mbox{\hyperlink{class_particle}{Particle}} \&p2) const
+\begin{DoxyCompactList}\small\item\em Calculates the minimum image distance between two particles considering PBC. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_simulation_box_aaa554c4733f3a9bb21d01162918fd3c1}{minimum\+Image\+Distance}} (const \mbox{\hyperlink{class_particle}{Particle}} \&p1, const \mbox{\hyperlink{class_particle}{Particle}} \&p2) const
+\begin{DoxyCompactList}\small\item\em Calculates the minimum image distance between two particles considering PBC. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_simulation_box_a775f1e58f1b8b4abf23870aa4a87c072}{get\+Lx}} () const
+\begin{DoxyCompactList}\small\item\em Gets the length of the simulation box in the x-\/direction. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{class_simulation_box_a0ddf1f8f995208f2b81ea5bb81e7f635}{get\+Ly}} () const
+\begin{DoxyCompactList}\small\item\em Gets the length of the simulation box in the y-\/direction. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Detailed Description}
+Manages the 2D simulation box, including periodic boundary conditions. 
+
+\doxysubsection{Constructor \& Destructor Documentation}
+\Hypertarget{class_simulation_box_a2102f6f2fe62d0c7081017105fa6edc6}\index{SimulationBox@{SimulationBox}!SimulationBox@{SimulationBox}}
+\index{SimulationBox@{SimulationBox}!SimulationBox@{SimulationBox}}
+\doxysubsubsection{\texorpdfstring{SimulationBox()}{SimulationBox()}}
+{\footnotesize\ttfamily \label{class_simulation_box_a2102f6f2fe62d0c7081017105fa6edc6} 
+Simulation\+Box\+::\+Simulation\+Box (\begin{DoxyParamCaption}\item[{double}]{Lx}{, }\item[{double}]{Ly}{}\end{DoxyParamCaption})}
+
+
+
+Constructs a \doxylink{class_simulation_box}{Simulation\+Box} with the given dimensions. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em Lx} & Length of the simulation box in the x-\/direction. \\
+\hline
+{\em Ly} & Length of the simulation box in the y-\/direction. \\
+\hline
+\end{DoxyParams}
+
+
+\doxysubsection{Member Function Documentation}
+\Hypertarget{class_simulation_box_a5bb605ef128303cff23e2192cd5cdf00}\index{SimulationBox@{SimulationBox}!applyPBC@{applyPBC}}
+\index{applyPBC@{applyPBC}!SimulationBox@{SimulationBox}}
+\doxysubsubsection{\texorpdfstring{applyPBC()}{applyPBC()}}
+{\footnotesize\ttfamily \label{class_simulation_box_a5bb605ef128303cff23e2192cd5cdf00} 
+void Simulation\+Box\+::apply\+PBC (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{class_particle}{Particle}} \&}]{p}{}\end{DoxyParamCaption}) const}
+
+
+
+Applies periodic boundary conditions to a particle. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p} & The particle to which PBC will be applied. \\
+\hline
+\end{DoxyParams}
+\Hypertarget{class_simulation_box_a775f1e58f1b8b4abf23870aa4a87c072}\index{SimulationBox@{SimulationBox}!getLx@{getLx}}
+\index{getLx@{getLx}!SimulationBox@{SimulationBox}}
+\doxysubsubsection{\texorpdfstring{getLx()}{getLx()}}
+{\footnotesize\ttfamily \label{class_simulation_box_a775f1e58f1b8b4abf23870aa4a87c072} 
+double Simulation\+Box\+::get\+Lx (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+
+
+Gets the length of the simulation box in the x-\/direction. 
+
+\begin{DoxyReturn}{Returns}
+The length in the x-\/direction. 
+\end{DoxyReturn}
+\Hypertarget{class_simulation_box_a0ddf1f8f995208f2b81ea5bb81e7f635}\index{SimulationBox@{SimulationBox}!getLy@{getLy}}
+\index{getLy@{getLy}!SimulationBox@{SimulationBox}}
+\doxysubsubsection{\texorpdfstring{getLy()}{getLy()}}
+{\footnotesize\ttfamily \label{class_simulation_box_a0ddf1f8f995208f2b81ea5bb81e7f635} 
+double Simulation\+Box\+::get\+Ly (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption}) const}
+
+
+
+Gets the length of the simulation box in the y-\/direction. 
+
+\begin{DoxyReturn}{Returns}
+The length in the y-\/direction. 
+\end{DoxyReturn}
+\Hypertarget{class_simulation_box_aaa554c4733f3a9bb21d01162918fd3c1}\index{SimulationBox@{SimulationBox}!minimumImageDistance@{minimumImageDistance}}
+\index{minimumImageDistance@{minimumImageDistance}!SimulationBox@{SimulationBox}}
+\doxysubsubsection{\texorpdfstring{minimumImageDistance()}{minimumImageDistance()}}
+{\footnotesize\ttfamily \label{class_simulation_box_aaa554c4733f3a9bb21d01162918fd3c1} 
+double Simulation\+Box\+::minimum\+Image\+Distance (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_particle}{Particle}} \&}]{p1}{, }\item[{const \mbox{\hyperlink{class_particle}{Particle}} \&}]{p2}{}\end{DoxyParamCaption}) const}
+
+
+
+Calculates the minimum image distance between two particles considering PBC. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p1} & The first particle. \\
+\hline
+{\em p2} & The second particle. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The shortest distance between p1 and p2 squared under periodic boundary conditions. 
+\end{DoxyReturn}
+\Hypertarget{class_simulation_box_a3e13147f0f97fc2b1e2ade112c43611a}\index{SimulationBox@{SimulationBox}!minimumImageDistanceSquared@{minimumImageDistanceSquared}}
+\index{minimumImageDistanceSquared@{minimumImageDistanceSquared}!SimulationBox@{SimulationBox}}
+\doxysubsubsection{\texorpdfstring{minimumImageDistanceSquared()}{minimumImageDistanceSquared()}}
+{\footnotesize\ttfamily \label{class_simulation_box_a3e13147f0f97fc2b1e2ade112c43611a} 
+double Simulation\+Box\+::minimum\+Image\+Distance\+Squared (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_particle}{Particle}} \&}]{p1}{, }\item[{const \mbox{\hyperlink{class_particle}{Particle}} \&}]{p2}{}\end{DoxyParamCaption}) const}
+
+
+
+Calculates the minimum image distance between two particles considering PBC. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em p1} & The first particle. \\
+\hline
+{\em p2} & The second particle. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The shortest distance between p1 and p2 under periodic boundary conditions. 
+\end{DoxyReturn}
+
+
+The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
+\item 
+src/initial.\+h\item 
+src/initial.\+cpp\end{DoxyCompactItemize}

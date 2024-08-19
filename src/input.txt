@@ -1,0 +1,34 @@
+# Simulation box dimensions
+boxLengthX 10.0
+boxLengthY 10.0
+
+# Number of particles in the simulation
+numParticles 4
+
+# Particle initialization: 1 for random placement, 0 for grid placement
+randomPlacement 0
+
+# Temperature of the simulation
+temperature 1.0
+
+# Number of simulation steps
+numSteps 1
+
+# Time step for the simulation
+timeStep 1
+
+# Output frequency: how often to log the results
+outputFrequency 100
+
+# Equilibration time: number of steps before starting to log
+equilibrationTime 1
+
+# Cutoff squared distance for potential calculations
+r2cut 2.5
+
+# Type of potential: LennardJones, WCA, Yukawa
+potentialType LennardJones
+
+# File names for logging
+positionFile particle_positions.xyz
+dataFile simulation_data.dat

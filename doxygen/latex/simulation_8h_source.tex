@@ -1,0 +1,74 @@
+\doxysection{simulation.\+h}
+\hypertarget{simulation_8h_source}{}\label{simulation_8h_source}\index{src/simulation.h@{src/simulation.h}}
+
+\begin{DoxyCode}{0}
+\DoxyCodeLine{00001\ \textcolor{preprocessor}{\#ifndef\ SIMULATION\_H}}
+\DoxyCodeLine{00002\ \textcolor{preprocessor}{\#define\ SIMULATION\_H}}
+\DoxyCodeLine{00003\ }
+\DoxyCodeLine{00004\ \textcolor{preprocessor}{\#include\ <vector>}}
+\DoxyCodeLine{00005\ \textcolor{preprocessor}{\#include\ "{}initial.h"{}}}
+\DoxyCodeLine{00006\ \textcolor{preprocessor}{\#include\ "{}potential.h"{}}}
+\DoxyCodeLine{00007\ \textcolor{preprocessor}{\#include\ "{}logging.h"{}}}
+\DoxyCodeLine{00008\ \textcolor{keyword}{struct\ }\mbox{\hyperlink{struct_cell_list_node}{CellListNode}}\ \{}
+\DoxyCodeLine{00009\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{struct_cell_list_node_a37e08edb2b8089bb20078f8e5aed08fd}{particleIndex}};\ \ \ \ \ \ }
+\DoxyCodeLine{00010\ \ \ \ \ \mbox{\hyperlink{struct_cell_list_node}{CellListNode}}*\ \mbox{\hyperlink{struct_cell_list_node_a2f3806db4bca46d27e2dfe2baa6a2b14}{next}};\ \ \ \ \ }
+\DoxyCodeLine{00011\ }
+\DoxyCodeLine{00012\ \ \ \ \ \mbox{\hyperlink{struct_cell_list_node}{CellListNode}}(\textcolor{keywordtype}{int}\ idx)\ :\ \mbox{\hyperlink{struct_cell_list_node_a37e08edb2b8089bb20078f8e5aed08fd}{particleIndex}}(idx),\ \mbox{\hyperlink{struct_cell_list_node_a2f3806db4bca46d27e2dfe2baa6a2b14}{next}}(nullptr)\ \{\}}
+\DoxyCodeLine{00013\ \};}
+\DoxyCodeLine{00014\ }
+\DoxyCodeLine{00015\ \textcolor{keyword}{enum\ class}\ SimulationType\ \{}
+\DoxyCodeLine{00016\ \ \ \ \ MonteCarloNVT,}
+\DoxyCodeLine{00017\ \ \ \ \ \textcolor{comment}{//\ Other\ simulation\ types\ can\ be\ added\ here}}
+\DoxyCodeLine{00018\ \ \ \ \ \};}
+\DoxyCodeLine{00019\ }
+\DoxyCodeLine{00024\ \textcolor{keyword}{class\ }\mbox{\hyperlink{class_simulation}{Simulation}}\ \{}
+\DoxyCodeLine{00025\ \textcolor{keyword}{private}:}
+\DoxyCodeLine{00026\ \ \ \ \ \mbox{\hyperlink{class_simulation_box}{SimulationBox}}\ box;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00027\ \ \ \ \ std::vector<Particle>\ particles;\ \ \ \ \ }
+\DoxyCodeLine{00028\ \ \ \ \ PotentialType\ potentialType;\ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00029\ \ \ \ \ \textcolor{keywordtype}{double}\ temperature;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00030\ \ \ \ \ \textcolor{keywordtype}{int}\ numParticles;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00031\ \ \ \ \ \textcolor{keywordtype}{double}\ maxDisplacement;\ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00032\ \ \ \ \ \textcolor{keywordtype}{double}\ r2cut;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00033\ \ \ \ \ \textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ seed;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00034\ \ \ \ \ \textcolor{keywordtype}{bool}\ useCellList;\ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00035\ \ \ \ \ \textcolor{keywordtype}{int}\ cellListUpdateFrequency;\ \ \ \ \ \ \ \ }
+\DoxyCodeLine{00036\ \ \ \ std::vector<CellListNode*>\ cellList;\ \ }
+\DoxyCodeLine{00037\ }
+\DoxyCodeLine{00038\ \textcolor{keyword}{public}:}
+\DoxyCodeLine{00039\ \ \ \ \ \textcolor{keywordtype}{double}\ energy;}
+\DoxyCodeLine{00040\ }
+\DoxyCodeLine{00041\ \ \ \ }
+\DoxyCodeLine{00042\ }
+\DoxyCodeLine{00053\ \ \ \ \ \mbox{\hyperlink{class_simulation_aaf6e53711310438ad1511f9e14049752}{Simulation}}(\textcolor{keyword}{const}\ \mbox{\hyperlink{class_simulation_box}{SimulationBox}}\ \&box,\ PotentialType\ potentialType,\ \textcolor{keywordtype}{double}\ temperature,\ \textcolor{keywordtype}{int}\ numParticles,\ \textcolor{keywordtype}{double}\ maxDisplacement,\ \textcolor{keywordtype}{double}\ r2cut,\textcolor{keywordtype}{unsigned}\ \textcolor{keywordtype}{int}\ seed,\ \textcolor{keywordtype}{bool}\ useCellList,\ \textcolor{keywordtype}{int}\ cellListUpdateFrequency);}
+\DoxyCodeLine{00054\ }
+\DoxyCodeLine{00060\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_simulation_a488a457403a66972cab1851db2e95e33}{initializeParticles}}(\textcolor{keywordtype}{bool}\ randomPlacement);}
+\DoxyCodeLine{00061\ }
+\DoxyCodeLine{00068\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_simulation_ad53d6662f17d7104b7d5ee22119d52f7}{setParticlePosition}}(\textcolor{keywordtype}{size\_t}\ index,\ \textcolor{keywordtype}{double}\ x,\ \textcolor{keywordtype}{double}\ y);}
+\DoxyCodeLine{00069\ }
+\DoxyCodeLine{00073\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{class_simulation_a06b0016e56c7693db77872b95f8ed9c0}{computeEnergy}}();}
+\DoxyCodeLine{00074\ }
+\DoxyCodeLine{00075\ }
+\DoxyCodeLine{00076\ }
+\DoxyCodeLine{00081\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{class_simulation_a3d396b88ab1a084b842ecb57bfd8a57a}{getEnergy}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00082\ }
+\DoxyCodeLine{00087\ \ \ \ \ \textcolor{keywordtype}{int}\ \mbox{\hyperlink{class_simulation_a02572d51e7c92430de275a1c9b794428}{getNumParticles}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00088\ }
+\DoxyCodeLine{00093\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{class_simulation_a63b6d44dfe5016ff062efa69f78117c5}{getTemperature}}()\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00094\ }
+\DoxyCodeLine{00099\ \ \ \ \ \textcolor{keywordtype}{bool}\ \mbox{\hyperlink{class_simulation_a5d6fd02ccf9a33c700749877f7e619ed}{monteCarloMove}}();}
+\DoxyCodeLine{00100\ \ \ \ \ }
+\DoxyCodeLine{00109\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_simulation_ae2b620e8633f83993d39de98d241d2b3}{run}}(\textcolor{keywordtype}{int}\ numSteps,\ \textcolor{keywordtype}{int}\ equilibrationTime,\ \textcolor{keywordtype}{int}\ outputFrequency,\ \mbox{\hyperlink{class_logging}{Logging}}\ \&logger,\ SimulationType\ simType);}
+\DoxyCodeLine{00110\ }
+\DoxyCodeLine{00111\ \ \ \ \ \textcolor{keywordtype}{void}\ buildCellList();}
+\DoxyCodeLine{00112\ }
+\DoxyCodeLine{00116\ \ \ \ \ \textcolor{keywordtype}{void}\ \mbox{\hyperlink{class_simulation_a21621db31f5da30e7c44d50543462d59}{clearCellList}}();}
+\DoxyCodeLine{00117\ }
+\DoxyCodeLine{00125\ \ \ \ \ \textcolor{keywordtype}{double}\ \mbox{\hyperlink{class_simulation_af96e0431213d993cc9f55cde899f3fbd}{computeLocalEnergy}}(\textcolor{keywordtype}{int}\ particleIndex)\ \textcolor{keyword}{const};}
+\DoxyCodeLine{00126\ }
+\DoxyCodeLine{00127\ }
+\DoxyCodeLine{00128\ \};}
+\DoxyCodeLine{00129\ }
+\DoxyCodeLine{00130\ \textcolor{preprocessor}{\#endif\ }\textcolor{comment}{//\ SIMULATION\_H}}
+
+\end{DoxyCode}
