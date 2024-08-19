@@ -8,7 +8,7 @@ TEST_DIR = .
 BUILD_DIR = build
 
 # Source files
-TEST_SRCS = integration_test_main.cpp test_reprodicibiliy.cpp
+TEST_SRCS = integration_test_main.cpp test_reprodicibiliy.cpp cell_test_NVT.cpp
 SRC_SRCS = $(SRC_DIR)/simulation.cpp $(SRC_DIR)/input.cpp $(SRC_DIR)/logging.cpp $(SRC_DIR)/initial.cpp $(SRC_DIR)/potential.cpp 
 OBJS = $(addprefix $(BUILD_DIR)/,$(TEST_SRCS:.cpp=.o)) $(SRC_SRCS:$(SRC_DIR)/%.cpp=$(BUILD_DIR)/%.o)
 

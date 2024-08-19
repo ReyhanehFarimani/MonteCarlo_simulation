@@ -6,5 +6,6 @@
  * This test runs two simulations with the same seed and compares their outputs to ensure they are identical.
  */
 void seed_test();
+void cell_test_NVT();
 
 #endif // INTEGRATION_TEST_H
