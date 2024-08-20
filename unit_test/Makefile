@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 TEST_EXEC = unit_tests
 
 # Test source files
-TEST_SRCS = test_main.cpp test_energy.cpp test_pbc.cpp test_montecarloNVT.cpp
+TEST_SRCS = test_main.cpp test_energy.cpp test_pbc.cpp test_montecarloNVT.cpp test_force.cpp
 
 # Source files from the src directory
 SRCS = ../src/initial.cpp ../src/input.cpp ../src/logging.cpp ../src/potential.cpp ../src/simulation.cpp
