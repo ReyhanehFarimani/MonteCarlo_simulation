@@ -301,3 +301,32 @@ double Simulation::computeTotalForce() const{
     }
     return forceSum;
 }
+
+/**
+ * @brief Calculates the pressure of the system using the virial theorem.
+ * 
+ * The pressure is calculated as P = (N * k_B * T + virial) / V,
+ * where N is the number of particles, k_B is the Boltzmann constant,
+ * T is the temperature, the virial is the sum of r_ij * f_ij over all pairs,
+ * and V is the volume of the simulation box.
+ * 
+ * @return The calculated pressure.
+ */
+double Simulation::calculatePressure() const {
+    double V = box.getLx() * box.getLy();
+    double virialPressure = computeTotalForce() / (2 * V);
+    double rho = numParticles / V;
+    double idealPressure = rho * temperature;
+    return idealPressure + virialPressure;
+}
+
+
+    
+/**
+* @brief Gets the pressure in the simulation.
+* @return Pressure.
+*/
+double Simulation::getPressure() const {
+    double P = calculatePressure();
+    return P;
+}
