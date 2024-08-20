@@ -53,8 +53,9 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles) {
 }
 void Logging::logSimulationData(const Simulation &sim, int timestep){
     outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
-            << ",\tEnergy:"<< sim.getEnergy() << ",\tTempreture" << sim.getTemperature() <<
-            ",\tNumberofParticles"<<sim.getNumParticles()<< "\n";
+            << ",\tEnergy:"<< sim.getEnergy() << ",\tTempreture:" << sim.getTemperature() << 
+            ",\tPressure:" << sim.getPressure() <<
+            ",\tNumberofParticles:"<<sim.getNumParticles()<< "\n";
 }
 
 void Logging::close() {
