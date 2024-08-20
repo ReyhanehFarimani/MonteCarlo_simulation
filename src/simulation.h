@@ -14,8 +14,17 @@ struct CellListNode {
 
 enum class SimulationType {
     MonteCarloNVT,
+    GCMC,
     // Other simulation types can be added here
     };
+
+/**
+ * @brief Selects the simulation type based on a string input.
+ * 
+ * @param potentialName The name of the potential type as a string.
+ * @return The corresponding SimulationType enum value.
+ */
+SimulationType selectSimulationType(const std::string &simulationName);
 
 /**
  * @brief Manages the entire simulation process, including initialization,

@@ -147,39 +147,39 @@ double Simulation::computeEnergy() {
  * @param outputFrequency How often to log the results.
  * @param logger The logging object for output.
  */
-void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType) {
-    int acceptedMoves = 0;
-    energy = computeEnergy();
-    // Calculate energy at each step using the appropriate method
-    for (int step = 0; step < numSteps + equilibrationTime; ++step) {
-        if (useCellList){
-        if (step%cellListUpdateFrequency == 0)
-        {
-            buildCellList();
-            energy = computeEnergy();
-        }
-        }
-        if (simType == SimulationType::MonteCarloNVT) {
-            if (monteCarloMove()) {
-                acceptedMoves++;
+void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType = SimulationType::MonteCarloNVT) {
+    if(simType == SimulationType::MonteCarloNVT){
+        int acceptedMoves = 0;
+        energy = computeEnergy();
+        // Calculate energy at each step using the appropriate method
+        for (int step = 0; step < numSteps + equilibrationTime; ++step) {
+            if (useCellList){
+            if (step%cellListUpdateFrequency == 0)
+            {
+                buildCellList();
+                energy = computeEnergy();
+            }
+            }
+            if (simType == SimulationType::MonteCarloNVT) {
+                if (monteCarloMove()) {
+                    acceptedMoves++;
+                }
+            }
+
+            // Other simulation types can be added here as additional conditions
+            
+            // Optionally log data
+            if (step >= equilibrationTime && step % outputFrequency == 0) {
+                if (fabs(energy - computeEnergy())> 1){
+                std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
+                }   
+                logger.logPositions_xyz(particles, box, r2cut);
+                logger.logSimulationData(*this, step);
             }
         }
-
-        // Other simulation types can be added here as additional conditions
-        
-        // Optionally log data
-        if (step >= equilibrationTime && step % outputFrequency == 0) {
-            if (fabs(energy - computeEnergy())> 1){
-            std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
-            }   
-            logger.logPositions_xyz(particles, box, r2cut);
-            logger.logSimulationData(*this, step);
-        }
-    }
-
-    if (simType == SimulationType::MonteCarloNVT) {
         std::cout << "Monte Carlo NVT simulation completed with " 
-                  << acceptedMoves << " accepted moves out of " << (numSteps + equilibrationTime) << " steps." << std::endl;
+                    << acceptedMoves << " accepted moves out of " << (numSteps + equilibrationTime) << " steps." << std::endl;
+        
     }
 }
 
@@ -269,4 +269,11 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
     }
     // std::cout<<localEnergy<<std::endl;
     return localEnergy;
+}
+
+
+SimulationType selectSimulationType(const std::string &simulationName) {
+    if (simulationName == "NVT") return SimulationType::MonteCarloNVT;
+    if (simulationName == "GCMC") return SimulationType::GCMC;
+    throw std::invalid_argument("Unknown potential type: " + simulationName);
 }

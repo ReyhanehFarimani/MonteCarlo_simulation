@@ -24,11 +24,14 @@ int main(int argc, char *argv[]) {
     const bool useCellList = input.getConstant("useCellList");
     const int cellListUpdateFrequency = input.getConstant("cellListUpdateFrequency");
 
-    SimulationType simtype = SimulationType::MonteCarloNVT;
 
     // Retrieve the potential type from the input
     std::string potentialName = input.getFilename("potentialType");
     PotentialType potentialType = selectPotentialType(potentialName);
+
+    // Retrieve the simulation type from the input
+    std::string simName = input.getFilename("simulationType");
+    SimulationType simType = selectSimulationType(simName);
 
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
@@ -41,7 +44,7 @@ int main(int argc, char *argv[]) {
     // Create and run the simulation
     Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement);
-    simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simtype);
+    simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simType);
 
     return 0;
 }
