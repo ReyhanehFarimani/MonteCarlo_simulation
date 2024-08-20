@@ -28,7 +28,7 @@ double lennardJonesPotential(double r2);
  * @param r2 The squared distance between two particles.
  * @return The magnitude of the Lennard-Jones force between two particles.
  */
-double lennardJonesForce(double r2);
+double lennardJonesForceDotR(double r2);
 
 /**
  * @brief Calculates the Weeks-Chandler-Andersen (WCA) potential energy.
@@ -47,7 +47,7 @@ double wcaPotential(double r2);
  * @param r2 The squared distance between two particles.
  * @return The magnitude of the WCA force between two particles.
  */
-double wcaForce(double r2);
+double wcaForceDotR(double r2);
 
 /**
  * @brief Calculates the Yukawa potential energy.
@@ -66,7 +66,7 @@ double yukawaPotential(double r2);
  * @param r2 The squared distance between two particles.
  * @return The magnitude of the Yukawa force between two particles.
  */
-double yukawaForce(double r2);
+double yukawaForceDotR(double r2);
 
 /**
  * @brief Selects the potential type based on a string input.
