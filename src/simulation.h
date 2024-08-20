@@ -151,8 +151,16 @@ public:
      * @return Pressure.
      */
     double getPressure() const;
-
-
+    /**
+    * @brief Calculate tail correction for internal energy in 2D
+    * @return Energy Correction.
+    */
+    double tail_correction_energy_2d() const;
+    /**
+    * @brief Calculate tail correction for pressure in 2D
+    * @return Pressure Correction.
+    */
+    double tail_correction_pressure_2d() const;
 };
 
 #endif // SIMULATION_H
