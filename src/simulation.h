@@ -137,6 +137,21 @@ public:
      */
     double computeTotalForce() const;
 
+    /**
+     * @brief Calculates the pressure of the system using the virial theorem.
+     * 
+     * The pressure is computed based on the kinetic energy and the virial of the system.
+     * 
+     * @return The calculated pressure.
+     */
+    double calculatePressure() const;
+
+    /**
+     * @brief Gets the pressure in the simulation.
+     * @return Pressure.
+     */
+    double getPressure() const;
+
 
 };
 
