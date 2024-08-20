@@ -1,0 +1,26 @@
+name: C++ CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Install dependencies
+      run: sudo apt-get install g++ make
+
+    - name: Build and run tests
+      run: |
+	cd unit_test
+        make all
+        ./unit_tests
+	make clean
+
