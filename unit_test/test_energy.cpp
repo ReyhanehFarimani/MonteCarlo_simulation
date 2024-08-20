@@ -9,7 +9,7 @@
 
 void testBoundaryEnergy() {
     SimulationBox box(10.0, 10.0);
-    Simulation sim(box, PotentialType::LennardJones, 1.0, 2, 0.01, 2.5);
+    Simulation sim(box, PotentialType::LennardJones, 1.0, 2, 0.1, 2.5, 0, 0, 0);
 
     std::vector<Particle> particles = {
         Particle(9.0, 9.0),
@@ -31,7 +31,7 @@ void testBoundaryEnergy() {
 
 void testEnergyLJ() {
     SimulationBox box(10.0, 10.0);
-    Simulation sim(box, PotentialType::LennardJones, 1.0, 2, 0.01, 2.5);
+    Simulation sim(box, PotentialType::LennardJones, 1.0, 2, 0.1, 2.5, 0, 0, 0);
 
     std::vector<Particle> particles = {
         Particle(1.0, 1.0),
@@ -52,7 +52,7 @@ void testEnergyLJ() {
 }
 void testEnergyYukawa() {
     SimulationBox box(10.0, 10.0);
-    Simulation sim(box, PotentialType::Yukawa, 1.0, 2, 0.01, 2.5);
+    Simulation sim(box, PotentialType::Yukawa, 1.0, 2, 0.1, 2.5, 0, 0, 0);
 
     std::vector<Particle> particles = {
         Particle(1.0, 1.0),
@@ -74,7 +74,7 @@ void testEnergyYukawa() {
 
 void testEnergyWCA() {
     SimulationBox box(10.0, 10.0); // Define a box of size 10x10
-    Simulation sim(box, PotentialType::WCA, 1.0, 2, 0.01, 2.5);
+    Simulation sim(box, PotentialType::WCA, 1.0, 2, 0.1, 2.5, 0, 0, 0);
     
     std::vector<Particle> particles = {
         Particle(1.0, 1.0),
