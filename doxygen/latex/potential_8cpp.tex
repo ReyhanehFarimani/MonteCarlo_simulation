@@ -1,0 +1,113 @@
+\doxysection{src/potential.cpp File Reference}
+\hypertarget{potential_8cpp}{}\label{potential_8cpp}\index{src/potential.cpp@{src/potential.cpp}}
+{\ttfamily \#include "{}potential.\+h"{}}\newline
+{\ttfamily \#include $<$stdexcept$>$}\newline
+{\ttfamily \#include $<$string$>$}\newline
+{\ttfamily \#include $<$functional$>$}\newline
+{\ttfamily \#include $<$iostream$>$}\newline
+\doxysubsubsection*{Functions}
+\begin{DoxyCompactItemize}
+\item 
+double \mbox{\hyperlink{potential_8cpp_ab3791f685b6bfb51bf689f9b2c824992}{lennard\+Jones\+Potential}} (double r2)
+\begin{DoxyCompactList}\small\item\em Calculates the Lennard-\/\+Jones potential energy. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{potential_8cpp_a154e53bc1ec2f103da634029eb9a338b}{wca\+Potential}} (double r2)
+\begin{DoxyCompactList}\small\item\em Calculates the Weeks-\/\+Chandler-\/\+Andersen (WCA) potential energy. \end{DoxyCompactList}\item 
+double \mbox{\hyperlink{potential_8cpp_ac2d5416b149b073be386028cff7e3bdf}{yukawa\+Potential}} (double r2)
+\begin{DoxyCompactList}\small\item\em Calculates the Yukawa potential energy. \end{DoxyCompactList}\item 
+\mbox{\hyperlink{potential_8h_a03ba3731588c17aed51f9d519b28b588}{Potential\+Type}} \mbox{\hyperlink{potential_8cpp_a51ce65f295a7f7901f354647649bd0f0}{select\+Potential\+Type}} (const std\+::string \&potential\+Name)
+\begin{DoxyCompactList}\small\item\em Selects the potential type based on a string input. \end{DoxyCompactList}\item 
+std\+::function$<$ double(double)$>$ \mbox{\hyperlink{potential_8cpp_a6d901a36250c26975a78d82185e6e23a}{get\+Potential\+Function}} (\mbox{\hyperlink{potential_8h_a03ba3731588c17aed51f9d519b28b588}{Potential\+Type}} type)
+\begin{DoxyCompactList}\small\item\em Returns a function pointer to the appropriate potential function. \end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\doxysubsection{Function Documentation}
+\Hypertarget{potential_8cpp_a6d901a36250c26975a78d82185e6e23a}\index{potential.cpp@{potential.cpp}!getPotentialFunction@{getPotentialFunction}}
+\index{getPotentialFunction@{getPotentialFunction}!potential.cpp@{potential.cpp}}
+\doxysubsubsection{\texorpdfstring{getPotentialFunction()}{getPotentialFunction()}}
+{\footnotesize\ttfamily \label{potential_8cpp_a6d901a36250c26975a78d82185e6e23a} 
+std\+::function$<$ double(double)$>$ get\+Potential\+Function (\begin{DoxyParamCaption}\item[{\mbox{\hyperlink{potential_8h_a03ba3731588c17aed51f9d519b28b588}{Potential\+Type}}}]{type}{}\end{DoxyParamCaption})}
+
+
+
+Returns a function pointer to the appropriate potential function. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em type} & The type of potential. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+A function pointer to the selected potential function. 
+\end{DoxyReturn}
+\Hypertarget{potential_8cpp_ab3791f685b6bfb51bf689f9b2c824992}\index{potential.cpp@{potential.cpp}!lennardJonesPotential@{lennardJonesPotential}}
+\index{lennardJonesPotential@{lennardJonesPotential}!potential.cpp@{potential.cpp}}
+\doxysubsubsection{\texorpdfstring{lennardJonesPotential()}{lennardJonesPotential()}}
+{\footnotesize\ttfamily \label{potential_8cpp_ab3791f685b6bfb51bf689f9b2c824992} 
+double lennard\+Jones\+Potential (\begin{DoxyParamCaption}\item[{double}]{r2}{}\end{DoxyParamCaption})}
+
+
+
+Calculates the Lennard-\/\+Jones potential energy. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em r2} & The squared distance between two particles. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The Lennard-\/\+Jones potential energy between two particles. 
+\end{DoxyReturn}
+\Hypertarget{potential_8cpp_a51ce65f295a7f7901f354647649bd0f0}\index{potential.cpp@{potential.cpp}!selectPotentialType@{selectPotentialType}}
+\index{selectPotentialType@{selectPotentialType}!potential.cpp@{potential.cpp}}
+\doxysubsubsection{\texorpdfstring{selectPotentialType()}{selectPotentialType()}}
+{\footnotesize\ttfamily \label{potential_8cpp_a51ce65f295a7f7901f354647649bd0f0} 
+\mbox{\hyperlink{potential_8h_a03ba3731588c17aed51f9d519b28b588}{Potential\+Type}} select\+Potential\+Type (\begin{DoxyParamCaption}\item[{const std\+::string \&}]{potential\+Name}{}\end{DoxyParamCaption})}
+
+
+
+Selects the potential type based on a string input. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em potential\+Name} & The name of the potential type as a string. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The corresponding Potential\+Type enum value. 
+\end{DoxyReturn}
+\Hypertarget{potential_8cpp_a154e53bc1ec2f103da634029eb9a338b}\index{potential.cpp@{potential.cpp}!wcaPotential@{wcaPotential}}
+\index{wcaPotential@{wcaPotential}!potential.cpp@{potential.cpp}}
+\doxysubsubsection{\texorpdfstring{wcaPotential()}{wcaPotential()}}
+{\footnotesize\ttfamily \label{potential_8cpp_a154e53bc1ec2f103da634029eb9a338b} 
+double wca\+Potential (\begin{DoxyParamCaption}\item[{double}]{r2}{}\end{DoxyParamCaption})}
+
+
+
+Calculates the Weeks-\/\+Chandler-\/\+Andersen (WCA) potential energy. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em r2} & The squared distance between two particles. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The WCA potential energy between two particles. 
+\end{DoxyReturn}
+\Hypertarget{potential_8cpp_ac2d5416b149b073be386028cff7e3bdf}\index{potential.cpp@{potential.cpp}!yukawaPotential@{yukawaPotential}}
+\index{yukawaPotential@{yukawaPotential}!potential.cpp@{potential.cpp}}
+\doxysubsubsection{\texorpdfstring{yukawaPotential()}{yukawaPotential()}}
+{\footnotesize\ttfamily \label{potential_8cpp_ac2d5416b149b073be386028cff7e3bdf} 
+double yukawa\+Potential (\begin{DoxyParamCaption}\item[{double}]{r2}{}\end{DoxyParamCaption})}
+
+
+
+Calculates the Yukawa potential energy. 
+
+
+\begin{DoxyParams}{Parameters}
+{\em r2} & The squared distance between two particles. \\
+\hline
+\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+The Yukawa potential energy between two particles. 
+\end{DoxyReturn}

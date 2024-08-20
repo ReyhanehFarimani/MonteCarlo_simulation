@@ -99,7 +99,7 @@ $(function(){ initResizable(false); });
 <table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-methods" name="pub-methods"></a>
 Public Member Functions</h2></td></tr>
-<tr class="memitem:aaf6e53711310438ad1511f9e14049752" id="r_aaf6e53711310438ad1511f9e14049752"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf6e53711310438ad1511f9e14049752">Simulation</a> (const <a class="el" href="class_simulation_box.html">SimulationBox</a> &amp;box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, unsigned int seed, bool useCellList, int cellListUpdateFrequency)</td></tr>
+<tr class="memitem:aaf6e53711310438ad1511f9e14049752" id="r_aaf6e53711310438ad1511f9e14049752"><td class="memItemLeft" align="right" valign="top">&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#aaf6e53711310438ad1511f9e14049752">Simulation</a> (const <a class="el" href="class_simulation_box.html">SimulationBox</a> &amp;box, <a class="el" href="potential_8h.html#a03ba3731588c17aed51f9d519b28b588">PotentialType</a> potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, unsigned int seed, bool useCellList, int cellListUpdateFrequency)</td></tr>
 <tr class="memdesc:aaf6e53711310438ad1511f9e14049752"><td class="mdescLeft">&#160;</td><td class="mdescRight">Constructs a <a class="el" href="class_simulation.html" title="Manages the entire simulation process, including initialization, running the simulation,...">Simulation</a> object with the specified parameters.  <br /></td></tr>
 <tr class="separator:aaf6e53711310438ad1511f9e14049752"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a488a457403a66972cab1851db2e95e33" id="r_a488a457403a66972cab1851db2e95e33"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a488a457403a66972cab1851db2e95e33">initializeParticles</a> (bool randomPlacement)</td></tr>
@@ -123,15 +123,13 @@ Public Member Functions</h2></td></tr>
 <tr class="memitem:a5d6fd02ccf9a33c700749877f7e619ed" id="r_a5d6fd02ccf9a33c700749877f7e619ed"><td class="memItemLeft" align="right" valign="top">bool&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a5d6fd02ccf9a33c700749877f7e619ed">monteCarloMove</a> ()</td></tr>
 <tr class="memdesc:a5d6fd02ccf9a33c700749877f7e619ed"><td class="mdescLeft">&#160;</td><td class="mdescRight">Perform a single Monte Carlo move.  <br /></td></tr>
 <tr class="separator:a5d6fd02ccf9a33c700749877f7e619ed"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ae2b620e8633f83993d39de98d241d2b3" id="r_ae2b620e8633f83993d39de98d241d2b3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae2b620e8633f83993d39de98d241d2b3">run</a> (int numSteps, int equilibrationTime, int outputFrequency, <a class="el" href="class_logging.html">Logging</a> &amp;logger, SimulationType simType)</td></tr>
+<tr class="memitem:ae2b620e8633f83993d39de98d241d2b3" id="r_ae2b620e8633f83993d39de98d241d2b3"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ae2b620e8633f83993d39de98d241d2b3">run</a> (int numSteps, int equilibrationTime, int outputFrequency, <a class="el" href="class_logging.html">Logging</a> &amp;logger, <a class="el" href="simulation_8h.html#ad69f3cf5fdb6ef307d85180c346e7921">SimulationType</a> simType)</td></tr>
 <tr class="memdesc:ae2b620e8633f83993d39de98d241d2b3"><td class="mdescLeft">&#160;</td><td class="mdescRight">Run the simulation.  <br /></td></tr>
 <tr class="separator:ae2b620e8633f83993d39de98d241d2b3"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ad93b4f35f60d34e1bbd91a0d27eaf6b1" id="r_ad93b4f35f60d34e1bbd91a0d27eaf6b1"><td class="memItemLeft" align="right" valign="top"><a id="ad93b4f35f60d34e1bbd91a0d27eaf6b1" name="ad93b4f35f60d34e1bbd91a0d27eaf6b1"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>buildCellList</b> ()</td></tr>
+<tr class="memitem:ad93b4f35f60d34e1bbd91a0d27eaf6b1" id="r_ad93b4f35f60d34e1bbd91a0d27eaf6b1"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ad93b4f35f60d34e1bbd91a0d27eaf6b1">buildCellList</a> ()</td></tr>
 <tr class="separator:ad93b4f35f60d34e1bbd91a0d27eaf6b1"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:a21621db31f5da30e7c44d50543462d59" id="r_a21621db31f5da30e7c44d50543462d59"><td class="memItemLeft" align="right" valign="top"><a id="a21621db31f5da30e7c44d50543462d59" name="a21621db31f5da30e7c44d50543462d59"></a>
-void&#160;</td><td class="memItemRight" valign="bottom"><b>clearCellList</b> ()</td></tr>
-<tr class="memdesc:a21621db31f5da30e7c44d50543462d59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the current cell list. <br /></td></tr>
+<tr class="memitem:a21621db31f5da30e7c44d50543462d59" id="r_a21621db31f5da30e7c44d50543462d59"><td class="memItemLeft" align="right" valign="top">void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#a21621db31f5da30e7c44d50543462d59">clearCellList</a> ()</td></tr>
+<tr class="memdesc:a21621db31f5da30e7c44d50543462d59"><td class="mdescLeft">&#160;</td><td class="mdescRight">Clears the current cell list.  <br /></td></tr>
 <tr class="separator:a21621db31f5da30e7c44d50543462d59"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:af96e0431213d993cc9f55cde899f3fbd" id="r_af96e0431213d993cc9f55cde899f3fbd"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#af96e0431213d993cc9f55cde899f3fbd">computeLocalEnergy</a> (int particleIndex) const</td></tr>
 <tr class="memdesc:af96e0431213d993cc9f55cde899f3fbd"><td class="mdescLeft">&#160;</td><td class="mdescRight">Computes the interaction energy of a particle with particles in its cell and neighboring cells.  <br /></td></tr>
@@ -139,8 +137,7 @@ void&#160;</td><td class="memItemRight" valign="bottom"><b>clearCellList</b> ()<
 </table><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="pub-attribs" name="pub-attribs"></a>
 Public Attributes</h2></td></tr>
-<tr class="memitem:ac18d5ccfddfe20a17afe6a47844f2adc" id="r_ac18d5ccfddfe20a17afe6a47844f2adc"><td class="memItemLeft" align="right" valign="top"><a id="ac18d5ccfddfe20a17afe6a47844f2adc" name="ac18d5ccfddfe20a17afe6a47844f2adc"></a>
-double&#160;</td><td class="memItemRight" valign="bottom"><b>energy</b></td></tr>
+<tr class="memitem:ac18d5ccfddfe20a17afe6a47844f2adc" id="r_ac18d5ccfddfe20a17afe6a47844f2adc"><td class="memItemLeft" align="right" valign="top">double&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="#ac18d5ccfddfe20a17afe6a47844f2adc">energy</a></td></tr>
 <tr class="separator:ac18d5ccfddfe20a17afe6a47844f2adc"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <a name="details" id="details"></a><h2 class="groupheader">Detailed Description</h2>
@@ -160,7 +157,7 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>energy</b></td></tr
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">PotentialType</td>          <td class="paramname"><span class="paramname"><em>potentialType</em></span>, </td>
+          <td class="paramtype"><a class="el" href="potential_8h.html#a03ba3731588c17aed51f9d519b28b588">PotentialType</a></td>          <td class="paramname"><span class="paramname"><em>potentialType</em></span>, </td>
         </tr>
         <tr>
           <td class="paramkey"></td>
@@ -222,6 +219,42 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>energy</b></td></tr
 </div>
 </div>
 <h2 class="groupheader">Member Function Documentation</h2>
+<a id="ad93b4f35f60d34e1bbd91a0d27eaf6b1" name="ad93b4f35f60d34e1bbd91a0d27eaf6b1"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ad93b4f35f60d34e1bbd91a0d27eaf6b1">&#9670;&#160;</a></span>buildCellList()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Simulation::buildCellList </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
+<a id="a21621db31f5da30e7c44d50543462d59" name="a21621db31f5da30e7c44d50543462d59"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a21621db31f5da30e7c44d50543462d59">&#9670;&#160;</a></span>clearCellList()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">void Simulation::clearCellList </td>
+          <td>(</td>
+          <td class="paramname"><span class="paramname"><em></em></span></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+<p>Clears the current cell list. </p>
+
+</div>
+</div>
 <a id="a06b0016e56c7693db77872b95f8ed9c0" name="a06b0016e56c7693db77872b95f8ed9c0"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a06b0016e56c7693db77872b95f8ed9c0">&#9670;&#160;</a></span>computeEnergy()</h2>
 
@@ -405,7 +438,7 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>energy</b></td></tr
         <tr>
           <td class="paramkey"></td>
           <td></td>
-          <td class="paramtype">SimulationType</td>          <td class="paramname"><span class="paramname"><em>simType</em></span>&#160;)</td>
+          <td class="paramtype"><a class="el" href="simulation_8h.html#ad69f3cf5fdb6ef307d85180c346e7921">SimulationType</a></td>          <td class="paramname"><span class="paramname"><em>simType</em></span>&#160;)</td>
         </tr>
       </table>
 </div><div class="memdoc">
@@ -465,9 +498,24 @@ double&#160;</td><td class="memItemRight" valign="bottom"><b>energy</b></td></tr
 
 </div>
 </div>
+<h2 class="groupheader">Member Data Documentation</h2>
+<a id="ac18d5ccfddfe20a17afe6a47844f2adc" name="ac18d5ccfddfe20a17afe6a47844f2adc"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#ac18d5ccfddfe20a17afe6a47844f2adc">&#9670;&#160;</a></span>energy</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">double Simulation::energy</td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+
+</div>
+</div>
 <hr/>The documentation for this class was generated from the following files:<ul>
 <li>src/<a class="el" href="simulation_8h_source.html">simulation.h</a></li>
-<li>src/<b>simulation.cpp</b></li>
+<li>src/<a class="el" href="simulation_8cpp.html">simulation.cpp</a></li>
 </ul>
 </div><!-- contents -->
 <!-- start footer part -->

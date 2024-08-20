@@ -12,7 +12,7 @@ Manages the entire simulation process, including initialization, running the sim
 \doxysubsubsection*{Public Member Functions}
 \begin{DoxyCompactItemize}
 \item 
-\mbox{\hyperlink{class_simulation_aaf6e53711310438ad1511f9e14049752}{Simulation}} (const \mbox{\hyperlink{class_simulation_box}{Simulation\+Box}} \&box, Potential\+Type potential\+Type, double temperature, int num\+Particles, double max\+Displacement, double r2cut, unsigned int seed, bool use\+Cell\+List, int cell\+List\+Update\+Frequency)
+\mbox{\hyperlink{class_simulation_aaf6e53711310438ad1511f9e14049752}{Simulation}} (const \mbox{\hyperlink{class_simulation_box}{Simulation\+Box}} \&box, \mbox{\hyperlink{potential_8h_a03ba3731588c17aed51f9d519b28b588}{Potential\+Type}} potential\+Type, double temperature, int num\+Particles, double max\+Displacement, double r2cut, unsigned int seed, bool use\+Cell\+List, int cell\+List\+Update\+Frequency)
 \begin{DoxyCompactList}\small\item\em Constructs a \doxylink{class_simulation}{Simulation} object with the specified parameters. \end{DoxyCompactList}\item 
 void \mbox{\hyperlink{class_simulation_a488a457403a66972cab1851db2e95e33}{initialize\+Particles}} (bool random\+Placement)
 \begin{DoxyCompactList}\small\item\em Initializes particles in the simulation box. \end{DoxyCompactList}\item 
@@ -28,21 +28,18 @@ double \mbox{\hyperlink{class_simulation_a63b6d44dfe5016ff062efa69f78117c5}{get\
 \begin{DoxyCompactList}\small\item\em Gets the temperature in the simulation. \end{DoxyCompactList}\item 
 bool \mbox{\hyperlink{class_simulation_a5d6fd02ccf9a33c700749877f7e619ed}{monte\+Carlo\+Move}} ()
 \begin{DoxyCompactList}\small\item\em Perform a single Monte Carlo move. \end{DoxyCompactList}\item 
-void \mbox{\hyperlink{class_simulation_ae2b620e8633f83993d39de98d241d2b3}{run}} (int num\+Steps, int equilibration\+Time, int output\+Frequency, \mbox{\hyperlink{class_logging}{Logging}} \&logger, Simulation\+Type sim\+Type)
+void \mbox{\hyperlink{class_simulation_ae2b620e8633f83993d39de98d241d2b3}{run}} (int num\+Steps, int equilibration\+Time, int output\+Frequency, \mbox{\hyperlink{class_logging}{Logging}} \&logger, \mbox{\hyperlink{simulation_8h_ad69f3cf5fdb6ef307d85180c346e7921}{Simulation\+Type}} sim\+Type)
 \begin{DoxyCompactList}\small\item\em Run the simulation. \end{DoxyCompactList}\item 
-\Hypertarget{class_simulation_ad93b4f35f60d34e1bbd91a0d27eaf6b1}\label{class_simulation_ad93b4f35f60d34e1bbd91a0d27eaf6b1} 
-void {\bfseries build\+Cell\+List} ()
+void \mbox{\hyperlink{class_simulation_ad93b4f35f60d34e1bbd91a0d27eaf6b1}{build\+Cell\+List}} ()
 \item 
-\Hypertarget{class_simulation_a21621db31f5da30e7c44d50543462d59}\label{class_simulation_a21621db31f5da30e7c44d50543462d59} 
-void {\bfseries clear\+Cell\+List} ()
+void \mbox{\hyperlink{class_simulation_a21621db31f5da30e7c44d50543462d59}{clear\+Cell\+List}} ()
 \begin{DoxyCompactList}\small\item\em Clears the current cell list. \end{DoxyCompactList}\item 
 double \mbox{\hyperlink{class_simulation_af96e0431213d993cc9f55cde899f3fbd}{compute\+Local\+Energy}} (int particle\+Index) const
 \begin{DoxyCompactList}\small\item\em Computes the interaction energy of a particle with particles in its cell and neighboring cells. \end{DoxyCompactList}\end{DoxyCompactItemize}
 \doxysubsubsection*{Public Attributes}
 \begin{DoxyCompactItemize}
 \item 
-\Hypertarget{class_simulation_ac18d5ccfddfe20a17afe6a47844f2adc}\label{class_simulation_ac18d5ccfddfe20a17afe6a47844f2adc} 
-double {\bfseries energy}
+double \mbox{\hyperlink{class_simulation_ac18d5ccfddfe20a17afe6a47844f2adc}{energy}}
 \end{DoxyCompactItemize}
 
 
@@ -54,7 +51,7 @@ Manages the entire simulation process, including initialization, running the sim
 \index{Simulation@{Simulation}!Simulation@{Simulation}}
 \doxysubsubsection{\texorpdfstring{Simulation()}{Simulation()}}
 {\footnotesize\ttfamily \label{class_simulation_aaf6e53711310438ad1511f9e14049752} 
-Simulation\+::\+Simulation (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_simulation_box}{Simulation\+Box}} \&}]{box}{, }\item[{Potential\+Type}]{potential\+Type}{, }\item[{double}]{temperature}{, }\item[{int}]{num\+Particles}{, }\item[{double}]{max\+Displacement}{, }\item[{double}]{r2cut}{, }\item[{unsigned int}]{seed}{, }\item[{bool}]{use\+Cell\+List}{, }\item[{int}]{cell\+List\+Update\+Frequency}{}\end{DoxyParamCaption})}
+Simulation\+::\+Simulation (\begin{DoxyParamCaption}\item[{const \mbox{\hyperlink{class_simulation_box}{Simulation\+Box}} \&}]{box}{, }\item[{\mbox{\hyperlink{potential_8h_a03ba3731588c17aed51f9d519b28b588}{Potential\+Type}}}]{potential\+Type}{, }\item[{double}]{temperature}{, }\item[{int}]{num\+Particles}{, }\item[{double}]{max\+Displacement}{, }\item[{double}]{r2cut}{, }\item[{unsigned int}]{seed}{, }\item[{bool}]{use\+Cell\+List}{, }\item[{int}]{cell\+List\+Update\+Frequency}{}\end{DoxyParamCaption})}
 
 
 
@@ -90,6 +87,22 @@ Constructs a \doxylink{class_simulation}{Simulation} object with the specified p
 
 
 \doxysubsection{Member Function Documentation}
+\Hypertarget{class_simulation_ad93b4f35f60d34e1bbd91a0d27eaf6b1}\index{Simulation@{Simulation}!buildCellList@{buildCellList}}
+\index{buildCellList@{buildCellList}!Simulation@{Simulation}}
+\doxysubsubsection{\texorpdfstring{buildCellList()}{buildCellList()}}
+{\footnotesize\ttfamily \label{class_simulation_ad93b4f35f60d34e1bbd91a0d27eaf6b1} 
+void Simulation\+::build\+Cell\+List (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+\Hypertarget{class_simulation_a21621db31f5da30e7c44d50543462d59}\index{Simulation@{Simulation}!clearCellList@{clearCellList}}
+\index{clearCellList@{clearCellList}!Simulation@{Simulation}}
+\doxysubsubsection{\texorpdfstring{clearCellList()}{clearCellList()}}
+{\footnotesize\ttfamily \label{class_simulation_a21621db31f5da30e7c44d50543462d59} 
+void Simulation\+::clear\+Cell\+List (\begin{DoxyParamCaption}{}{}\end{DoxyParamCaption})}
+
+
+
+Clears the current cell list. 
+
 \Hypertarget{class_simulation_a06b0016e56c7693db77872b95f8ed9c0}\index{Simulation@{Simulation}!computeEnergy@{computeEnergy}}
 \index{computeEnergy@{computeEnergy}!Simulation@{Simulation}}
 \doxysubsubsection{\texorpdfstring{computeEnergy()}{computeEnergy()}}
@@ -198,7 +211,7 @@ True if the move is accepted, false otherwise.
 \index{run@{run}!Simulation@{Simulation}}
 \doxysubsubsection{\texorpdfstring{run()}{run()}}
 {\footnotesize\ttfamily \label{class_simulation_ae2b620e8633f83993d39de98d241d2b3} 
-void Simulation\+::run (\begin{DoxyParamCaption}\item[{int}]{num\+Steps}{, }\item[{int}]{equilibration\+Time}{, }\item[{int}]{output\+Frequency}{, }\item[{\mbox{\hyperlink{class_logging}{Logging}} \&}]{logger}{, }\item[{Simulation\+Type}]{sim\+Type}{}\end{DoxyParamCaption})}
+void Simulation\+::run (\begin{DoxyParamCaption}\item[{int}]{num\+Steps}{, }\item[{int}]{equilibration\+Time}{, }\item[{int}]{output\+Frequency}{, }\item[{\mbox{\hyperlink{class_logging}{Logging}} \&}]{logger}{, }\item[{\mbox{\hyperlink{simulation_8h_ad69f3cf5fdb6ef307d85180c346e7921}{Simulation\+Type}}}]{sim\+Type}{}\end{DoxyParamCaption})}
 
 
 
@@ -248,7 +261,16 @@ Sets the position of a specific particle.
 \end{DoxyParams}
 
 
+\doxysubsection{Member Data Documentation}
+\Hypertarget{class_simulation_ac18d5ccfddfe20a17afe6a47844f2adc}\index{Simulation@{Simulation}!energy@{energy}}
+\index{energy@{energy}!Simulation@{Simulation}}
+\doxysubsubsection{\texorpdfstring{energy}{energy}}
+{\footnotesize\ttfamily \label{class_simulation_ac18d5ccfddfe20a17afe6a47844f2adc} 
+double Simulation\+::energy}
+
+
+
 The documentation for this class was generated from the following files\+:\begin{DoxyCompactItemize}
 \item 
-src/simulation.\+h\item 
-src/simulation.\+cpp\end{DoxyCompactItemize}
+src/\mbox{\hyperlink{simulation_8h}{simulation.\+h}}\item 
+src/\mbox{\hyperlink{simulation_8cpp}{simulation.\+cpp}}\end{DoxyCompactItemize}

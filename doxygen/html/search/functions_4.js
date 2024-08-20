@@ -1,7 +1,5 @@
 var searchData=
 [
-  ['logging_0',['Logging',['../class_logging.html#a8bc3ffbdb6a3b1f388b5730bf072d785',1,'Logging']]],
-  ['logpositions_5fdump_1',['logPositions_dump',['../class_logging.html#a5d0c6fc1e02827505516ccf196d06859',1,'Logging']]],
-  ['logpositions_5fxyz_2',['logPositions_xyz',['../class_logging.html#a6dec714c2e71e82a77d2b46ed45a1aa7',1,'Logging']]],
-  ['logsimulationdata_3',['logSimulationData',['../class_logging.html#a54ccb4de3bfdb143b5b2f2e54b639c22',1,'Logging']]]
+  ['initializeparticles_0',['initializeParticles',['../class_simulation.html#a488a457403a66972cab1851db2e95e33',1,'Simulation::initializeParticles()'],['../initial_8cpp.html#aed4e296a1f11366f687103694286f106',1,'initializeParticles(std::vector&lt; Particle &gt; &amp;particles, const SimulationBox &amp;box, int N, bool random, unsigned int seed):&#160;initial.cpp'],['../initial_8h.html#ac44d1811e558335969c40fcb2d6d358b',1,'initializeParticles(std::vector&lt; Particle &gt; &amp;particles, const SimulationBox &amp;box, int N, bool random=true, unsigned int seed=0):&#160;initial.cpp']]],
+  ['input_1',['Input',['../class_input.html#ade6e2c54a2bd707966ac2fa8811ffe38',1,'Input']]]
 ];
