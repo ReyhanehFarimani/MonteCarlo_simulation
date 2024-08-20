@@ -1,8 +1,10 @@
 #ifndef POTENTIAL_H
 #define POTENTIAL_H
+
 #include <string>
 #include <functional>
 #include <cmath>
+
 /**
  * @brief Enumeration of available potential types.
  */
@@ -21,6 +23,14 @@ enum class PotentialType {
 double lennardJonesPotential(double r2);
 
 /**
+ * @brief Calculates the force between two particles using Lennard-Jones potential.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @return The magnitude of the Lennard-Jones force between two particles.
+ */
+double lennardJonesForce(double r2);
+
+/**
  * @brief Calculates the Weeks-Chandler-Andersen (WCA) potential energy.
  * 
  * The WCA potential is a truncated and shifted Lennard-Jones potential,
@@ -32,6 +42,14 @@ double lennardJonesPotential(double r2);
 double wcaPotential(double r2);
 
 /**
+ * @brief Calculates the force between two particles using WCA potential.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @return The magnitude of the WCA force between two particles.
+ */
+double wcaForce(double r2);
+
+/**
  * @brief Calculates the Yukawa potential energy.
  * 
  * The Yukawa potential models screened Coulomb interactions, often used
@@ -41,6 +59,14 @@ double wcaPotential(double r2);
  * @return The Yukawa potential energy between two particles.
  */
 double yukawaPotential(double r2);
+
+/**
+ * @brief Calculates the force between two particles using Yukawa potential.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @return The magnitude of the Yukawa force between two particles.
+ */
+double yukawaForce(double r2);
 
 /**
  * @brief Selects the potential type based on a string input.
@@ -57,5 +83,13 @@ PotentialType selectPotentialType(const std::string &potentialName);
  * @return A function pointer to the selected potential function.
  */
 std::function<double(double)> getPotentialFunction(PotentialType type);
+
+/**
+ * @brief Returns a function pointer to the appropriate force function.
+ * 
+ * @param type The type of potential.
+ * @return A function pointer to the selected force function.
+ */
+std::function<double(double)> getForceFunction(PotentialType type);
 
 #endif // POTENTIAL_H
