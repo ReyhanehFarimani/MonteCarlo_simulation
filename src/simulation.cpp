@@ -281,19 +281,19 @@ SimulationType selectSimulationType(const std::string &simulationName) {
 
 double Simulation::computeTotalForce() const{
     double forceSum = 0.0;
-    for (size_t p1 = 0; p1 < particles.size(); ++p1){
-        for (size_t p2 = p1 + 1; p2 < particles.size(); ++p2){
+    for (size_t p1 = 0; p1 < particles.size() + 1; ++p1){
+        for (size_t p2 = p1 + 1; p2 < particles.size() + 1; ++p2){
             double r2 = box.minimumImageDistanceSquared(particles[p1], particles[p2]);
             if (r2<r2cut){
                 switch (potentialType){
                     case PotentialType::LennardJones:
-                        forceSum += lennardJonesForce(r2);
+                        forceSum += lennardJonesForceDotR(r2);
                         break;
                     case PotentialType::WCA:
-                        forceSum += wcaForce(r2);
+                        forceSum += wcaForceDotR(r2);
                         break;
                     case PotentialType::Yukawa:
-                        forceSum += yukawaForce(r2);
+                        forceSum += yukawaForceDotR(r2);
                         break;
                 }
             }
