@@ -5,10 +5,10 @@ CXX = g++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
 # Executable name for tests
-TEST_EXEC = unit_tests
+TEST_EXEC = sys_tests
 
 # Test source files
-TEST_SRCS = test_main.cpp test_energy.cpp test_pbc.cpp test_montecarloNVT.cpp test_force.cpp
+TEST_SRCS = sys_main_test.cpp pressure_NVT_LJ_test.cpp
 
 # Source files from the src directory
 SRCS = ../src/initial.cpp ../src/input.cpp ../src/logging.cpp ../src/potential.cpp ../src/simulation.cpp

@@ -1,7 +1,7 @@
 #include "simulation.h"
 #include "iostream"
 #include <cstdlib> // For srand() and rand()
-
+#include <cassert>
 /**
  * @brief Constructs a Simulation object with the specified parameters.
  * 
@@ -13,7 +13,7 @@
  * @param r2cut The squared distance cutoff for potential calculations.
  */
 Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
-    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency){
+    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut * r2cut), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency){
     particles.resize(numParticles);
     if (seed != 0) {
         srand(seed); // Seed the random number generator
@@ -44,7 +44,7 @@ void Simulation::initializeParticles(bool randomPlacement) {
  * @param y The new y-coordinate of the particle.
  */
 void Simulation::setParticlePosition(size_t index, double x, double y) {
-    if (index < particles.size() + 1) {
+    if (index < particles.size()) {
         particles[index].x = x;
         particles[index].y = y;
     } else {
@@ -59,7 +59,7 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
 
 bool Simulation::monteCarloMove() {
     // Randomly select a particle
-    size_t particleIndex = rand() % (particles.size() + 1);
+    size_t particleIndex = rand() % (particles.size());
     Particle &p = particles[particleIndex];
 
     // Store the old position
@@ -110,8 +110,8 @@ bool Simulation::monteCarloMove() {
 double Simulation::computeEnergy() {
     double tmp_energy = 0.0;
     
-    for (size_t i = 0; i < particles.size() + 1; ++i) {
-        for (size_t j = i + 1; j < particles.size() + 1; ++j) {
+    for (size_t i = 0; i < particles.size(); ++i) {
+        for (size_t j = i + 1; j < particles.size(); ++j) {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
             
             if (r2 < r2cut) {
@@ -151,6 +151,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
     if(simType == SimulationType::MonteCarloNVT){
         int acceptedMoves = 0;
         energy = computeEnergy();
+        
         // Calculate energy at each step using the appropriate method
         for (int step = 0; step < numSteps + equilibrationTime; ++step) {
             if (useCellList){
@@ -208,18 +209,24 @@ void Simulation::clearCellList() {
     }
 }
 
+
+
 void Simulation::buildCellList() {
     clearCellList();  // Clear the previous cell list
-
-    int numCellsX = static_cast<int>(box.getLx() / r2cut);
-    int numCellsY = static_cast<int>(box.getLy() / r2cut);
-
+    double rcut = sqrt(r2cut);
+    int numCellsX = static_cast<int>(box.getLx() / rcut);
+    int numCellsY = static_cast<int>(box.getLy() / rcut);
+    // Ensure that there are enough cells to cover the box
+    if (box.getLx() > numCellsX * rcut) numCellsX++;
+    if (box.getLy() > numCellsY * rcut) numCellsY++;
+    // Resize the cells vector based on numCellsX and numCellsY
     cellList.resize(numCellsX * numCellsY, nullptr);
 
     for (size_t i = 0; i < particles.size(); ++i) {
-        int cellX = static_cast<int>(particles[i].x / r2cut);
-        int cellY = static_cast<int>(particles[i].y / r2cut);
+        int cellX = static_cast<int>(particles[i].x / rcut);
+        int cellY = static_cast<int>(particles[i].y / rcut);
         int cellIndex = cellY * numCellsX + cellX;
+        assert(cellIndex >= 0 && cellIndex < cellList.size()); // Check bounds
 
         CellListNode* newNode = new CellListNode(i);
         newNode->next = cellList[cellIndex];
@@ -231,12 +238,18 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
     double localEnergy = 0.0;
     const Particle& p = particles[particleIndex];
 
-    // Get the current cell of the particle
-    int cellX = static_cast<int>(p.x / r2cut);
-    int cellY = static_cast<int>(p.y / r2cut);
+    double rcut = sqrt(r2cut);
+    int numCellsX = static_cast<int>(box.getLx() / rcut);
+    int numCellsY = static_cast<int>(box.getLy() / rcut);
+    
+    // Ensure that there are enough cells to cover the box
+    if (box.getLx() > numCellsX * rcut) numCellsX++;
+    if (box.getLy() > numCellsY * rcut) numCellsY++;
 
-    int numCellsX = static_cast<int>(box.getLx() / r2cut);
-    int numCellsY = static_cast<int>(box.getLy() / r2cut);
+
+    // Get the current cell of the particle
+    int cellX = static_cast<int>(p.x / rcut);
+    int cellY = static_cast<int>(p.y / rcut);
 
 
     // Iterate over neighboring cells
@@ -276,4 +289,77 @@ SimulationType selectSimulationType(const std::string &simulationName) {
     if (simulationName == "NVT") return SimulationType::MonteCarloNVT;
     if (simulationName == "GCMC") return SimulationType::GCMC;
     throw std::invalid_argument("Unknown potential type: " + simulationName);
+}
+
+
+double Simulation::computeTotalForce() const{
+    double forceSum = 0.0;
+    for (size_t p1 = 0; p1 < particles.size(); ++p1){
+        for (size_t p2 = p1 + 1; p2 < particles.size(); ++p2){
+            double r2 = box.minimumImageDistanceSquared(particles[p1], particles[p2]);
+            if (r2<r2cut){
+                switch (potentialType){
+                    case PotentialType::LennardJones:
+                        forceSum += lennardJonesForceDotR(r2);
+                        break;
+                    case PotentialType::WCA:
+                        forceSum += wcaForceDotR(r2);
+                        break;
+                    case PotentialType::Yukawa:
+                        forceSum += yukawaForceDotR(r2);
+                        break;
+                }
+            }
+        }
+    }
+    return forceSum;
+}
+
+/**
+ * @brief Calculates the pressure of the system using the virial theorem.
+ * 
+ * The pressure is calculated as P = (N * k_B * T + virial) / V,
+ * where N is the number of particles, k_B is the Boltzmann constant,
+ * T is the temperature, the virial is the sum of r_ij * f_ij over all pairs,
+ * and V is the volume of the simulation box.
+ * 
+ * @return The calculated pressure.
+ */
+double Simulation::calculatePressure() const {
+    double V = box.getLx() * box.getLy();
+    double virialPressure = computeTotalForce() / (2 * V);
+    double rho = numParticles / V;
+    double idealPressure = rho * temperature;
+    return idealPressure + virialPressure;
+}
+
+
+    
+/**
+* @brief Gets the pressure in the simulation.
+* @return Pressure.
+*/
+double Simulation::getPressure() const {
+    double P = calculatePressure();
+    return P;
+}
+
+/**
+* @brief Calculate tail correction for internal energy in 2D
+* @return Energy Correction.
+*/
+double Simulation::tail_correction_energy_2d() const{
+    double sr2 = r2cut;
+    double sr6 = sr2 * sr2 * sr2;
+    return M_PI * numParticles * numParticles * (1.0 / 3.0 * sr6 * sr6 - sr6) / (box.getLx() * box.getLy());
+}
+
+/**
+* @brief Calculate tail correction for pressure in 2D
+* @return Pressure Correction.
+*/
+double Simulation::tail_correction_pressure_2d() const{
+    double sr2 = r2cut;
+    double sr6 = sr2 * sr2 * sr2;
+    return 2 * M_PI * numParticles * numParticles * (2.0 / 3.0 * sr6 * sr6 - sr6)/ (box.getLx() * box.getLy())/ (box.getLx() * box.getLy());
 }

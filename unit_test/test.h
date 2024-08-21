@@ -7,4 +7,6 @@ void testEnergyYukawa();
 void testBoundaryEnergy();
 void testPBC();
 void testMonteCarloEnergyReduction();
+void testBoundaryForce();
+void testForceWCA();
 #endif 

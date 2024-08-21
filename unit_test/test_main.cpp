@@ -7,6 +7,7 @@ int main() {
     testBoundaryEnergy();
     testPBC();
     testMonteCarloEnergyReduction();
-
+    testBoundaryForce();
+    testForceWCA();
     return 0;
 }

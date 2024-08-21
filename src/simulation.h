@@ -127,13 +127,40 @@ public:
     /**
      * @brief Computes the interaction energy of a particle with particles in its cell and neighboring cells.
      * @param particleIndex The index of the particle.
-     * @param x The x-coordinate of the particle.
-     * @param y The y-coordinate of the particle.
      * @return The computed interaction energy.
      */
     double computeLocalEnergy(int particleIndex) const;
 
+    /**
+     * @brief Computes the interaction forces of all particles.
+     * @return The computed interaction froces.
+     */
+    double computeTotalForce() const;
 
+    /**
+     * @brief Calculates the pressure of the system using the virial theorem.
+     * 
+     * The pressure is computed based on the kinetic energy and the virial of the system.
+     * 
+     * @return The calculated pressure.
+     */
+    double calculatePressure() const;
+
+    /**
+     * @brief Gets the pressure in the simulation.
+     * @return Pressure.
+     */
+    double getPressure() const;
+    /**
+    * @brief Calculate tail correction for internal energy in 2D
+    * @return Energy Correction.
+    */
+    double tail_correction_energy_2d() const;
+    /**
+    * @brief Calculate tail correction for pressure in 2D
+    * @return Pressure Correction.
+    */
+    double tail_correction_pressure_2d() const;
 };
 
 #endif // SIMULATION_H
