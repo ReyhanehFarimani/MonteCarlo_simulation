@@ -1,6 +1,7 @@
 #include "logging.h"
 #include "simulation.h"
 #include <iomanip>  // For setting precision in output
+#include <cmath>
 
 Logging::Logging(const std::string &filename_position, const std::string &filename_data)
     : filename_position(filename_position), filename_data(filename_data) {
@@ -27,13 +28,16 @@ Logging::~Logging() {
 void Logging::logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut) {
     outFile_position << particles.size() << "\n";
     outFile_position << "Cell index for each particle\n";
-
-    int numCellsX = static_cast<int>(box.getLx() / r2cut);
-    int numCellsY = static_cast<int>(box.getLy() / r2cut);
+    double rcut = sqrt(r2cut);
+    int numCellsX = static_cast<int>(box.getLx() / rcut);
+    int numCellsY = static_cast<int>(box.getLy() / rcut);
+    // Ensure that there are enough cells to cover the box
+    if (box.getLx() > numCellsX * rcut) numCellsX++;
+    if (box.getLy() > numCellsY * rcut) numCellsY++;
 
     for (const auto &particle : particles) {
-        int cellX = static_cast<int>(particle.x / r2cut);
-        int cellY = static_cast<int>(particle.y / r2cut);
+        int cellX = static_cast<int>(particle.x / rcut);
+        int cellY = static_cast<int>(particle.y / rcut);
         int cellIndex = cellY * numCellsX + cellX;
 
         outFile_position << cellIndex << " " << particle.x << " " << particle.y << "\n";
