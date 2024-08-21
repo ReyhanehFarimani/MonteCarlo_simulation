@@ -11,7 +11,8 @@
 enum class PotentialType {
     LennardJones,  ///< Lennard-Jones potential
     WCA,           ///< Weeks-Chandler-Andersen (WCA) potential
-    Yukawa         ///< Yukawa potential
+    Yukawa,         ///< Yukawa potential
+    AthermalStar   ///< force bettween two cores of athermal star polymer.
 };
 
 /**
@@ -67,6 +68,24 @@ double yukawaPotential(double r2);
  * @return The magnitude of the Yukawa force between two particles.
  */
 double yukawaForceDotR(double r2);
+
+/**
+ * @brief Calculates the logarithmic potential energy.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @param f_dependant star polymer functtionality dependant part.
+ * @return The potential energy between two star polymer.
+ */
+double athermalStarPotential(double r2, float f_dependenat);
+
+/**
+ * @brief Calculates the force between two star polymer cores.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @param f_dependant star polymer functtionality dependant part.
+ * @return The magnitude of the force between two star polymer.
+ */
+double athermalStarForceDotR(double r2, float f_dependant);
 
 /**
  * @brief Selects the potential type based on a string input.

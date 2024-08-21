@@ -93,6 +93,40 @@ double yukawaForceDotR(double r2) {
 }
 
 /**
+ * @brief Calculates the logarithmic potential energy.
+ * 
+ * @param f_dependant star polymer functtionality dependant part.
+ * @param r2 The squared distance between two particles.
+ * @return The potential energy between two star polymer.
+ */
+double athermalStarPotential(double r2, float f_dependant){
+    double e;
+    if (r2<1) {
+        double r = sqrt(r2);
+        e = -log(r) + 0.5;
+    }
+    else {
+        e = 0.5 * exp(1 - r2);
+    }
+    return f_dependant * e;
+}
+
+/**
+ * @brief Calculates the force between two star polymer cores.
+ * 
+ * @param f_dependant star polymer functtionality dependant part.
+ * @param r2 The squared distance between two particles.
+ * @return The magnitude of the force between two star polymer.
+ */
+double athermalStarForceDotR(double r2, float f_Dependant){
+    double f;
+    if (r2<1) {
+        return f_Dependant;
+    }
+    return f_Dependant r2 * exp(1 - r2);
+}
+
+/**
  * @brief Selects the potential type based on a string input.
  * 
  * @param potentialName The name of the potential type as a string.
@@ -119,6 +153,8 @@ std::function<double(double)> getPotentialFunction(PotentialType type) {
             return wcaPotential;
         case PotentialType::Yukawa:
             return yukawaPotential;
+        case PotentialType::AthermalStar:
+            return athermalStarPotential;
         default:
             throw std::invalid_argument("Invalid potential type");
     }
@@ -138,6 +174,8 @@ std::function<double(double)> getForceFunction(PotentialType type) {
             return wcaForceDotR;
         case PotentialType::Yukawa:
             return yukawaForceDotR;
+        case PotentialType::AthermalStar:
+            return athermalStarDotR;
         default:
             throw std::invalid_argument("Invalid potential type");
     }
