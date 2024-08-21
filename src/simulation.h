@@ -42,7 +42,8 @@ private:
     unsigned int seed;                   ///< Seed for random number generation
     bool useCellList;                   ///< bool use cell list option for optimized energy compution
     int cellListUpdateFrequency;        ///< frquency of cell list updating.
-   std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
+    std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
+    float f_prime;
 
 public:
     double energy;
@@ -59,7 +60,7 @@ public:
      * @param maxDisplacement 
      * @param r2cut The squared distance cutoff for potential calculations.
      */
-    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut,unsigned int seed, bool useCellList, int cellListUpdateFrequency);
+    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, unsigned int seed, bool useCellList, int cellListUpdateFrequency);
 
     /**
      * @brief Initializes particles in the simulation box.

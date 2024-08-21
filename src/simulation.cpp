@@ -12,8 +12,8 @@
  * @param maxDisplacement The time step for the simulation.
  * @param r2cut The squared distance cutoff for potential calculations.
  */
-Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
-    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut * r2cut), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency){
+Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
+    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut * r2cut), f_prime(f_prime), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency){
     particles.resize(numParticles);
     if (seed != 0) {
         srand(seed); // Seed the random number generator
@@ -126,6 +126,9 @@ double Simulation::computeEnergy() {
                         break;
                     case PotentialType::Yukawa:
                         potential = yukawaPotential(r2);
+                        break;
+                    case PotentialType::AthermalStar:
+                        potential = athermalStarPotential(r2, f_prime);
                         break;
                 }
                 tmp_energy += potential;
@@ -274,6 +277,9 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
                             case PotentialType::Yukawa:
                                 localEnergy += yukawaPotential(r2);
                                 break;
+                            case PotentialType::AthermalStar:
+                                localEnergy += athermalStarPotential(r2, f_prime);
+                                break;
                         }
                     }
                 }
@@ -307,6 +313,9 @@ double Simulation::computeTotalForce() const{
                         break;
                     case PotentialType::Yukawa:
                         forceSum += yukawaForceDotR(r2);
+                        break;
+                    case PotentialType::AthermalStar:
+                        forceSum += athermalStarForceDotR(r2, f_prime);
                         break;
                 }
             }

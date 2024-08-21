@@ -123,7 +123,7 @@ double athermalStarForceDotR(double r2, float f_Dependant){
     if (r2<1) {
         return f_Dependant;
     }
-    return f_Dependant r2 * exp(1 - r2);
+    return f_Dependant * r2 * exp(1 - r2);
 }
 
 /**
@@ -136,6 +136,7 @@ PotentialType selectPotentialType(const std::string &potentialName) {
     if (potentialName == "LennardJones") return PotentialType::LennardJones;
     if (potentialName == "WCA") return PotentialType::WCA;
     if (potentialName == "Yukawa") return PotentialType::Yukawa;
+    if (potentialName == "AthermalStar") return PotentialType::AthermalStar;
     throw std::invalid_argument("Unknown potential type: " + potentialName);
 }
 
@@ -153,8 +154,8 @@ std::function<double(double)> getPotentialFunction(PotentialType type) {
             return wcaPotential;
         case PotentialType::Yukawa:
             return yukawaPotential;
-        case PotentialType::AthermalStar:
-            return athermalStarPotential;
+        // case PotentialType::AthermalStar:
+        //     return athermalStarPotential;
         default:
             throw std::invalid_argument("Invalid potential type");
     }
@@ -174,8 +175,8 @@ std::function<double(double)> getForceFunction(PotentialType type) {
             return wcaForceDotR;
         case PotentialType::Yukawa:
             return yukawaForceDotR;
-        case PotentialType::AthermalStar:
-            return athermalStarDotR;
+        // case PotentialType::AthermalStar:
+        //     return athermalStarForceDotR;
         default:
             throw std::invalid_argument("Invalid potential type");
     }

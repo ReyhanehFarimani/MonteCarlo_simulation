@@ -28,11 +28,19 @@ int main(int argc, char *argv[]) {
     // Retrieve the potential type from the input
     std::string potentialName = input.getFilename("potentialType");
     PotentialType potentialType = selectPotentialType(potentialName);
-
+    float f_prime = 0.0;
+    if (potentialType == PotentialType::AthermalStar)
+    {
+        int f = input.getConstant("f");
+        f_prime = (2.0 + 9.0 * f * f) / 24.0;
+    }
     // Retrieve the simulation type from the input
     std::string simName = input.getFilename("simulationType");
     SimulationType simType = selectSimulationType(simName);
-
+    if (simType == SimulationType::GCMC)
+    {
+        double mu = input.getConstant("mu");
+    }
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
 
@@ -42,7 +50,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, seed, useCellList, cellListUpdateFrequency);
+    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, f_prime, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simType);
 
