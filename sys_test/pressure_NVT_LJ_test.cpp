@@ -10,14 +10,14 @@
 
 void pressure_test_NVT_LJ()
 {
-    const int N = 64 * 64; // Reduced number of particles to 2500
+    const int N = 32 * 32; // Reduced number of particles to 2500
     const double temperature = 10.0; // Temperature set to 10.0
     const double r_cutoff = 2.5; // Cutoff radius
-    const double equilibration_steps = 500000;
-    const double production_steps = 100000;
-    const double density_increment = 0.01;
+    const double equilibration_steps = 5000000;
+    const double production_steps = 1000000;
+    const double density_increment = 0.0025;
     
-    for (double density = 1.17; density < 1.23; density += density_increment) {
+    for (double density = 1.19; density < 1.23; density += density_increment) {
         double L2 = N / density;
         double box_length_x = sqrt(L2 / (sqrt(3.0) / 2.0));
         double box_length_y = sqrt(L2 * (sqrt(3.0) / 2.0));
