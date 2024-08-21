@@ -349,7 +349,7 @@ double Simulation::getPressure() const {
 * @return Energy Correction.
 */
 double Simulation::tail_correction_energy_2d() const{
-    double sr2 = r2cut;
+    double sr2 = 1/r2cut;
     double sr6 = sr2 * sr2 * sr2;
     return M_PI * numParticles * numParticles * (1.0 / 3.0 * sr6 * sr6 - sr6) / (box.getLx() * box.getLy());
 }
@@ -359,7 +359,7 @@ double Simulation::tail_correction_energy_2d() const{
 * @return Pressure Correction.
 */
 double Simulation::tail_correction_pressure_2d() const{
-    double sr2 = r2cut;
+    double sr2 = 1/r2cut;
     double sr6 = sr2 * sr2 * sr2;
     return 2 * M_PI * numParticles * numParticles * (2.0 / 3.0 * sr6 * sr6 - sr6)/ (box.getLx() * box.getLy())/ (box.getLx() * box.getLy());
 }
