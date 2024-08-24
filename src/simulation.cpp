@@ -364,24 +364,26 @@ double Simulation::getPressure() const {
 */
 double Simulation::tail_correction_energy_2d() const{
     double prefactor = M_PI * numParticles/(box.getLx() * box.getLy());
-    switch (potentialType)
-    {
-    case PotentialType::LennardJones:
+    switch (potentialType){
+    case PotentialType::LennardJones:{
         double sr2 = 1/r2cut;
         double sr4 = sr2 * sr2;
         double sr10 = sr4 * sr4 * sr2;
-        return prefactor * 4.0 * (sr4/4.0 - sr10/10.0);
+        prefactor *= 4.0 * (sr4/4.0 - sr10/10.0);
         break;
+    }
     case PotentialType::WCA:
-        return 0;
-    case PotentialType::AthermalStar:
+        prefactor = 0;
+        break;
+    case PotentialType::AthermalStar:{
         double I  =  -exp(1 - r2cut)/4.0;
-        return I * prefactor;
-    
+        prefactor *= I;
+        break;
+    }
     default:
         break;
     }
-    
+    return prefactor;
 }
 
 /**
