@@ -355,20 +355,64 @@ double Simulation::getPressure() const {
 
 /**
 * @brief Calculate tail correction for internal energy in 2D
+* 
+* in two dimension considering we have same densities, we are going to have,  
+* the enrgy correction as follows:
+* u_{tail} = \frac{1}{2} 2 \pi int_{r_c}^{\inf} dr r \rho u(r) = \pi * rho * int_{r_c}^{inf} dr r u(r) 
+* 
 * @return Energy Correction.
 */
 double Simulation::tail_correction_energy_2d() const{
-    double sr2 = r2cut;
-    double sr6 = sr2 * sr2 * sr2;
-    return M_PI * numParticles * numParticles * (1.0 / 3.0 * sr6 * sr6 - sr6) / (box.getLx() * box.getLy());
+    double answer = M_PI * numParticles/(box.getLx() * box.getLy());
+    switch (potentialType){
+    case PotentialType::LennardJones:{
+        double sr2 = 1/r2cut;
+        double sr4 = sr2 * sr2;
+        double sr10 = sr4 * sr4 * sr2;
+        answer *= 4.0 * (sr4/4.0 - sr10/10.0);
+        break;
+    }
+    case PotentialType::WCA:
+        answer = 0;
+        break;
+    case PotentialType::AthermalStar:{
+        double I  =  -exp(1 - r2cut)/4.0 * f_prime;
+        answer *= I;
+        break;
+    }
+    default:
+        break;
+    }
+    return answer;
 }
 
 /**
-* @brief Calculate tail correction for pressure in 2D
+* @brief Calculate tail correction for pressure in 2D.
+* 
+* g(r) = 1 -> P_cut = \frac{\rho^2 pi}{2} \int_{r_{cut}}^{\inf} f(r) r^2 dr
+* 
 * @return Pressure Correction.
 */
 double Simulation::tail_correction_pressure_2d() const{
-    double sr2 = r2cut;
-    double sr6 = sr2 * sr2 * sr2;
-    return 2 * M_PI * numParticles * numParticles * (2.0 / 3.0 * sr6 * sr6 - sr6)/ (box.getLx() * box.getLy())/ (box.getLx() * box.getLy());
+    double answer = M_PI * (numParticles/(box.getLx() * box.getLy())) * (numParticles/(box.getLx() * box.getLy())) /2;
+    switch (potentialType){
+    case PotentialType::LennardJones:{
+        double sr2 = 1/r2cut;
+        double sr4 = sr2 * sr2;
+        double sr10 = sr4 * sr4 * sr2;
+        answer *= 48.0 * (sr4/8.0 - sr10/10.0);
+        break;
+    }
+    case PotentialType::WCA:
+        answer = 0;
+        break;
+    case PotentialType::AthermalStar:{
+        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime;
+        answer *= I;
+        break;
+    }
+    default:
+        break;
+    }
+    return answer;
 }
