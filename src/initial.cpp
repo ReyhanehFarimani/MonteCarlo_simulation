@@ -12,39 +12,51 @@ void Particle::updatePosition(double dx, double dy) {
     y += dy;
 }
 
-// SimulationBox class methods
+// Constructor for SimulationBox
 SimulationBox::SimulationBox(double Lx, double Ly)
-    : Lx(Lx), Ly(Ly) {}
+    : Lx(Lx), Ly(Ly), invLx(1.0 / Lx), invLy(1.0 / Ly), volume(Lx * Ly) {}
 
+// Apply periodic boundary conditions to a particle
 void SimulationBox::applyPBC(Particle &p) const {
-    p.x = p.x - Lx * std::floor(p.x / Lx);
-    p.y = p.y - Ly * std::floor(p.y / Ly);
+    p.x -= Lx * std::floor(p.x * invLx);
+    p.y -= Ly * std::floor(p.y * invLy);
 }
 
+// Calculate the minimum image distance between two particles considering PBC
 double SimulationBox::minimumImageDistance(const Particle &p1, const Particle &p2) const {
     double dx = p1.x - p2.x;
     double dy = p1.y - p2.y;
 
-    dx -= Lx * std::round(dx / Lx);
-    dy -= Ly * std::round(dy / Ly);
+    dx -= Lx * std::round(dx * invLx);
+    dy -= Ly * std::round(dy * invLy);
 
     return std::sqrt(dx * dx + dy * dy);
 }
+
+// Calculate the minimum image distance squared between two particles considering PBC
 double SimulationBox::minimumImageDistanceSquared(const Particle &p1, const Particle &p2) const {
     double dx = p1.x - p2.x;
     double dy = p1.y - p2.y;
 
-    dx -= Lx * std::round(dx / Lx);
-    dy -= Ly * std::round(dy / Ly);
-    // debugging output
+    dx -= Lx * std::round(dx * invLx);
+    dy -= Ly * std::round(dy * invLy);
+
     return (dx * dx + dy * dy);
 }
+
+// Get the length of the simulation box in the x-direction
 double SimulationBox::getLx() const {
     return Lx;
 }
 
+// Get the length of the simulation box in the y-direction
 double SimulationBox::getLy() const {
     return Ly;
+}
+
+// Get the simulation box volume
+double SimulationBox::getV() const {
+    return volume;
 }
 
 

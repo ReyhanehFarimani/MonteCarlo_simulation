@@ -25,7 +25,6 @@ public:
      */
     void updatePosition(double dx, double dy);
 };
-
 /**
  * @brief Manages the 2D simulation box, including periodic boundary conditions.
  */
@@ -33,6 +32,9 @@ class SimulationBox {
 private:
     double Lx;  ///< Length of the simulation box in the x-direction.
     double Ly;  ///< Length of the simulation box in the y-direction.
+    double invLx;  ///< Precomputed 1/Lx for performance.
+    double invLy;  ///< Precomputed 1/Ly for performance.
+    double volume; ///< Precomputed volume of the simulation box.
 
 public:
     /**
@@ -54,15 +56,16 @@ public:
      * @param p2 The second particle.
      * @return The shortest distance between p1 and p2 under periodic boundary conditions.
      */
-    double minimumImageDistanceSquared(const Particle &p1, const Particle &p2) const;
+    double minimumImageDistance(const Particle &p1, const Particle &p2) const;
 
     /**
-     * @brief Calculates the minimum image distance between two particles considering PBC.
+     * @brief Calculates the minimum image distance squared between two particles considering PBC.
      * @param p1 The first particle.
      * @param p2 The second particle.
-     * @return The shortest distance between p1 and p2 squared under periodic boundary conditions.
+     * @return The shortest distance squared between p1 and p2 under periodic boundary conditions.
      */
-    double minimumImageDistance(const Particle &p1, const Particle &p2) const;
+    double minimumImageDistanceSquared(const Particle &p1, const Particle &p2) const;
+
     /**
      * @brief Gets the length of the simulation box in the x-direction.
      * @return The length in the x-direction.
@@ -74,6 +77,12 @@ public:
      * @return The length in the y-direction.
      */
     double getLy() const;
+
+    /**
+     * @brief Gets the simulation box volume.
+     * @return The simulation box volume.
+     */
+    double getV() const;
 };
 
 /**
