@@ -3,26 +3,34 @@
 #include <cstdlib> // For srand() and rand()
 #include <cassert>
 /**
- * @brief Constructs a Simulation object with the specified parameters.
+ * @brief Initializes a Simulation object with the given parameters.
  * 
- * @param box The simulation box.
- * @param potentialType The type of potential used in the simulation.
- * @param temperature The temperature of the simulation.
- * @param numParticles The number of particles in the simulation.
- * @param maxDisplacement The time step for the simulation.
- * @param r2cut The squared distance cutoff for potential calculations.
+ * This constructor sets up the simulation environment, including the simulation box, interaction potential, temperature, and other relevant parameters. It also seeds the random number generator and computes the initial energy of the system.
+ * 
+ * @param box The simulation box that defines the boundaries of the system.
+ * @param simtype The type of simulation being performed (e.g., Monte Carlo, GCMC).
+ * @param potentialType The type of interaction potential used for particle interactions.
+ * @param temperature The temperature of the system, which influences the acceptance of moves.
+ * @param numParticles The initial number of particles in the simulation.
+ * @param maxDisplacement The maximum displacement allowed for particle moves in Monte Carlo steps.
+ * @param r2cut The square of the cutoff distance beyond which interactions are ignored.
+ * @param f_prime An additional parameter related to the specific potential type (e.g., athermal star potential).
+ * @param mu The chemical potential, relevant for grand canonical simulations.
+ * @param seed The seed for the random number generator. If zero, the current time is used as the seed.
+ * @param useCellList A boolean flag indicating whether to use a cell list for efficient neighbor searching.
+ * @param cellListUpdateFrequency The frequency (in simulation steps) at which the cell list is updated.
  */
-Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
-    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut * r2cut), f_prime(f_prime), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency){
+Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
+    : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut * r2cut), f_prime(f_prime), mu(mu), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) {
     particles.resize(numParticles);
     if (seed != 0) {
         srand(seed); // Seed the random number generator
-        
     } else {
-        srand(static_cast<unsigned int>(time(nullptr))); // Use current time as seed
+        srand(static_cast<unsigned int>(time(nullptr))); // Use the current time as the seed
     }
-    energy = computeEnergy(); // Initialize the energy
+    energy = computeEnergy(); // Compute and store the initial energy of the system
 }
+
 
 /**
  * @brief Initializes particles in the simulation box.
@@ -56,7 +64,10 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
     energy = computeEnergy();
 }
 
-
+/**
+ * @brief Perform a single Monte Carlo move.
+ * @return True if the move is accepted, false otherwise.
+ */
 bool Simulation::monteCarloMove() {
     // Randomly select a particle
     size_t particleIndex = rand() % (particles.size());
@@ -99,6 +110,90 @@ bool Simulation::monteCarloMove() {
         p.y = oldY;
         return false;
     }
+}
+
+/**
+ * @brief Attempt to exchange a particle with a resorvoir.
+ * @return True if the move is accepted, false otherwise.
+ */
+bool Simulation::monteCarloAddRemove() {
+    double r_decide = rand() / double(RAND_MAX);
+    if (r_decide < 0.5) { 
+        // random position for the partile:
+        double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
+        double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
+        Particle newParticle(x, y);
+
+        double dE = 0;
+
+        if (useCellList){
+            //computing particle cell index:
+            double rcut = sqrt(r2cut);
+            int numCellsX = static_cast<int>(box.getLx() / rcut);
+            int numCellsY = static_cast<int>(box.getLy() / rcut);
+            // Ensure that there are enough cells to cover the box
+            if (box.getLx() > numCellsX * rcut) numCellsX++;
+            if (box.getLy() > numCellsY * rcut) numCellsY++;
+            int cellX = static_cast<int>(newParticle.x / rcut);
+            int cellY = static_cast<int>(newParticle.y / rcut);
+            int cellIndex = cellY * numCellsX + cellX;
+            assert(cellIndex >= 0 && cellIndex < cellList.size()); // Check bounds
+            for (int offsetY = -2; offsetY <= 2; ++offsetY) {
+                int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+                for (int offsetX = -2; offsetX <= 2; ++offsetX) {
+                    int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                    int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+                    for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                        double r2 = box.minimumImageDistanceSquared(newParticle, particles[node->particleIndex]);
+                        if (r2 < r2cut) {
+                            switch (potentialType) {
+                                case PotentialType::LennardJones:
+                                    dE += lennardJonesPotential(r2);
+                                    break;
+                                case PotentialType::WCA:
+                                    dE += wcaPotential(r2);
+                                    break;
+                                case PotentialType::Yukawa:
+                                    dE += yukawaPotential(r2);
+                                    break;
+                                case PotentialType::AthermalStar:
+                                    dE += athermalStarPotential(r2, f_prime);
+                                    break;
+                            }
+                        }
+                    }
+                }
+            }
+        }//adding particle to the new cell and compute the energy (using cell list)
+        else {
+            for (size_t i = 0; i < particles.size(); ++i) {
+                double r2 = box.minimumImageDistanceSquared(newParticle, particles[i]);
+                if (r2 < r2cut) {
+                    switch (potentialType) {
+                        case PotentialType::LennardJones:
+                            dE += lennardJonesPotential(r2);
+                            break;
+                        case PotentialType::WCA:
+                            dE += wcaPotential(r2);
+                            break;
+                        case PotentialType::Yukawa:
+                            dE += yukawaPotential(r2);
+                            break;
+                        case PotentialType::AthermalStar:
+                            dE += athermalStarPotential(r2, f_prime);
+                            break;
+                    }
+                }
+            }
+        }//adding particle to the new cell and compute the energy (no cell list)
+        double acc = exp(- dE/ temperature) * mu * box.getLx() * box.getLy() / (particles.size());
+
+
+    } //if adding a particle
+    else {
+        return 0;
+    } //if for removing a particle
+    return 0;
 }
 
 /**
