@@ -40,7 +40,7 @@ void Logging::logPositions_xyz(const std::vector<Particle> &particles, const Sim
         int cellY = static_cast<int>(particle.y / rcut);
         int cellIndex = cellY * numCellsX + cellX;
 
-        outFile_position << cellIndex << " " << particle.x << " " << particle.y << "\n";
+        outFile_position << "1" << " " << particle.x << " " << particle.y << "\n";
     }
 }
 

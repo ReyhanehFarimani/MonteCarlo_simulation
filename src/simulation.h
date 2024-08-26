@@ -12,6 +12,8 @@ struct CellListNode {
     CellListNode(int idx) : particleIndex(idx), next(nullptr) {}
 };
 
+
+
 enum class SimulationType {
     MonteCarloNVT,
     GCMC,
@@ -34,33 +36,46 @@ class Simulation {
 private:
     SimulationBox box;                   ///< The simulation box
     std::vector<Particle> particles;     ///< Particles in the simulation
+    SimulationType simtype;             ///< The selected ensemble in the simulation
     PotentialType potentialType;         ///< The type of potential used in the simulation
     double temperature;                  ///< Temperature of the simulation
     int numParticles;                    ///< Number of particles in the simulation
     double maxDisplacement;              ///< Max Displacement for the simulation
     double r2cut;                        ///< Squared distance cutoff for potential calculations
+    double rcut;                         ///<  cutoff for potential calculations
     unsigned int seed;                   ///< Seed for random number generation
     bool useCellList;                   ///< bool use cell list option for optimized energy compution
     int cellListUpdateFrequency;        ///< frquency of cell list updating.
     std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
-    float f_prime;
+    float f_prime;                      ///< if one selectys the logarithmic potential
+    double mu;                          ///< if one selects the GCMC!
+    int numCellsX;                      ///< number of cells in the box in x direction.
+    int numCellsY;                      ///< number of cells in the box in y direction.
 
 public:
     double energy;
 
    
 
-    /**
-     * @brief Constructs a Simulation object with the specified parameters.
-     * 
-     * @param box The simulation box.
-     * @param potentialType The type of potential used in the simulation.
-     * @param temperature The temperature of the simulation.
-     * @param numParticles The number of particles in the simulation.
-     * @param maxDisplacement 
-     * @param r2cut The squared distance cutoff for potential calculations.
-     */
-    Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, unsigned int seed, bool useCellList, int cellListUpdateFrequency);
+/**
+ * @brief Constructs a Simulation object with the specified parameters.
+ * 
+ * This constructor initializes the simulation environment, setting up the simulation box, interaction potential, temperature, particle count, and other key parameters. It also handles the seeding of the random number generator and prepares the system for simulation.
+ * 
+ * @param box The simulation box that defines the boundaries of the system.
+ * @param potentialType The type of interaction potential used for particle interactions.
+ * @param simtype The type of simulation being performed (e.g., Monte Carlo, GCMC).
+ * @param temperature The temperature of the system, affecting the acceptance of moves.
+ * @param numParticles The initial number of particles in the simulation.
+ * @param maxDisplacement The maximum displacement allowed for particles in Monte Carlo steps.
+ * @param r2cut The square of the cutoff distance beyond which interactions are neglected.
+ * @param f_prime A parameter specific to certain potential types, such as the athermal star potential.
+ * @param mu The chemical potential, relevant for grand canonical simulations.
+ * @param seed The seed for the random number generator. A value of zero will result in seeding with the current time.
+ * @param useCellList Boolean indicating whether to use a cell list for efficient neighbor searching.
+ * @param cellListUpdateFrequency The frequency (in simulation steps) at which the cell list should be updated.
+ */
+Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency);
 
     /**
      * @brief Initializes particles in the simulation box.
@@ -82,7 +97,12 @@ public:
      */
     double computeEnergy();
 
-
+    /**
+     * @brief remove a particle from cell list.
+     * @param particleIndex The index of the particle to be removed
+     * @param cellIndex The index of particle to be removed.
+     */
+    void removeParticleFromCellList(int particleIndex, int cellIndex);
 
     /**
      * @brief Gets the current energy of the system.
@@ -107,7 +127,13 @@ public:
      * @return True if the move is accepted, false otherwise.
      */
     bool monteCarloMove();
-    
+     
+    /**
+     * @brief Attempt to exchange a particle with a resorvoir.
+     * @return True if the move is accepted, false otherwise.
+     */
+    bool monteCarloAddRemove();
+
     /**
      * @brief Run the simulation.
      * @param numSteps The number of steps to run the simulation.

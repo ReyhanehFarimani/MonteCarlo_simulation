@@ -37,9 +37,10 @@ int main(int argc, char *argv[]) {
     // Retrieve the simulation type from the input
     std::string simName = input.getFilename("simulationType");
     SimulationType simType = selectSimulationType(simName);
+    double mu = 0.0;
     if (simType == SimulationType::GCMC)
     {
-        double mu = input.getConstant("mu");
+        mu = input.getConstant("mu");
     }
     // Create a SimulationBox object
     SimulationBox simBox(boxLengthX, boxLengthY);
@@ -50,7 +51,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, temperature, numParticles, timeStep, r2cut, f_prime, seed, useCellList, cellListUpdateFrequency);
+    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime,mu, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simType);
 

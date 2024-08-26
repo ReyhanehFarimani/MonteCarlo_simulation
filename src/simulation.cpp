@@ -3,26 +3,39 @@
 #include <cstdlib> // For srand() and rand()
 #include <cassert>
 /**
- * @brief Constructs a Simulation object with the specified parameters.
+ * @brief Initializes a Simulation object with the given parameters.
  * 
- * @param box The simulation box.
- * @param potentialType The type of potential used in the simulation.
- * @param temperature The temperature of the simulation.
- * @param numParticles The number of particles in the simulation.
- * @param maxDisplacement The time step for the simulation.
- * @param r2cut The squared distance cutoff for potential calculations.
+ * This constructor sets up the simulation environment, including the simulation box, interaction potential, temperature, and other relevant parameters. It also seeds the random number generator and computes the initial energy of the system.
+ * 
+ * @param box The simulation box that defines the boundaries of the system.
+ * @param simtype The type of simulation being performed (e.g., Monte Carlo, GCMC).
+ * @param potentialType The type of interaction potential used for particle interactions.
+ * @param temperature The temperature of the system, which influences the acceptance of moves.
+ * @param numParticles The initial number of particles in the simulation.
+ * @param maxDisplacement The maximum displacement allowed for particle moves in Monte Carlo steps.
+ * @param r2cut The square of the cutoff distance beyond which interactions are ignored.
+ * @param f_prime An additional parameter related to the specific potential type (e.g., athermal star potential).
+ * @param mu The chemical potential, relevant for grand canonical simulations.
+ * @param seed The seed for the random number generator. If zero, the current time is used as the seed.
+ * @param useCellList A boolean flag indicating whether to use a cell list for efficient neighbor searching.
+ * @param cellListUpdateFrequency The frequency (in simulation steps) at which the cell list is updated.
  */
-Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
-    : box(box), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), r2cut(r2cut * r2cut), f_prime(f_prime), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency){
+Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
+    : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), rcut(r2cut), r2cut(r2cut * r2cut), f_prime(f_prime), mu(exp(mu/temperature)), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) , numCellsX(1), numCellsY(1){
     particles.resize(numParticles);
     if (seed != 0) {
         srand(seed); // Seed the random number generator
-        
     } else {
-        srand(static_cast<unsigned int>(time(nullptr))); // Use current time as seed
+        srand(static_cast<unsigned int>(time(nullptr))); // Use the current time as the seed
     }
-    energy = computeEnergy(); // Initialize the energy
+    energy = computeEnergy(); // Compute and store the initial energy of the system
+    numCellsX = static_cast<int>(box.getLx() / rcut);
+    numCellsY = static_cast<int>(box.getLy() / rcut);
+    // Ensure that there are enough cells to cover the box
+    if (box.getLx() > numCellsX * rcut) numCellsX++;
+    if (box.getLy() > numCellsY * rcut) numCellsY++;
 }
+
 
 /**
  * @brief Initializes particles in the simulation box.
@@ -56,49 +69,166 @@ void Simulation::setParticlePosition(size_t index, double x, double y) {
     energy = computeEnergy();
 }
 
-
+/**
+ * @brief Perform a single Monte Carlo move.
+ * @return True if the move is accepted, false otherwise.
+ */
 bool Simulation::monteCarloMove() {
-    // Randomly select a particle
-    size_t particleIndex = rand() % (particles.size());
-    Particle &p = particles[particleIndex];
+    double r_decide = 0;
+    if (simtype == SimulationType::GCMC)
+        r_decide = rand() / double(RAND_MAX);
+    if (r_decide < 0.98){
+        // Randomly select a particle
+        size_t particleIndex = rand() % (particles.size());
+        Particle &p = particles[particleIndex];
 
-    // Store the old position
-    double oldX = p.x;
-    double oldY = p.y;
-    // Calculate the initial local energy
-    double initialEnergy;
-    if (useCellList)
-        initialEnergy = computeLocalEnergy(particleIndex);
-    else
-        initialEnergy = energy;
-    // double test_e_new = computeEnergy();
-    // Randomly displace the particle
-    double dx = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
-    double dy = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
-    p.updatePosition(dx, dy);
-    box.applyPBC(p);
+        // Store the old position
+        double oldX = p.x;
+        double oldY = p.y;
+        // Calculate the initial local energy
+        double initialEnergy;
+        if (useCellList)
+            initialEnergy = computeLocalEnergy(particleIndex);
+        else
+            initialEnergy = energy;
+        // double test_e_new = computeEnergy();
+        // Randomly displace the particle
+        double dx = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
+        double dy = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
+        p.updatePosition(dx, dy);
+        box.applyPBC(p);
 
-    // Calculate the new local energy
-    double newEnergy;
-    if (useCellList)
-        newEnergy = computeLocalEnergy(particleIndex);
-    else
-        newEnergy = computeEnergy();
-    // double test_e_old = computeEnergy();
-    // Calculate the energy difference
-    double deltaE = newEnergy - initialEnergy;
-    // std::cout<<deltaE<<"   "<<test_e_old - test_e_new<<std::endl;
-    // Decide whether to accept or reject the move
-    if (deltaE < 0 || exp(-deltaE / temperature) > (rand() / double(RAND_MAX))) {
-        // Accept the move
-        energy += deltaE;
-        return true;
-    } else {
-        // Reject the move, restore the old position
-        p.x = oldX;
-        p.y = oldY;
-        return false;
+        // Calculate the new local energy
+        double newEnergy;
+        if (useCellList)
+            newEnergy = computeLocalEnergy(particleIndex);
+        else
+            newEnergy = computeEnergy();
+        // double test_e_old = computeEnergy();
+        // Calculate the energy difference
+        double deltaE = newEnergy - initialEnergy;
+        // std::cout<<deltaE<<"   "<<test_e_old - test_e_new<<std::endl;
+        // Decide whether to accept or reject the move
+        if (deltaE < 0 || exp(-deltaE / temperature) > (rand() / double(RAND_MAX))) {
+            // Accept the move
+            energy += deltaE;
+            return true;
+        } else {
+            // Reject the move, restore the old position
+            p.x = oldX;
+            p.y = oldY;
+            return false;
+        }
     }
+    else {
+        bool acceptance = monteCarloAddRemove();
+        return acceptance;
+    }
+}
+
+/**
+ * @brief Attempt to exchange a particle with a resorvoir.
+ * @return True if the move is accepted, false otherwise.
+ */
+bool Simulation::monteCarloAddRemove() {
+    double r_decide = rand() / double(RAND_MAX);
+    if (r_decide < 0.5) { 
+        // random position for the partile:
+        double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
+        double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
+        Particle newParticle(x, y);
+
+        double dE = 0;
+        //computing particle cell index:
+        int cellX = static_cast<int>(newParticle.x / rcut);
+        int cellY = static_cast<int>(newParticle.y / rcut);
+        int cellIndex = cellY * numCellsX + cellX;
+
+        if (useCellList){
+            
+            for (int offsetY = -2; offsetY <= 2; ++offsetY) {
+                int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+                for (int offsetX = -2; offsetX <= 2; ++offsetX) {
+                    int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                    int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+                    for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                        double r2 = box.minimumImageDistanceSquared(newParticle, particles[node->particleIndex]);
+                        if (r2 < r2cut) {
+                            dE += computePairPotential(r2, potentialType, f_prime); 
+                        }
+                    }
+                }
+            }
+        }//adding particle to the new cell and compute the energy (using cell list)
+        else {
+            for (size_t i = 0; i < particles.size(); ++i) {
+                double r2 = box.minimumImageDistanceSquared(newParticle, particles[i]);
+                if (r2 < r2cut) {
+                    dE += computePairPotential(r2, potentialType, f_prime); 
+                }
+            }
+        }//adding particle to the new cell and compute the energy (no cell list)
+        double acc = exp( -dE/ temperature) * box.getV() / (particles.size() + 1) * mu;
+        // std::cout<<acc<<std::endl;
+        if (acc > (rand() / double(RAND_MAX))){
+            particles.emplace_back(newParticle);
+            numParticles ++;
+            energy += dE;
+            if (useCellList) {
+                CellListNode* newNode = new CellListNode(numParticles - 1);
+                newNode->next = cellList[cellIndex];
+                cellList[cellIndex] = newNode;
+            }
+            return true;     
+        } //adding a particle
+        else 
+            return false;
+
+    } //if adding a particle
+    else {
+        if (particles.size()>5){
+            //choosing a particle
+            size_t particleIndex = rand() % (particles.size());
+            Particle &p = particles[particleIndex];
+            double dE = 0;
+            //computing particle cell index:
+            int cellX = static_cast<int>(p.x / rcut);
+            int cellY = static_cast<int>(p.y / rcut);
+            int cellIndex = cellY * numCellsX + cellX;
+
+            if (useCellList){
+                dE = -computeLocalEnergy(particleIndex);
+            }//removing particle to the new cell and compute the energy (using cell list)
+            else {
+                for (size_t i = 0; i < particles.size(); ++i) {
+                    if (i != particleIndex){
+                        double r2 = box.minimumImageDistanceSquared(p, particles[i]);
+                        if (r2 < r2cut) {
+                            dE -= computePairPotential(r2, potentialType, f_prime); 
+                        }
+                    }
+                }
+            }//removing particle to the new cell and compute the energy (no cell list)
+            double acc = exp( -dE/ temperature) / box.getV() * (particles.size()) * mu;
+            
+            if (acc > (rand() / double(RAND_MAX))){
+                if (useCellList) {
+                    removeParticleFromCellList(particleIndex, cellIndex);
+                }
+                if (particleIndex < particles.size()) 
+                    particles.erase(particles.begin() + particleIndex);
+                else
+                    std::cerr<<"particle index out of bound!, unable to remove the particle!"<<std::endl;
+                numParticles --;
+                energy += dE;
+                return true;     
+            } //removing a particle
+            else 
+                return false;
+            }
+        return false;
+    } //if removing a plarticle a particle
+    
 }
 
 /**
@@ -115,22 +245,7 @@ double Simulation::computeEnergy() {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
             
             if (r2 < r2cut) {
-                double potential = 0.0;
-                switch (potentialType) {
-                    case PotentialType::LennardJones:
-                        potential = lennardJonesPotential(r2);
-                        
-                        break;
-                    case PotentialType::WCA:
-                        potential = wcaPotential(r2);
-                        break;
-                    case PotentialType::Yukawa:
-                        potential = yukawaPotential(r2);
-                        break;
-                    case PotentialType::AthermalStar:
-                        potential = athermalStarPotential(r2, f_prime);
-                        break;
-                }
+                double potential = computePairPotential(r2, potentialType, f_prime);
                 tmp_energy += potential;
                 
             }
@@ -151,7 +266,6 @@ double Simulation::computeEnergy() {
  * @param logger The logging object for output.
  */
 void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType = SimulationType::MonteCarloNVT) {
-    if(simType == SimulationType::MonteCarloNVT){
         int acceptedMoves = 0;
         energy = computeEnergy();
         
@@ -164,10 +278,9 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 energy = computeEnergy();
             }
             }
-            if (simType == SimulationType::MonteCarloNVT) {
-                if (monteCarloMove()) {
-                    acceptedMoves++;
-                }
+            if (monteCarloMove()) {
+                acceptedMoves++;
+                
             }
 
             // Other simulation types can be added here as additional conditions
@@ -184,7 +297,6 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
         std::cout << "Monte Carlo NVT simulation completed with " 
                     << acceptedMoves << " accepted moves out of " << (numSteps + equilibrationTime) << " steps." << std::endl;
         
-    }
 }
 
 double Simulation::getEnergy() const {
@@ -192,7 +304,8 @@ double Simulation::getEnergy() const {
 }
 
 int Simulation::getNumParticles() const {
-    return numParticles;
+    assert(particles.size() == numParticles);
+    return particles.size();
 }
 
 double Simulation::getTemperature() const {
@@ -216,12 +329,6 @@ void Simulation::clearCellList() {
 
 void Simulation::buildCellList() {
     clearCellList();  // Clear the previous cell list
-    double rcut = sqrt(r2cut);
-    int numCellsX = static_cast<int>(box.getLx() / rcut);
-    int numCellsY = static_cast<int>(box.getLy() / rcut);
-    // Ensure that there are enough cells to cover the box
-    if (box.getLx() > numCellsX * rcut) numCellsX++;
-    if (box.getLy() > numCellsY * rcut) numCellsY++;
     // Resize the cells vector based on numCellsX and numCellsY
     cellList.resize(numCellsX * numCellsY, nullptr);
 
@@ -240,16 +347,6 @@ void Simulation::buildCellList() {
 double Simulation::computeLocalEnergy(int particleIndex) const {
     double localEnergy = 0.0;
     const Particle& p = particles[particleIndex];
-
-    double rcut = sqrt(r2cut);
-    int numCellsX = static_cast<int>(box.getLx() / rcut);
-    int numCellsY = static_cast<int>(box.getLy() / rcut);
-    
-    // Ensure that there are enough cells to cover the box
-    if (box.getLx() > numCellsX * rcut) numCellsX++;
-    if (box.getLy() > numCellsY * rcut) numCellsY++;
-
-
     // Get the current cell of the particle
     int cellX = static_cast<int>(p.x / rcut);
     int cellY = static_cast<int>(p.y / rcut);
@@ -267,20 +364,7 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
                     // std::cout<<node->particleIndex<<std::endl;
                     double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
                     if (r2 < r2cut) {
-                        switch (potentialType) {
-                            case PotentialType::LennardJones:
-                                localEnergy += lennardJonesPotential(r2);
-                                break;
-                            case PotentialType::WCA:
-                                localEnergy += wcaPotential(r2);
-                                break;
-                            case PotentialType::Yukawa:
-                                localEnergy += yukawaPotential(r2);
-                                break;
-                            case PotentialType::AthermalStar:
-                                localEnergy += athermalStarPotential(r2, f_prime);
-                                break;
-                        }
+                        localEnergy += computePairPotential(r2, potentialType, f_prime);
                     }
                 }
             }
@@ -304,20 +388,7 @@ double Simulation::computeTotalForce() const{
         for (size_t p2 = p1 + 1; p2 < particles.size(); ++p2){
             double r2 = box.minimumImageDistanceSquared(particles[p1], particles[p2]);
             if (r2<r2cut){
-                switch (potentialType){
-                    case PotentialType::LennardJones:
-                        forceSum += lennardJonesForceDotR(r2);
-                        break;
-                    case PotentialType::WCA:
-                        forceSum += wcaForceDotR(r2);
-                        break;
-                    case PotentialType::Yukawa:
-                        forceSum += yukawaForceDotR(r2);
-                        break;
-                    case PotentialType::AthermalStar:
-                        forceSum += athermalStarForceDotR(r2, f_prime);
-                        break;
-                }
+                forceSum += computePairForce(r2, potentialType, f_prime);
             }
         }
     }
@@ -335,7 +406,7 @@ double Simulation::computeTotalForce() const{
  * @return The calculated pressure.
  */
 double Simulation::calculatePressure() const {
-    double V = box.getLx() * box.getLy();
+    double V = box.getV();
     double virialPressure = computeTotalForce() / (2 * V);
     double rho = numParticles / V;
     double idealPressure = rho * temperature;
@@ -363,7 +434,7 @@ double Simulation::getPressure() const {
 * @return Energy Correction.
 */
 double Simulation::tail_correction_energy_2d() const{
-    double answer = M_PI * numParticles/(box.getLx() * box.getLy());
+    double answer = M_PI * numParticles/(box.getV());
     switch (potentialType){
     case PotentialType::LennardJones:{
         double sr2 = 1/r2cut;
@@ -394,7 +465,7 @@ double Simulation::tail_correction_energy_2d() const{
 * @return Pressure Correction.
 */
 double Simulation::tail_correction_pressure_2d() const{
-    double answer = M_PI * (numParticles/(box.getLx() * box.getLy())) * (numParticles/(box.getLx() * box.getLy())) /2;
+    double answer = M_PI * (numParticles/(box.getV())) * (numParticles/(box.getV())) /2;
     switch (potentialType){
     case PotentialType::LennardJones:{
         double sr2 = 1/r2cut;
@@ -416,3 +487,32 @@ double Simulation::tail_correction_pressure_2d() const{
     }
     return answer;
 }
+
+
+void Simulation::removeParticleFromCellList(int particleIndex, int cellIndex) {
+    CellListNode* current = cellList[cellIndex];
+    CellListNode* prev = nullptr;
+
+    while (current != nullptr) {
+        if (current->particleIndex == particleIndex) {
+            if (prev == nullptr) {
+                cellList[cellIndex] = current->next; // Removing head of the list
+            } else {
+                prev->next = current->next; // Bypassing the current node
+            }
+            delete current; // Free the node's memory
+            break;
+        }
+        prev = current;
+        current = current->next;
+    }
+
+    // Adjust the indices in the cell list to reflect the removed particle
+    for (CellListNode* node : cellList) {
+        if (node && node->particleIndex > particleIndex) {
+            node->particleIndex--;
+        }
+    }
+}
+
+
