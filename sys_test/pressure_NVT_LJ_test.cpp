@@ -22,7 +22,7 @@ void pressure_test_NVT_LJ()
         double box_length_x = sqrt(L2 / (sqrt(3.0) / 2.0));
         double box_length_y = sqrt(L2 * (sqrt(3.0) / 2.0));
         SimulationBox box(box_length_x, box_length_y);
-        Simulation sim(box, PotentialType::LennardJones, temperature, N, 0.1, r_cutoff, 0, 1, 100);
+        Simulation sim(box,PotentialType::LennardJones, SimulationType::MonteCarloNVT, temperature, N, 0.1, r_cutoff, 0, 0, 123, 1, 100);
         sim.initializeParticles(0);
 
         // Log file names based on density
@@ -30,7 +30,7 @@ void pressure_test_NVT_LJ()
         Logging logger("position_" + density_str + ".xyz", "data_" + density_str + ".txt");
 
         // Run the simulation
-        sim.run(production_steps, equilibration_steps, 10000, logger, SimulationType::MonteCarloNVT);
+        sim.run(production_steps, equilibration_steps, 10000, logger);
 
         // Compute and print the pressure for this density
         double pressure = sim.calculatePressure();

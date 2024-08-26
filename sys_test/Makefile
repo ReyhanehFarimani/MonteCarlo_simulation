@@ -8,7 +8,7 @@ CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 TEST_EXEC = sys_tests
 
 # Test source files
-TEST_SRCS = sys_main_test.cpp pressure_NVT_LJ_test.cpp
+TEST_SRCS = sys_main_test.cpp pressure_NVT_LJ_test.cpp ideal_gas_GCMC.cpp
 
 # Source files from the src directory
 SRCS = ../src/initial.cpp ../src/input.cpp ../src/logging.cpp ../src/potential.cpp ../src/simulation.cpp
