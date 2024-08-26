@@ -12,6 +12,8 @@ struct CellListNode {
     CellListNode(int idx) : particleIndex(idx), next(nullptr) {}
 };
 
+
+
 enum class SimulationType {
     MonteCarloNVT,
     GCMC,
@@ -40,12 +42,15 @@ private:
     int numParticles;                    ///< Number of particles in the simulation
     double maxDisplacement;              ///< Max Displacement for the simulation
     double r2cut;                        ///< Squared distance cutoff for potential calculations
+    double rcut;                         ///<  cutoff for potential calculations
     unsigned int seed;                   ///< Seed for random number generation
     bool useCellList;                   ///< bool use cell list option for optimized energy compution
     int cellListUpdateFrequency;        ///< frquency of cell list updating.
     std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
     float f_prime;                      ///< if one selectys the logarithmic potential
     double mu;                          ///< if one selects the GCMC!
+    int numCellsX;                      ///< number of cells in the box in x direction.
+    int numCellsY;                      ///< number of cells in the box in y direction.
 
 public:
     double energy;
@@ -92,7 +97,12 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      */
     double computeEnergy();
 
-
+    /**
+     * @brief remove a particle from cell list.
+     * @param particleIndex The index of the particle to be removed
+     * @param cellIndex The index of particle to be removed.
+     */
+    void removeParticleFromCellList(int particleIndex, int cellIndex);
 
     /**
      * @brief Gets the current energy of the system.
