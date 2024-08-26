@@ -96,19 +96,23 @@ double athermalStarForceDotR(double r2, float f_dependant);
 PotentialType selectPotentialType(const std::string &potentialName);
 
 /**
- * @brief Returns a function pointer to the appropriate potential function.
+ * @brief Returns the pair potential betwen two particles
  * 
- * @param type The type of potential.
- * @return A function pointer to the selected potential function.
+ * @param r2 the squared distance between the two particles
+ * @param type The type of potential
+ * @param f_prime for the case of the ultrasoft potential.
+ * @return The amount of potential.
  */
-std::function<double(double)> getPotentialFunction(PotentialType type);
+double computePairPotential(double r2, PotentialType potentialType, float f_prime);
 
 /**
- * @brief Returns a function pointer to the appropriate force function.
+ * @brief Returns the pair potential betwen two particles
  * 
- * @param type The type of potential.
- * @return A function pointer to the selected force function.
+ * @param r2 the squared distance between the two particles
+ * @param type The type of potential
+ * @param f_prime for the case of the ultrasoft potential.
+ * @return The amount of force dot r.
  */
-std::function<double(double)> getForceFunction(PotentialType type);
+double computePairForce(double r2, PotentialType potentialType, float f_prime);
 
 #endif // POTENTIAL_H

@@ -21,7 +21,7 @@
  * @param cellListUpdateFrequency The frequency (in simulation steps) at which the cell list is updated.
  */
 Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
-    : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), rcut(r2cut), r2cut(r2cut * r2cut), f_prime(f_prime), mu(mu), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) , numCellsX(1), numCellsY(1){
+    : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), rcut(r2cut), r2cut(r2cut * r2cut), f_prime(f_prime), mu(exp(mu/temperature)), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) , numCellsX(1), numCellsY(1){
     particles.resize(numParticles);
     if (seed != 0) {
         srand(seed); // Seed the random number generator
@@ -77,7 +77,7 @@ bool Simulation::monteCarloMove() {
     double r_decide = 0;
     if (simtype == SimulationType::GCMC)
         r_decide = rand() / double(RAND_MAX);
-    if (r_decide < 0.9){
+    if (r_decide < 0.98){
         // Randomly select a particle
         size_t particleIndex = rand() % (particles.size());
         Particle &p = particles[particleIndex];
@@ -168,7 +168,8 @@ bool Simulation::monteCarloAddRemove() {
                 }
             }
         }//adding particle to the new cell and compute the energy (no cell list)
-        double acc = exp(- dE/ temperature) * mu * box.getV() / (particles.size() + 1);
+        double acc = exp( -dE/ temperature) * box.getV() / (particles.size() + 1) * mu;
+        // std::cout<<acc<<std::endl;
         if (acc > (rand() / double(RAND_MAX))){
             particles.emplace_back(newParticle);
             numParticles ++;
@@ -196,7 +197,7 @@ bool Simulation::monteCarloAddRemove() {
             int cellIndex = cellY * numCellsX + cellX;
 
             if (useCellList){
-                dE = computeLocalEnergy(particleIndex);
+                dE = -computeLocalEnergy(particleIndex);
             }//removing particle to the new cell and compute the energy (using cell list)
             else {
                 for (size_t i = 0; i < particles.size(); ++i) {
@@ -208,7 +209,7 @@ bool Simulation::monteCarloAddRemove() {
                     }
                 }
             }//removing particle to the new cell and compute the energy (no cell list)
-            double acc = exp(- dE/ temperature) / mu / box.getV() * (particles.size());
+            double acc = exp( -dE/ temperature) / box.getV() * (particles.size()) * mu;
             
             if (acc > (rand() / double(RAND_MAX))){
                 if (useCellList) {
@@ -346,8 +347,6 @@ void Simulation::buildCellList() {
 double Simulation::computeLocalEnergy(int particleIndex) const {
     double localEnergy = 0.0;
     const Particle& p = particles[particleIndex];
-
-
     // Get the current cell of the particle
     int cellX = static_cast<int>(p.x / rcut);
     int cellY = static_cast<int>(p.y / rcut);

@@ -141,43 +141,47 @@ PotentialType selectPotentialType(const std::string &potentialName) {
 }
 
 /**
- * @brief Returns a function pointer to the appropriate potential function.
+ * @brief Returns the pair potential betwen two particles
  * 
- * @param type The type of potential.
- * @return A function pointer to the selected potential function.
+ * @param r2 the squared distance between the two particles
+ * @param type The type of potential
+ * @param f_prime for the case of the ultrasoft potential.
+ * @return The amount of potential.
  */
-std::function<double(double)> getPotentialFunction(PotentialType type) {
-    switch (type) {
+double computePairPotential(double r2, PotentialType potentialType, float f_prime) {
+    switch (potentialType) {
         case PotentialType::LennardJones:
-            return lennardJonesPotential;
+            return lennardJonesPotential(r2);
         case PotentialType::WCA:
-            return wcaPotential;
+            return wcaPotential(r2);
         case PotentialType::Yukawa:
-            return yukawaPotential;
-        // case PotentialType::AthermalStar:
-        //     return athermalStarPotential;
+            return yukawaPotential(r2);
+        case PotentialType::AthermalStar:
+            return athermalStarPotential(r2, f_prime);
         default:
-            throw std::invalid_argument("Invalid potential type");
+            throw std::invalid_argument("Unknown potential type");
     }
 }
 
 /**
- * @brief Returns a function pointer to the appropriate force function.
+ * @brief Returns the pair potential betwen two particles
  * 
- * @param type The type of potential.
- * @return A function pointer to the selected force function.
+ * @param r2 the squared distance between the two particles
+ * @param type The type of potential
+ * @param f_prime for the case of the ultrasoft potential.
+ * @return The amount of force dot r.
  */
-std::function<double(double)> getForceFunction(PotentialType type) {
-    switch (type) {
+double computePairForce(double r2, PotentialType potentialType, float f_prime) {
+    switch (potentialType) {
         case PotentialType::LennardJones:
-            return lennardJonesForceDotR;
+            return lennardJonesForceDotR(r2);
         case PotentialType::WCA:
-            return wcaForceDotR;
+            return wcaForceDotR(r2);
         case PotentialType::Yukawa:
-            return yukawaForceDotR;
-        // case PotentialType::AthermalStar:
-        //     return athermalStarForceDotR;
+            return yukawaForceDotR(r2);
+        case PotentialType::AthermalStar:
+            return athermalStarForceDotR(r2, f_prime);
         default:
-            throw std::invalid_argument("Invalid potential type");
+            throw std::invalid_argument("Unknown potential type");
     }
 }
