@@ -209,7 +209,7 @@ bool Simulation::monteCarloAddRemove() {
                     }
                 }
             }//removing particle to the new cell and compute the energy (no cell list)
-            double acc = exp( -dE/ temperature) / box.getV() * (particles.size()) * mu;
+            double acc = exp( -dE/ temperature) / box.getV() * (particles.size())/ mu;
             
             if (acc > (rand() / double(RAND_MAX))){
                 if (useCellList) {
