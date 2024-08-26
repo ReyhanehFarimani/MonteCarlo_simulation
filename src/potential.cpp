@@ -2,6 +2,25 @@
 #include <stdexcept>
 #include <cmath>
 
+
+/**
+ * @brief Calculates the Ideal potential energy.
+ * 
+ * @return zero!
+ */
+double idealPotential(){
+    return 0.0;
+}
+
+/**
+ * @brief Calculates the force between two ideal particles.
+ * 
+ * @return zero!
+ */
+double idealForceDotR(){
+    return 0.0;
+}
+
 /**
  * @brief Calculates the Lennard-Jones potential energy.
  * 
@@ -137,6 +156,7 @@ PotentialType selectPotentialType(const std::string &potentialName) {
     if (potentialName == "WCA") return PotentialType::WCA;
     if (potentialName == "Yukawa") return PotentialType::Yukawa;
     if (potentialName == "AthermalStar") return PotentialType::AthermalStar;
+    if (potentialName == "Ideal") return PotentialType::Ideal;
     throw std::invalid_argument("Unknown potential type: " + potentialName);
 }
 
@@ -158,6 +178,8 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
             return yukawaPotential(r2);
         case PotentialType::AthermalStar:
             return athermalStarPotential(r2, f_prime);
+        case PotentialType::Ideal:
+            return idealPotential();
         default:
             throw std::invalid_argument("Unknown potential type");
     }
@@ -181,6 +203,8 @@ double computePairForce(double r2, PotentialType potentialType, float f_prime) {
             return yukawaForceDotR(r2);
         case PotentialType::AthermalStar:
             return athermalStarForceDotR(r2, f_prime);
+        case PotentialType::Ideal:
+            return idealForceDotR();
         default:
             throw std::invalid_argument("Unknown potential type");
     }

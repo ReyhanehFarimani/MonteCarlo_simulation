@@ -142,7 +142,7 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @param logger The logging object for output.
      * @param simType The type of simulation to run (e.g., Monte Carlo NVT).
      */
-    void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType);
+    void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger);
 
     void buildCellList();
 

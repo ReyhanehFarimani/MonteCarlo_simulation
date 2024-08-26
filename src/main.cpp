@@ -53,7 +53,7 @@ int main(int argc, char *argv[]) {
     // Create and run the simulation
     Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime,mu, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement);
-    simulation.run(numSteps, equilibrationTime, outputFrequency, logger, simType);
+    simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
 
     return 0;
 }

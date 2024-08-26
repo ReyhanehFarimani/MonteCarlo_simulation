@@ -12,8 +12,23 @@ enum class PotentialType {
     LennardJones,  ///< Lennard-Jones potential
     WCA,           ///< Weeks-Chandler-Andersen (WCA) potential
     Yukawa,         ///< Yukawa potential
-    AthermalStar   ///< force bettween two cores of athermal star polymer.
+    AthermalStar,   ///< potential between two cores of athermal star polymer.
+    Ideal           ///< non interacting particls.
 };
+
+/**
+ * @brief Calculates the Ideal potential energy.
+ * 
+ * @return zero!
+ */
+double idealPotential();
+
+/**
+ * @brief Calculates the force between two ideal particles.
+ * 
+ * @return zero!
+ */
+double idealForceDotR();
 
 /**
  * @brief Calculates the Lennard-Jones potential energy.

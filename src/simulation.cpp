@@ -265,7 +265,7 @@ double Simulation::computeEnergy() {
  * @param outputFrequency How often to log the results.
  * @param logger The logging object for output.
  */
-void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger, SimulationType simType = SimulationType::MonteCarloNVT) {
+void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger) {
         int acceptedMoves = 0;
         energy = computeEnergy();
         
@@ -294,7 +294,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 logger.logSimulationData(*this, step);
             }
         }
-        std::cout << "Monte Carlo NVT simulation completed with " 
+        std::cout << "Monte Carlo simulation completed with " 
                     << acceptedMoves << " accepted moves out of " << (numSteps + equilibrationTime) << " steps." << std::endl;
         
 }
@@ -451,6 +451,9 @@ double Simulation::tail_correction_energy_2d() const{
         answer *= I;
         break;
     }
+    case PotentialType::Ideal:
+        answer = 0;
+        break;
     default:
         break;
     }
@@ -482,7 +485,8 @@ double Simulation::tail_correction_pressure_2d() const{
         answer *= I;
         break;
     }
-    default:
+    case PotentialType::Ideal:
+        answer = 0;
         break;
     }
     return answer;
