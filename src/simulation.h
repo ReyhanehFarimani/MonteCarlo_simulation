@@ -51,6 +51,7 @@ private:
     double mu;                          ///< if one selects the GCMC!
     int numCellsX;                      ///< number of cells in the box in x direction.
     int numCellsY;                      ///< number of cells in the box in y direction.
+    int maxNumParticle;                 ///<maximum number of particles in a box.
 
 public:
     double energy;

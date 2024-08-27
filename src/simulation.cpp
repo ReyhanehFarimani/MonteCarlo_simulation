@@ -34,6 +34,7 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, Si
     // Ensure that there are enough cells to cover the box
     if (box.getLx() > numCellsX * rcut) numCellsX++;
     if (box.getLy() > numCellsY * rcut) numCellsY++;
+    maxNumParticle = int(box.getV() * 3);
 }
 
 
@@ -133,56 +134,58 @@ bool Simulation::monteCarloMove() {
 bool Simulation::monteCarloAddRemove() {
     double r_decide = rand() / double(RAND_MAX);
     if (r_decide < 0.5) { 
-        // random position for the partile:
-        double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
-        double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
-        Particle newParticle(x, y);
+        if (numParticles < maxNumParticle){
+            // random position for the partile:
+            double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
+            double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
+            Particle newParticle(x, y);
 
-        double dE = 0;
-        //computing particle cell index:
-        int cellX = static_cast<int>(newParticle.x / rcut);
-        int cellY = static_cast<int>(newParticle.y / rcut);
-        int cellIndex = cellY * numCellsX + cellX;
+            double dE = 0;
+            //computing particle cell index:
+            int cellX = static_cast<int>(newParticle.x / rcut);
+            int cellY = static_cast<int>(newParticle.y / rcut);
+            int cellIndex = cellY * numCellsX + cellX;
 
-        if (useCellList){
-            
-            for (int offsetY = -2; offsetY <= 2; ++offsetY) {
-                int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
-                for (int offsetX = -2; offsetX <= 2; ++offsetX) {
-                    int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
-                    int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
-                    for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
-                        double r2 = box.minimumImageDistanceSquared(newParticle, particles[node->particleIndex]);
-                        if (r2 < r2cut) {
-                            dE += computePairPotential(r2, potentialType, f_prime); 
+            if (useCellList){
+                
+                for (int offsetY = -2; offsetY <= 2; ++offsetY) {
+                    int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+                    for (int offsetX = -2; offsetX <= 2; ++offsetX) {
+                        int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                        int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+                        for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                            double r2 = box.minimumImageDistanceSquared(newParticle, particles[node->particleIndex]);
+                            if (r2 < r2cut) {
+                                dE += computePairPotential(r2, potentialType, f_prime); 
+                            }
                         }
                     }
                 }
-            }
-        }//adding particle to the new cell and compute the energy (using cell list)
-        else {
-            for (size_t i = 0; i < particles.size(); ++i) {
-                double r2 = box.minimumImageDistanceSquared(newParticle, particles[i]);
-                if (r2 < r2cut) {
-                    dE += computePairPotential(r2, potentialType, f_prime); 
+            }//adding particle to the new cell and compute the energy (using cell list)
+            else {
+                for (size_t i = 0; i < particles.size(); ++i) {
+                    double r2 = box.minimumImageDistanceSquared(newParticle, particles[i]);
+                    if (r2 < r2cut) {
+                        dE += computePairPotential(r2, potentialType, f_prime); 
+                    }
                 }
-            }
-        }//adding particle to the new cell and compute the energy (no cell list)
-        double acc = exp( -dE/ temperature) * box.getV() / (particles.size() + 1) * mu;
-        // std::cout<<acc<<std::endl;
-        if (acc > (rand() / double(RAND_MAX))){
-            particles.emplace_back(newParticle);
-            numParticles ++;
-            energy += dE;
-            if (useCellList) {
-                CellListNode* newNode = new CellListNode(numParticles - 1);
-                newNode->next = cellList[cellIndex];
-                cellList[cellIndex] = newNode;
-            }
-            return true;     
-        } //adding a particle
-        else 
-            return false;
+            }//adding particle to the new cell and compute the energy (no cell list)
+            double acc = exp( -dE/ temperature) * box.getV() / (particles.size() + 1) * mu;
+            // std::cout<<acc<<std::endl;
+            if (acc > (rand() / double(RAND_MAX))){
+                particles.emplace_back(newParticle);
+                numParticles ++;
+                energy += dE;
+                if (useCellList) {
+                    CellListNode* newNode = new CellListNode(numParticles - 1);
+                    newNode->next = cellList[cellIndex];
+                    cellList[cellIndex] = newNode;
+                }
+                return true;     
+            } //adding a particle
+            else 
+                return false;
+        }// max number of particles
 
     } //if adding a particle
     else {
