@@ -1,7 +1,6 @@
 var searchData=
 [
-  ['y_0',['y',['../class_particle.html#a434ab690dde4422ac74ae10f6ace7a52',1,'Particle']]],
-  ['yukawa_1',['Yukawa',['../potential_8h.html#a03ba3731588c17aed51f9d519b28b588afe9b6dcb1517f528bc1422910be57f3a',1,'potential.h']]],
-  ['yukawaforcedotr_2',['yukawaForceDotR',['../potential_8cpp.html#a12b00817ca12261a005bf62b2c2f154a',1,'yukawaForceDotR(double r2):&#160;potential.cpp'],['../potential_8h.html#a12b00817ca12261a005bf62b2c2f154a',1,'yukawaForceDotR(double r2):&#160;potential.cpp']]],
-  ['yukawapotential_3',['yukawaPotential',['../potential_8cpp.html#ac2d5416b149b073be386028cff7e3bdf',1,'yukawaPotential(double r2):&#160;potential.cpp'],['../potential_8h.html#ac2d5416b149b073be386028cff7e3bdf',1,'yukawaPotential(double r2):&#160;potential.cpp']]]
+  ['wca_0',['WCA',['../potential_8h.html#a03ba3731588c17aed51f9d519b28b588aeefcfdba089d736934e762f14830ebe3',1,'potential.h']]],
+  ['wcaforcedotr_1',['wcaForceDotR',['../potential_8cpp.html#a789c378e40dc1b6aa2270688a6cf8f5c',1,'wcaForceDotR(double r2):&#160;potential.cpp'],['../potential_8h.html#a789c378e40dc1b6aa2270688a6cf8f5c',1,'wcaForceDotR(double r2):&#160;potential.cpp']]],
+  ['wcapotential_2',['wcaPotential',['../potential_8cpp.html#a154e53bc1ec2f103da634029eb9a338b',1,'wcaPotential(double r2):&#160;potential.cpp'],['../potential_8h.html#a154e53bc1ec2f103da634029eb9a338b',1,'wcaPotential(double r2):&#160;potential.cpp']]]
 ];
