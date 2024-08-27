@@ -3,4 +3,5 @@
 
 void pressure_test_NVT_LJ();
 void ideal_gas_GCMC();
+void LJ_GCMC();
 #endif 

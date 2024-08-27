@@ -1,14 +1,14 @@
 # Makefile for the unit tests
 
 # Compiler and flags
-CXX = g++
+CXX = mpic++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
 # Executable name for tests
 TEST_EXEC = sys_tests
 
 # Test source files
-TEST_SRCS = sys_main_test.cpp pressure_NVT_LJ_test.cpp ideal_gas_GCMC.cpp
+TEST_SRCS = sys_main_test.cpp pressure_NVT_LJ_test.cpp ideal_gas_GCMC.cpp LJ_GCMC.cpp
 
 # Source files from the src directory
 SRCS = ../src/initial.cpp ../src/input.cpp ../src/logging.cpp ../src/potential.cpp ../src/simulation.cpp
