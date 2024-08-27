@@ -89,11 +89,11 @@
                 <h2 id="basic-usage">Basic Usage</h2>
 <p>To use the program one should make an 'input.txt' in a directory, with the following information and structure:</p>
 <pre><code># Simulation box dimensions
-boxLengthX 5.0
-boxLengthY 5.0
+boxLengthX 25.0
+boxLengthY 25.0
 
 # Number of particles in the simulation
-numParticles 10
+numParticles 100
 
 # Particle initialization: 1 for random placement, 0 for grid placement
 randomPlacement 1
@@ -111,17 +111,19 @@ timeStep 0.1
 outputFrequency 10000
 
 # Equilibration time: number of steps before starting to log
-equilibrationTime 0
+equilibrationTime 1000
 
 # Cutoff squared distance for potential calculations
-r2cut 2.5
+r2cut 2.0
 
 # Type of potential: LennardJones, WCA, Yukawa, AthermalStar, Ideal
-potentialType Ideal
-
+potentialType AthermalStar
+# polymer functionality in case of Athermal star polymer
+f 10
 # Type of simulation: NVT, GCMC
 simulationType GCMC
-mu 0.0
+# chemical potential in case of GCMC simulation
+mu 0.1
 
 seed 1234
 
