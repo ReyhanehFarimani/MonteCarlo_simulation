@@ -43,26 +43,50 @@
                 <li class="toctree-l1"><a class="reference internal" href="..">Home</a>
                 </li>
               </ul>
-              <ul class="current">
-                <li class="toctree-l1 current"><a class="reference internal current" href="#">Test Scenarios</a>
-    <ul class="current">
-    <li class="toctree-l2"><a class="reference internal" href="#1-single-component-ideal-gas">1. Single Component Ideal Gas</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#2-lennard-jones-fluid">2. Lennard-Jones Fluid</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#3-hard-sphere-fluid">3. Hard Sphere Fluid</a>
-    </li>
-    <li class="toctree-l2"><a class="reference internal" href="#testing-the-scenarios">Testing the Scenarios</a>
-    </li>
-    </ul>
-                </li>
-              </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../installation/">Installation</a>
                 </li>
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="../running_simulations/">Running Simulations</a>
+                </li>
+              </ul>
+              <ul class="current">
+                <li class="toctree-l1 current"><a class="reference internal current" href="#">Test Scenarios</a>
+    <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#1-ideal-gas">1. Ideal Gas</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#description">Description</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#summary">Summary</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#results">Results</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#2-lennard-jones-fluid">2. Lennard-Jones Fluid</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#description_1">Description</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#expected-outcome">Expected Outcome</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#3-hard-sphere-fluid">3. Hard Sphere Fluid</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#description_2">Description</a>
+    </li>
+    <li class="toctree-l3"><a class="reference internal" href="#expected-outcome_1">Expected Outcome</a>
+    </li>
+        </ul>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#testing-the-scenarios">Testing the Scenarios</a>
+        <ul>
+    <li class="toctree-l3"><a class="reference internal" href="#additional-considerations">Additional Considerations</a>
+    </li>
+        </ul>
+    </li>
+    </ul>
                 </li>
               </ul>
               <ul>
@@ -93,38 +117,65 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="test-scenarios">Test Scenarios</h1>
-<p>Below are the test scenarios used to validate the GCMC simulation code:</p>
-<h2 id="1-single-component-ideal-gas">1. Single Component Ideal Gas</h2>
-<ul>
-<li><strong>Description</strong>: Tests the simulation for an ideal gas with no interactions.</li>
-<li><strong>Expected Outcome</strong>: Particle numbers fluctuate around the mean as per the chemical potential and temperature.</li>
-<li><strong>Results</strong>:</li>
-</ul>
-<object data="test_results/N_P_plot_ideal.html" width="100%" height="600px"></object>
-<iframe src="test_results/N_P_plot_ideal.html" width="100%" height="600px"></iframe>
-<iframe src="test_results/N_P_plot_ideal.html" width="100%" height="600px"></iframe>
+<p>This document outlines the test scenarios used to validate the Grand Canonical Monte Carlo (GCMC) simulation code.</p>
+<p>For running the simulations by yourself please follow this procedure:</p>
+<pre><code>cd sys_tests/
+make clean
+make all
+mpirun -np 'number-of-cores' ./sys_tests
 
+</code></pre>
+<h2 id="1-ideal-gas">1. Ideal Gas</h2>
+<h3 id="description">Description</h3>
+<p>In the grand canonical ensemble, the chemical potential ( \mu ) controls the exchange of particles between the system and a reservoir. For an ideal gas, the fugacity (z) is defined as:</p>
+<p>$$
+z = e^{\beta \mu}
+$$</p>
+<p>where ( \beta = \frac{1}{k_B T} ). Fugacity can be interpreted as the "effective pressure" exerted by the particles in the system, simplifying the calculation of the number of particles.</p>
+<p>The average number of particles ( \langle N \rangle ) in the system can be derived from the fugacity:</p>
+<p>$$
+\langle N \rangle = \frac{V z}{\lambda^2}
+$$</p>
+<p>where:
+- ( V ) is the volume of the system,
+- ( \lambda ) is the thermal de Broglie wavelength, which depends on the temperature and mass of the particles.</p>
+<p>This equation indicates that the number of particles in an ideal gas increases linearly with the volume and fugacity, and inversely with the square of the thermal wavelength.</p>
+<p>The pressure ( P ) in the system can also be related to the average number of particles ( \langle N \rangle ) and the temperature:</p>
+<p>$$
+P = \frac{k_B T \langle N \rangle}{V}
+$$</p>
+<p>This is consistent with the ideal gas law, showing that the pressure is directly proportional to the number of particles and temperature, and inversely proportional to the volume.</p>
+<h3 id="summary">Summary</h3>
+<p>This ideal gas test serves to validate the Grand Canonical Monte Carlo (GCMC) simulation by comparing the simulation results for the average number of particles ( \langle N \rangle ) and the pressure ( P ) with the theoretical predictions. The fugacity is a key factor in determining the number of particles in the system, and the pressure is expected to follow the ideal gas law.</p>
+<h3 id="results">Results</h3>
+<p><a href="../test_results/N_P_plot_ideal.html">Results Plot</a></p>
+<p>The discrepancies observed between the theoretical predictions and the simulation results were likely due to insufficient simulation time and the system not reaching equilibrium. To achieve more accurate results, the simulation should be run for a longer period to ensure equilibrium is established.</p>
+<hr />
 <h2 id="2-lennard-jones-fluid">2. Lennard-Jones Fluid</h2>
-<ul>
-<li><strong>Description</strong>: Simulates a fluid using the Lennard-Jones potential.</li>
-<li><strong>Expected Outcome</strong>: The density should match known values for Lennard-Jones fluids under specific conditions.</li>
-</ul>
+<h3 id="description_1">Description</h3>
+<p>This test simulates a fluid using the Lennard-Jones potential, a common model for intermolecular interactions.</p>
+<h3 id="expected-outcome">Expected Outcome</h3>
+<p>The density of the fluid should match known values for Lennard-Jones fluids under specific conditions. Deviations may indicate issues with the potential implementation or simulation parameters.</p>
+<hr />
 <h2 id="3-hard-sphere-fluid">3. Hard Sphere Fluid</h2>
-<ul>
-<li><strong>Description</strong>: Simulates a system of hard spheres.</li>
-<li><strong>Expected Outcome</strong>: The radial distribution function (g(r)) should follow theoretical predictions.</li>
-</ul>
-<p>(Add the other scenarios similarly...)</p>
+<h3 id="description_2">Description</h3>
+<p>This test simulates a system of hard spheres, where particles interact only through elastic collisions, with no other forces acting between them.</p>
+<h3 id="expected-outcome_1">Expected Outcome</h3>
+<p>The radial distribution function ( g(r) ) should follow theoretical predictions. This function describes how particle density varies as a function of distance from a reference particle, and it is critical for understanding the structure of fluids.</p>
+<hr />
 <h2 id="testing-the-scenarios">Testing the Scenarios</h2>
+<p>Each scenario should be run individually, with results compared against analytical solutions or published data where applicable. This ensures the GCMC simulation code is accurately modeling physical systems.</p>
+<h3 id="additional-considerations">Additional Considerations</h3>
 <ul>
-<li>Each scenario should be run individually. The results should be compared with analytical or published data where applicable.</li>
+<li><strong>Parameter Sensitivity</strong>: Ensure that the simulation parameters, such as temperature, chemical potential, and volume, are varied systematically to test the robustness of the simulation.</li>
+<li><strong>Performance Metrics</strong>: Evaluate the performance of the simulation in terms of computational efficiency and convergence rates, especially for more complex scenarios like the Lennard-Jones fluid.</li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href=".." class="btn btn-neutral float-left" title="Home"><span class="icon icon-circle-arrow-left"></span> Previous</a>
-        <a href="../installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="../running_simulations/" class="btn btn-neutral float-left" title="Running Simulations"><span class="icon icon-circle-arrow-left"></span> Previous</a>
+        <a href="../doxygen/html/" class="btn btn-neutral float-right" title="API Documentation">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -147,10 +198,10 @@
   <span class="rst-current-version" data-toggle="rst-current-version">
     
     
-      <span><a href=".." style="color: #fcfcfc">&laquo; Previous</a></span>
+      <span><a href="../running_simulations/" style="color: #fcfcfc">&laquo; Previous</a></span>
     
     
-      <span><a href="../installation/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="../doxygen/html/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
@@ -158,6 +209,7 @@
     <script>var base_url = "..";</script>
     <script src="../js/theme_extra.js"></script>
     <script src="../js/theme.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
       <script src="../search/main.js"></script>
     <script>
         jQuery(function () {

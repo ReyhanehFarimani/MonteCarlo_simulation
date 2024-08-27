@@ -42,13 +42,25 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Home</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#overview">Overview</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#features">Features</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#installation">Installation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#running-simulations">Running Simulations</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#test-scenarios">Test Scenarios</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#examples">Examples</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#api-documentation">API Documentation</a>
+    </li>
+    <li class="toctree-l2"><a class="reference internal" href="#credits">Credits</a>
+    </li>
     <li class="toctree-l2"><a class="reference internal" href="#table-of-contents">Table of Contents</a>
     </li>
     </ul>
-                </li>
-              </ul>
-              <ul>
-                <li class="toctree-l1"><a class="reference internal" href="test_scenarios/">Test Scenarios</a>
                 </li>
               </ul>
               <ul>
@@ -57,6 +69,10 @@
               </ul>
               <ul>
                 <li class="toctree-l1"><a class="reference internal" href="running_simulations/">Running Simulations</a>
+                </li>
+              </ul>
+              <ul>
+                <li class="toctree-l1"><a class="reference internal" href="test_scenarios/">Test Scenarios</a>
                 </li>
               </ul>
               <ul>
@@ -87,19 +103,43 @@
             <div class="section" itemprop="articleBody">
               
                 <h1 id="gcmc-simulation-documentation">GCMC Simulation Documentation</h1>
-<p>Welcome to the documentation for the Grand Canonical Monte Carlo (GCMC) simulation project. Here you will find information about the project, test scenarios, and results.</p>
+<p>Welcome to the documentation for the Grand Canonical Monte Carlo (GCMC) simulation project. This resource provides comprehensive guidance on using the simulation software, including the API documentation, installation instructions, and steps to run the program.</p>
+<h2 id="overview">Overview</h2>
+<p>This project is designed for two-dimensional Monte Carlo simulations of interacting particles. Currently, the program supports both the NVT (canonical) and GCMC (grand canonical) ensembles. The codebase is structured to be highly modular, allowing users to easily extend the functionality by adding custom Monte Carlo moves or interaction potentials.</p>
+<p>The simulation is implemented in C++ with additional Python scripting for post-processing and extended functionality. To run this software, you will need to have a C++ compiler, MPI (Message Passing Interface) for parallelization -Still in progress-, and a Python environment set up.</p>
+<h2 id="features">Features</h2>
+<ul>
+<li><strong>NVT and GCMC Simulations</strong>: Perform simulations in both canonical and grand canonical ensembles.</li>
+<li><strong>Modular Design</strong>: Easily extend the codebase with custom Monte Carlo moves or interaction potentials.</li>
+<li><strong>High Performance</strong>: Optimized for efficient computation using C++.</li>
+<li><strong>Python Integration</strong>: Utilize Python for post-processing, analysis, and additional scripting.</li>
+</ul>
+<h2 id="installation">Installation</h2>
+<p>Follow the <a href="installation/">Installation Guide</a> to set up the necessary environment and compile the code.</p>
+<h2 id="running-simulations">Running Simulations</h2>
+<p>Learn how to configure and execute simulations by visiting the <a href="running_simulations/">Running Simulations</a> section.</p>
+<h2 id="test-scenarios">Test Scenarios</h2>
+<p>Explore various test cases used to validate the simulation code in the <a href="test_scenarios/">Test Scenarios</a> section.</p>
+<h2 id="examples">Examples</h2>
+<p>For practical examples of using the software, refer to the <a href="example.md">Examples</a> section.</p>
+<h2 id="api-documentation">API Documentation</h2>
+<p>Detailed API documentation is available <a href="doxygen/html/">here</a>, generated using Doxygen.</p>
+<h2 id="credits">Credits</h2>
+<p>This program was developed by Reyhaneh Afghahi Farimani. For inquiries or further information, please contact me at:</p>
+<p><a href="&#109;&#97;&#105;&#108;&#116;&#111;&#58;&#114;&#101;&#121;&#104;&#97;&#110;&#101;&#104;&#46;&#97;&#102;&#103;&#104;&#97;&#104;&#105;&#46;&#102;&#97;&#114;&#105;&#109;&#97;&#110;&#105;&#64;&#117;&#110;&#105;&#118;&#105;&#101;&#46;&#97;&#99;&#46;&#97;&#116;">&#114;&#101;&#121;&#104;&#97;&#110;&#101;&#104;&#46;&#97;&#102;&#103;&#104;&#97;&#104;&#105;&#46;&#102;&#97;&#114;&#105;&#109;&#97;&#110;&#105;&#64;&#117;&#110;&#105;&#118;&#105;&#101;&#46;&#97;&#99;&#46;&#97;&#116;</a></p>
 <h2 id="table-of-contents">Table of Contents</h2>
 <ul>
-<li><a href="test_scenarios/">Test Scenarios</a></li>
 <li><a href="installation/">Installation</a></li>
 <li><a href="running_simulations/">Running Simulations</a></li>
+<li><a href="test_scenarios/">Test Scenarios</a></li>
+<li><a href="example.md">Examples</a></li>
 <li><a href="doxygen/html/">API Documentation</a></li>
 </ul>
               
             </div>
           </div><footer>
     <div class="rst-footer-buttons" role="navigation" aria-label="Footer Navigation">
-        <a href="test_scenarios/" class="btn btn-neutral float-right" title="Test Scenarios">Next <span class="icon icon-circle-arrow-right"></span></a>
+        <a href="installation/" class="btn btn-neutral float-right" title="Installation">Next <span class="icon icon-circle-arrow-right"></span></a>
     </div>
 
   <hr/>
@@ -123,7 +163,7 @@
     
     
     
-      <span><a href="test_scenarios/" style="color: #fcfcfc">Next &raquo;</a></span>
+      <span><a href="installation/" style="color: #fcfcfc">Next &raquo;</a></span>
     
   </span>
 </div>
@@ -131,6 +171,7 @@
     <script>var base_url = ".";</script>
     <script src="js/theme_extra.js"></script>
     <script src="js/theme.js"></script>
+      <script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js"></script>
       <script src="search/main.js"></script>
     <script>
         jQuery(function () {
@@ -143,5 +184,5 @@
 
 <!--
 MkDocs version : 1.6.0
-Build Date UTC : 2024-08-27 11:06:15.949345+00:00
+Build Date UTC : 2024-08-27 11:39:53.747060+00:00
 -->
