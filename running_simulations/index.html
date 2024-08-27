@@ -50,6 +50,8 @@
               <ul class="current">
                 <li class="toctree-l1 current"><a class="reference internal current" href="#">Running Simulations</a>
     <ul class="current">
+    <li class="toctree-l2"><a class="reference internal" href="#running-a-gcmc-simulation">Running a GCMC Simulation</a>
+    </li>
     </ul>
                 </li>
               </ul>
@@ -84,9 +86,60 @@
           <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
             <div class="section" itemprop="articleBody">
               
-                <h1 id="running-simulations">Running Simulations</h1>
-<p>After installation, simulations can be run using the following commands:</p>
-<pre><code class="language-bash">./simulation 
+                <h2 id="basic-usage">Basic Usage</h2>
+<p>To use the program one should make an 'input.txt' in a directory, with the following information and structure:</p>
+<pre><code># Simulation box dimensions
+boxLengthX 5.0
+boxLengthY 5.0
+
+# Number of particles in the simulation
+numParticles 10
+
+# Particle initialization: 1 for random placement, 0 for grid placement
+randomPlacement 1
+
+# Temperature of the simulation
+temperature 1
+
+# Number of simulation steps
+numSteps 1000000000
+
+# Time step for the simulation
+timeStep 0.1
+
+# Output frequency: how often to log the results
+outputFrequency 10000
+
+# Equilibration time: number of steps before starting to log
+equilibrationTime 0
+
+# Cutoff squared distance for potential calculations
+r2cut 2.5
+
+# Type of potential: LennardJones, WCA, Yukawa, AthermalStar, Ideal
+potentialType Ideal
+
+# Type of simulation: NVT, GCMC
+simulationType GCMC
+mu 0.0
+
+seed 123
+
+# Use cell list: 1 for yes, 0 for no
+useCellList 1
+
+# Frequency for updating the cell list
+cellListUpdateFrequency 1000
+
+# File names for logging
+positionFile particle_positions.xyz
+dataFile simulation_data.dat
+
+</code></pre>
+<h3 id="running-a-gcmc-simulation">Running a GCMC Simulation</h3>
+<p>To run a GCMC simulation, use the following command:</p>
+<pre><code>cd /path_to_input
+./path_to_installation/simulation 
 </code></pre>
               
             </div>
