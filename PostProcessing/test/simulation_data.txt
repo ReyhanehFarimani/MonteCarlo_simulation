@@ -1,0 +1,10 @@
+Timestep:100000 ,	Energy:0.26753,	Tempreture:1.00000,	Pressure:0.08677,	NumberofParticles:30
+Timestep:110000 ,	Energy:60.82296,	Tempreture:1.00000,	Pressure:1.12321,	NumberofParticles:31
+Timestep:120000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.05000,	NumberofParticles:20
+Timestep:130000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.04000,	NumberofParticles:16
+Timestep:140000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.01250,	NumberofParticles:5
+Timestep:150000 ,	Energy:2.40151,	Tempreture:1.00000,	Pressure:0.11177,	NumberofParticles:21
+Timestep:160000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.03250,	NumberofParticles:13
+Timestep:170000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.01750,	NumberofParticles:7
+Timestep:180000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.04250,	NumberofParticles:17
+Timestep:190000 ,	Energy:0.00000,	Tempreture:1.00000,	Pressure:0.05250,	NumberofParticles:21
