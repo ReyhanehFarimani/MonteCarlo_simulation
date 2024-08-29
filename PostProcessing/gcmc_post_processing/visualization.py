@@ -1,75 +1,74 @@
 import matplotlib.pyplot as plt
+import numpy as np
+import freud 
 
-def plot_gr(radii, g_r, title="Radial Distribution Function g(r)", xlabel="r", ylabel="g(r)", output_file=None):
+def plot_rdf(rdf, r_bins):
     """
     Plots the radial distribution function g(r).
 
     Parameters
     ----------
-    radii : np.array
-        Array of radii at which g(r) is computed.
-    g_r : np.array
-        Radial distribution function values g(r).
-    title : str, optional
-        Title of the plot.
-    xlabel : str, optional
-        Label for the x-axis.
-    ylabel : str, optional
-        Label for the y-axis.
-    output_file : str, optional
-        If provided, the plot will be saved to this file.
+    rdf : np.ndarray
+        The computed g(r) values.
+    r_bins : np.ndarray
+        The radii corresponding to the g(r) values.
 
     Returns
     -------
     None
     """
-    plt.figure(figsize=(8, 6))
-    plt.plot(radii, g_r, linestyle='-', color='blue')
-    plt.title(title)
-    plt.xlabel(xlabel)
-    plt.ylabel(ylabel)
+    plt.figure()
+    plt.plot(r_bins, rdf, '-o')
+    plt.xlabel('r')
+    plt.ylabel('g(r)')
+    plt.title('Radial Distribution Function (RDF)')
     plt.grid(True)
-    
-    if output_file:
-        plt.savefig(output_file)
-        print(f"Plot saved to {output_file}")
-    
     plt.show()
-    
-    
-    
 
-def plot_voronoi(points):
+def plot_voronoi_with_ids(points, box_size, neighbors):
     """
-    Plots the Voronoi diagram for a set of 2D points.
+    Plots the Voronoi diagram with particle IDs and shows the Voronoi neighbors using freud.
 
     Parameters
     ----------
     points : np.ndarray
         Array of points with shape (N, 2), where N is the number of points.
+    box_size : tuple of float
+        The size of the box in the x and y dimensions.
+    neighbors : dict
+        A dictionary where each key is a point index, and the value is a list of neighboring point indices.
 
     Returns
     -------
     None
     """
-    import matplotlib.pyplot as plt
-    from scipy.spatial import voronoi_plot_2d, Voronoi
-    vor = Voronoi(points)
+    # Define the box and Voronoi analysis
+    box = freud.box.Box(Lx=box_size[0], Ly=box_size[1], Lz = 0.0)
+    voronoi = freud.locality.Voronoi(box)
+    
+    # Compute the Voronoi diagram
+    voronoi.compute(system=(box, points))
     
     # Plot Voronoi diagram
     fig, ax = plt.subplots()
-    voronoi_plot_2d(vor, ax=ax, show_vertices=False, line_colors='orange', line_width=2)
+    for poly in voronoi.polytopes:
+        polygon = np.asarray(poly)
+        polygon = np.vstack([polygon, polygon[0]])  # Close the polygon
+        ax.plot(polygon[:, 0], polygon[:, 1], color='orange', lw=2)
     
-    # Plot points
-    ax.plot(points[:, 0], points[:, 1], 'o', color='black')
-    
-    ax.set_xlim([points[:, 0].min() - 1, points[:, 0].max() + 1])
-    ax.set_ylim([points[:, 1].min() - 1, points[:, 1].max() + 1])
+    # Plot points and their IDs
+    for i, point in enumerate(points):
+        ax.plot(point[0], point[1], 'o', color='black')
+        ax.text(point[0] + 0.1, point[1] + 0.1, str(i), color='blue', fontsize=12)
+        
+        # Annotate Voronoi neighbors
+        neighbor_ids = neighbors[i]
+        neighbor_text = f"{', '.join(map(str, neighbor_ids))}"
+        ax.text(point[0] + 0.1, point[1] - 0.3, neighbor_text, color='red', fontsize=8)
+
+    ax.set_xlim([0, box_size[0]])
+    ax.set_ylim([0, box_size[1]])
     
     ax.set_aspect('equal')
-    ax.set_title('Voronoi Diagram')
+    ax.set_title('Voronoi Diagram with Periodic Boundary Conditions (freud)')
     plt.show()
-
-
-
-

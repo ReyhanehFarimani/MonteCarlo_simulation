@@ -30,7 +30,7 @@ def load_xyz(filename):
             for j in range(n_particles):
                 i += 1
                 parts = lines[i].strip().split()
-                positions.append([float(parts[1]), float(parts[2])])
+                positions.append([float(parts[1]), float(parts[2]), 0.0])
             timesteps_positions.append(np.array(positions))
             i += 1  # Skip the comment line and move to the next timestep
     
