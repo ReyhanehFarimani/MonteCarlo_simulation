@@ -1,9 +1,9 @@
 # Simulation box dimensions
-boxLengthX 5.0
-boxLengthY 5.0
+boxLengthX 20.0
+boxLengthY 20.0
 
 # Number of particles in the simulation
-numParticles 10
+numParticles 200
 
 # Particle initialization: 1 for random placement, 0 for grid placement
 randomPlacement 1
@@ -12,7 +12,7 @@ randomPlacement 1
 temperature 1
 
 # Number of simulation steps
-numSteps 1000000000
+numSteps 100000
 
 # Time step for the simulation
 timeStep 0.1
@@ -21,17 +21,17 @@ timeStep 0.1
 outputFrequency 10000
 
 # Equilibration time: number of steps before starting to log
-equilibrationTime 0
+equilibrationTime 100000
 
 # Cutoff squared distance for potential calculations
 r2cut 2.5
 
 # Type of potential: LennardJones, WCA, Yukawa, AthermalStar, Ideal
-potentialType Ideal
+potentialType WCA
 
 # Type of simulation: NVT, GCMC
 simulationType GCMC
-mu 0.0
+mu 500.0
 
 seed 123
 

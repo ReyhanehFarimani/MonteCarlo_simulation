@@ -116,3 +116,4 @@ def voronoi_neighborhood_list(points, box_size):
         neighbors[i] = sorted(neighbors[i])
     
     return neighbors
+
