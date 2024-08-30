@@ -3,6 +3,21 @@
 Reyhaneh 28 Aug 2024
 '''
 import numpy as np
+import os
+import glob
+def get_data_files(pattern, directory="."):
+    """
+    Retrieve a list of data files that match the given pattern in the specified directory.
+
+    Parameters:
+    - pattern: The file name pattern to search for (e.g., "NEW_LJ_data_*_*.txt").
+    - directory: The directory to search in (defaults to the current directory).
+
+    Returns:
+    - List of file paths that match the pattern.
+    """
+    search_pattern = os.path.join(directory, pattern)
+    return glob.glob(search_pattern)
 
 def load_xyz(filename):
     """
