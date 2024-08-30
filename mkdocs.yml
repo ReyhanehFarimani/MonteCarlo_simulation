@@ -1,0 +1,14 @@
+extra_javascript:
+  - https://cdnjs.cloudflare.com/ajax/libs/mathjax/3.2.0/es5/tex-mml-chtml.js
+
+
+
+site_name: GCMC Simulation Documentation
+nav:
+    - Home: index.md
+    - Installation: installation.md
+    - Running Simulations: running_simulations.md
+    - Test Scenarios: test_scenarios.md
+    - API Documentation: doxygen/html/index.html
+theme:
+    name: 'readthedocs'
