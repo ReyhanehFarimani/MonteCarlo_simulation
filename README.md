@@ -30,7 +30,7 @@ Before you begin, ensure you have the following installed:
 
 - A C++ compiler (e.g., `g++`, `clang`)
 - MPI (Message Passing Interface) for parallel computation
-- Python 3.x with the necessary libraries (`numpy`, `matplotlib`, etc.)
+- Python 3.11 with the necessary libraries (`numpy`, `matplotlib`, `freud`, `scipy`,etc.)
 
 ### Installation Steps
 
@@ -40,7 +40,7 @@ Before you begin, ensure you have the following installed:
    make all
    ```
 ### Usage:
-  Please read the documentry provided at <https://reyhanehfarimani.github.io/MonteCarlo_simulation/>
+  Please read the document provided at <https://reyhanehfarimani.github.io/MonteCarlo_simulation/>
 
 ### Contribuation:
 
