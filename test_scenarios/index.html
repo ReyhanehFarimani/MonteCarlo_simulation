@@ -64,24 +64,24 @@
     </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#2-lennard-jones-fluid">2. Lennard-Jones Fluid</a>
+    <li class="toctree-l2"><a class="reference internal" href="#2-lennard-jones-fluid-nvt-simulation-and-gcmc-simulation">2. Lennard-Jones Fluid (NVT simulation, and GCMC simulation)</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#description_1">Description</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outcome">Expected Outcome</a>
     </li>
+    <li class="toctree-l3"><a class="reference internal" href="#results_1">Results:</a>
+    </li>
         </ul>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#3-hard-sphere-fluid">3. Hard Sphere Fluid</a>
+    <li class="toctree-l2"><a class="reference internal" href="#3-phase-diagram-of-logarithmic-interacting-particles">3. Phase diagram of Logarithmic interacting particles</a>
         <ul>
     <li class="toctree-l3"><a class="reference internal" href="#description_2">Description</a>
     </li>
     <li class="toctree-l3"><a class="reference internal" href="#expected-outcome_1">Expected Outcome</a>
     </li>
-        </ul>
+    <li class="toctree-l3"><a class="reference internal" href="#results_2">Results:</a>
     </li>
-    <li class="toctree-l2"><a class="reference internal" href="#testing-the-scenarios">Testing the Scenarios</a>
-        <ul>
     <li class="toctree-l3"><a class="reference internal" href="#additional-considerations">Additional Considerations</a>
     </li>
         </ul>
@@ -151,20 +151,20 @@ $$</p>
 <p><a href="../test_results/N_P_plot_ideal.html">Results Plot</a></p>
 <p>The discrepancies observed between the theoretical predictions and the simulation results were due to the fact that the program is designed in a way that the maximum density of particle to be set 3, this cause a dispersety in the number of particles particulary at high (\mu).</p>
 <hr />
-<h2 id="2-lennard-jones-fluid">2. Lennard-Jones Fluid</h2>
+<h2 id="2-lennard-jones-fluid-nvt-simulation-and-gcmc-simulation">2. Lennard-Jones Fluid (NVT simulation, and GCMC simulation)</h2>
 <h3 id="description_1">Description</h3>
 <p>This test simulates a fluid using the Lennard-Jones potential, a common model for intermolecular interactions.</p>
 <h3 id="expected-outcome">Expected Outcome</h3>
-<p>The density of the fluid should match known values for Lennard-Jones fluids under specific conditions. Deviations may indicate issues with the potential implementation or simulation parameters.</p>
+<p>DOI: &lt;10.1103/PhysRevE.102.062101&gt;</p>
+<h3 id="results_1">Results:</h3>
 <hr />
-<h2 id="3-hard-sphere-fluid">3. Hard Sphere Fluid</h2>
+<h2 id="3-phase-diagram-of-logarithmic-interacting-particles">3. Phase diagram of Logarithmic interacting particles</h2>
 <h3 id="description_2">Description</h3>
-<p>This test simulates a system of hard spheres, where particles interact only through elastic collisions, with no other forces acting between them.</p>
+<p>This test simulates a system of athermal stars.</p>
 <h3 id="expected-outcome_1">Expected Outcome</h3>
-<p>The radial distribution function ( g(r) ) should follow theoretical predictions. This function describes how particle density varies as a function of distance from a reference particle, and it is critical for understanding the structure of fluids.</p>
+<p>DOI: <a href="https://doi.org/10.1039/C8SM02100G">https://doi.org/10.1039/C8SM02100G</a></p>
+<h3 id="results_2">Results:</h3>
 <hr />
-<h2 id="testing-the-scenarios">Testing the Scenarios</h2>
-<p>Each scenario should be run individually, with results compared against analytical solutions or published data where applicable. This ensures the GCMC simulation code is accurately modeling physical systems.</p>
 <h3 id="additional-considerations">Additional Considerations</h3>
 <ul>
 <li><strong>Parameter Sensitivity</strong>: Ensure that the simulation parameters, such as temperature, chemical potential, and volume, are varied systematically to test the robustness of the simulation.</li>
