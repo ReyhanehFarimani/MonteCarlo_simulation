@@ -9,6 +9,18 @@ nav:
     - Installation: installation.md
     - Running Simulations: running_simulations.md
     - Test Scenarios: test_scenarios.md
-    - API Documentation: doxygen/html/index.html
+    - API Postprocesing: api_reference.md  # This will be generated using mkdocstrings
+    - API MonteCarlo Core: doxygen/html/index.html
 theme:
     name: 'readthedocs'
+
+plugins:
+  - search
+  # - mkdocs-material
+  - mkdocstrings
+
+markdown_extensions:
+  - admonition
+  - codehilite
+  - toc:
+      permalink: true
