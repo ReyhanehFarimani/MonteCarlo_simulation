@@ -281,9 +281,12 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 energy = computeEnergy();
             }
             }
-            if (monteCarloMove()) {
-                acceptedMoves++;
-                
+            int n_run = particles.size();
+            for(int i = 0; i<n_run; ++i){
+                if (monteCarloMove()) {
+                    acceptedMoves++;
+                    
+                }
             }
 
             // Other simulation types can be added here as additional conditions
