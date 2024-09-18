@@ -120,7 +120,7 @@ def voronoi_neighborhood_list(points, box_size):
     return neighbors
 
 
-def compute_sigma(all_points, box_size, order_number=6):
+def compute_psi(all_points, box_size, order_number=6):
     """
     Compute the average and standard deviation of the hexatic or other order parameter
     (e.g., sigma_6 or sigma_4) over a number of samples.
@@ -157,9 +157,9 @@ def compute_sigma(all_points, box_size, order_number=6):
             neighbors=voro.nlist,
         )
 
-        sigma_abs.append(op.particle_order)
+        sigma_abs.append(np.mean(np.abs(op.particle_order)))
 
-    return sigma_abs
+    return np.mean(sigma_abs), np.std(sigma_abs)/(len(sigma_abs) - 1)**0.5
 
 
 def compute_g6(all_positions, box, r_max=10.0, nbins=100):

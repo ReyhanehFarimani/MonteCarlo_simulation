@@ -1,5 +1,8 @@
 import matplotlib.pyplot as plt
 import pandas as pd
+import numpy as np
+import warnings
+import freud
 
 # Step 1: Set Global Visualization Settings
 plt.rcParams.update({
@@ -118,4 +121,113 @@ def plot_voronoi_with_ids(points, box_size, neighbors):
     
     ax.set_aspect('equal')
     ax.set_title('Voronoi Diagram with Periodic Boundary Conditions (freud)')
+    plt.show()
+
+
+def user_defined_voronoi_plot(box, polytopes, ax=None, color_by_sides=True, cmap=None, color_array = None):
+    """Helper function to draw 2D Voronoi diagram.
+
+    Args:
+        box (:class:`freud.box.Box`):
+            Simulation box.
+        polytopes (:class:`numpy.ndarray`):
+            Array containing Voronoi polytope vertices.
+        ax (:class:`matplotlib.axes.Axes`): Axes object to plot.
+            If :code:`None`, make a new axes and figure object.
+            (Default value = :code:`None`).
+        color_by_sides (bool):
+            If :code:`True`, color cells by the number of sides.
+            If :code:`False`, random colors are used for each cell.
+            (Default value = :code:`True`).
+        cmap (str):
+            Colormap name to use (Default value = :code:`None`).
+
+    Returns:
+        :class:`matplotlib.axes.Axes`: Axes object with the diagram.
+    """
+    from matplotlib import cm
+    from matplotlib.collections import PatchCollection
+    from matplotlib.colorbar import Colorbar
+    from matplotlib.patches import Polygon
+    from mpl_toolkits.axes_grid1.axes_divider import make_axes_locatable
+
+    if ax is None:
+        fig = plt.figure()
+        ax = fig.subplots()
+
+    # Draw Voronoi polytopes
+    patches = [Polygon(poly[:, :2]) for poly in polytopes]
+    patch_collection = PatchCollection(patches, edgecolors="black", alpha=0.4)
+
+    if color_by_sides:
+        colors = np.array([len(poly) for poly in polytopes])
+        num_colors = np.ptp(colors) + 1
+    else:
+        colors = np.random.RandomState().permutation(np.arange(len(patches)))
+        num_colors = np.unique(colors).size
+    if color_array is not None:
+        colors = color_array
+        num_colors = np.unique(colors).size
+
+    # Ensure we have enough colors to uniquely identify the cells
+    if cmap is None:
+        if color_by_sides and num_colors <= 10:
+            cmap = "tab10"
+        else:
+            if num_colors > 20:
+                warnings.warn(
+                    "More than 20 unique colors were requested. "
+                    "Consider providing a colormap to the cmap "
+                    "argument.",
+                    UserWarning,
+                )
+            cmap = "tab20"
+    cmap = cm.get_cmap(cmap, num_colors)
+    bounds = np.arange(-1, 2)
+
+    patch_collection.set_array(np.array(colors))
+    patch_collection.set_cmap(cmap)
+    patch_collection.set_clim(bounds[0], bounds[-1] )
+    ax.add_collection(patch_collection)
+
+    # Draw box
+    corners = [[0, 0, 0], [0, 1, 0], [1, 1, 0], [1, 0, 0]]
+    # Need to copy the last point so that the box is closed.
+    corners.append(corners[0])
+    corners = box.make_absolute(corners)[:, :2]
+    ax.plot(corners[:, 0], corners[:, 1], color="k")
+
+    # Set title, limits, aspect
+    ax.set_title("Voronoi Diagram")
+    ax.set_xlim((np.min(corners[:, 0]), np.max(corners[:, 0])))
+    ax.set_ylim((np.min(corners[:, 1]), np.max(corners[:, 1])))
+    ax.set_aspect("equal", "datalim")
+
+    # Add colorbar for number of sides
+    if color_by_sides:
+        ax_divider = make_axes_locatable(ax)
+        cax = ax_divider.append_axes("right", size="7%", pad="10%")
+        cb = Colorbar(cax, patch_collection)
+        cb.set_label(r"$\vec{\Psi}(\rho, f).\vec{\psi}(\vec{r})$")
+        cb.set_ticks(bounds)
+    return ax
+
+
+def plot_voro(ts, box, filename, label):
+    fig, ax = plt.subplots(1, 1, figsize=(20, 20))
+    points = ts - box/2
+    points[:, 2] = 0
+    box = freud.box.Box(Ly = box[1], Lx= box[0])
+    voro = freud.locality.Voronoi()
+    op = freud.order.Hexatic(k=6)
+    cells = voro.compute((box, points)).polytopes
+    op.compute( (box , points),neighbors=voro.nlist)
+    sigma_6 = op.particle_order
+    S = sigma_6.mean()
+    colors = np.array([(s.real * S.real + s.imag * S.imag)/(np.absolute(s)*np.absolute(S)) for s in sigma_6])
+    user_defined_voronoi_plot(box = box, polytopes= cells, ax = ax, color_array=colors, cmap = "terrain")
+    ax.quiver(points[:, 0], points[:, 1], np.real(sigma_6),np.imag(sigma_6),color = "k",  label = label, scale = 100, alpha = 0.6)
+    ax.legend(loc = "upper center")
+    plt.savefig(filename + ".pdf", dpi = 800)
+    plt.savefig(filename + ".eps", dpi = 800)
     plt.show()

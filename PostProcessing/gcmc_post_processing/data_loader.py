@@ -51,7 +51,7 @@ def load_xyz(filename):
     
     return timesteps_positions
 
-def load_txt_data(filename, maximum_energy_per_particle = 50):
+def load_txt_data(filename, maximum_energy_per_particle = 10):
     """
     Loads and processes simulation data from a .txt file.
 

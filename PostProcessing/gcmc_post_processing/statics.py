@@ -61,7 +61,7 @@ def read_simulation_input(input_file):
     
     return params
 
-def process_simulation_data(data_files, input_files):
+def process_simulation_data(data_files, input_files, lag):
     """
     Process simulation data from a list of files, extracting mu and temperature from filenames.
 
@@ -87,6 +87,9 @@ def process_simulation_data(data_files, input_files):
         # Load simulation data
         _, num_particles, pressures, energies = load_txt_data(filename, 1000)
         print(pressures)
+        num_particles = num_particles[lag:]
+        pressures = pressures[lag:]
+        energies = energies[lag:]
         if len(pressures) > 0:
             print('1')
             sim_avgN = np.mean(num_particles)
