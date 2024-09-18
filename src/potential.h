@@ -13,6 +13,7 @@ enum class PotentialType {
     WCA,           ///< Weeks-Chandler-Andersen (WCA) potential
     Yukawa,         ///< Yukawa potential
     AthermalStar,   ///< potential between two cores of athermal star polymer.
+    ThermalStar,   ///< potential between two cores of athermal star polymer.
     Ideal           ///< non interacting particls.
 };
 
@@ -103,6 +104,28 @@ double athermalStarPotential(double r2, float f_dependenat);
 double athermalStarForceDotR(double r2, float f_dependant);
 
 /**
+ * @brief Calculates the logarithmic potential energy + yukawa attraction.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @param f_dependant star polymer functtionality dependant part.
+ * @param f_dependent2 attration of star plymer term connented to (lambda, f)
+ * @param kappa attraction exponential decay connenction connected to lambda.
+ * @return The potential energy between two star polymer times r.
+ */
+double thermalStarPotential(double r2, float f_dependenat, float f_dependenat2, float kappa);
+
+/**
+ * @brief Calculates the force between two thermal star polymer cores.
+ * 
+ * @param r2 The squared distance between two particles.
+ * @param f_dependant star polymer functtionality dependant part.
+ * @param f_dependent2 attration of star plymer term connented to (lambda, f)
+ * @param kappa attraction exponential decay connenction connected to lambda.
+ * @return The magnitude of the force between two star polymer times r.
+ */
+double thermalStarForceDotR(double r2, float f_dependant, float f_dependenat2, float kappa);
+
+/**
  * @brief Selects the potential type based on a string input.
  * 
  * @param potentialName The name of the potential type as a string.
@@ -116,9 +139,11 @@ PotentialType selectPotentialType(const std::string &potentialName);
  * @param r2 the squared distance between the two particles
  * @param type The type of potential
  * @param f_prime for the case of the ultrasoft potential.
+ * @param f_dependent2 attration of star plymer term connented to (lambda, f)
+ * @param kappa attraction exponential decay connenction connected to lambda.
  * @return The amount of potential.
  */
-double computePairPotential(double r2, PotentialType potentialType, float f_prime);
+double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa);
 
 /**
  * @brief Returns the pair potential betwen two particles
@@ -126,8 +151,10 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
  * @param r2 the squared distance between the two particles
  * @param type The type of potential
  * @param f_prime for the case of the ultrasoft potential.
+ * @param f_dependent2 attration of star plymer term connented to (lambda, f)
+ * @param kappa attraction exponential decay connenction connected to lambda.
  * @return The amount of force dot r.
  */
-double computePairForce(double r2, PotentialType potentialType, float f_prime);
+double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa);
 
 #endif // POTENTIAL_H

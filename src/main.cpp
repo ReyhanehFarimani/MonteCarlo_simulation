@@ -34,6 +34,16 @@ int main(int argc, char *argv[]) {
         int f = input.getConstant("f");
         f_prime = (2.0 + 9.0 * f * f) / 24.0;
     }
+    float f_d_prime = 0.0;
+    float kappa = 0.0;
+    if (potentialType == PotentialType::ThermalStar)
+    {
+        int f = input.getConstant("f");
+        f_prime = (2.0 + 9.0 * f * f) / 24.0;
+        float A_0 = input.getConstant("A_0");
+        kappa = input.getConstant("kappa");
+        f_d_prime = A_0 * f * f / kappa; 
+    }
     // Retrieve the simulation type from the input
     std::string simName = input.getFilename("simulationType");
     SimulationType simType = selectSimulationType(simName);
@@ -51,7 +61,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime,mu, seed, useCellList, cellListUpdateFrequency);
+    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
 

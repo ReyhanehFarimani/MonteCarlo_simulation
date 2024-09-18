@@ -20,8 +20,8 @@
  * @param useCellList A boolean flag indicating whether to use a cell list for efficient neighbor searching.
  * @param cellListUpdateFrequency The frequency (in simulation steps) at which the cell list is updated.
  */
-Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
-    : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), rcut(r2cut), r2cut(r2cut * r2cut), f_prime(f_prime), mu(exp(mu/temperature)), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) , numCellsX(1), numCellsY(1){
+Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, float f_d_prime, float kappa, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
+    : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), rcut(r2cut), r2cut(r2cut * r2cut), f_prime(f_prime), f_d_prime(f_d_prime), kappa(kappa), mu(exp(mu/temperature)), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) , numCellsX(1), numCellsY(1){
     particles.resize(numParticles);
     if (seed != 0) {
         srand(seed); // Seed the random number generator
@@ -156,7 +156,7 @@ bool Simulation::monteCarloAddRemove() {
                         for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
                             double r2 = box.minimumImageDistanceSquared(newParticle, particles[node->particleIndex]);
                             if (r2 < r2cut) {
-                                dE += computePairPotential(r2, potentialType, f_prime); 
+                                dE += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa); 
                             }
                         }
                     }
@@ -166,7 +166,7 @@ bool Simulation::monteCarloAddRemove() {
                 for (size_t i = 0; i < particles.size(); ++i) {
                     double r2 = box.minimumImageDistanceSquared(newParticle, particles[i]);
                     if (r2 < r2cut) {
-                        dE += computePairPotential(r2, potentialType, f_prime); 
+                        dE += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa); 
                     }
                 }
             }//adding particle to the new cell and compute the energy (no cell list)
@@ -207,7 +207,7 @@ bool Simulation::monteCarloAddRemove() {
                     if (i != particleIndex){
                         double r2 = box.minimumImageDistanceSquared(p, particles[i]);
                         if (r2 < r2cut) {
-                            dE -= computePairPotential(r2, potentialType, f_prime); 
+                            dE -= computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa); 
                         }
                     }
                 }
@@ -248,7 +248,7 @@ double Simulation::computeEnergy() {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
             
             if (r2 < r2cut) {
-                double potential = computePairPotential(r2, potentialType, f_prime);
+                double potential = computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                 tmp_energy += potential;
                 
             }
@@ -285,8 +285,8 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
             for(int i = 0; i<n_run; ++i){
                 if (monteCarloMove()) {
                     acceptedMoves++;
-                    
-                }
+                }    
+                
             }
 
             // Other simulation types can be added here as additional conditions
@@ -370,7 +370,7 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
                     // std::cout<<node->particleIndex<<std::endl;
                     double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
                     if (r2 < r2cut) {
-                        localEnergy += computePairPotential(r2, potentialType, f_prime);
+                        localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                     }
                 }
             }
@@ -394,7 +394,7 @@ double Simulation::computeTotalForce() const{
         for (size_t p2 = p1 + 1; p2 < particles.size(); ++p2){
             double r2 = box.minimumImageDistanceSquared(particles[p1], particles[p2]);
             if (r2<r2cut){
-                forceSum += computePairForce(r2, potentialType, f_prime);
+                forceSum += computePairForce(r2, potentialType, f_prime, f_d_prime, kappa);
             }
         }
     }
@@ -457,6 +457,12 @@ double Simulation::tail_correction_energy_2d() const{
         answer *= I;
         break;
     }
+    case PotentialType::ThermalStar:{
+        double r = sqrt(r2cut);
+        double I  =  -exp(1 - r2cut)/4.0 * f_prime - f_d_prime/kappa/kappa * exp(-kappa * r) * (kappa * r + 1);
+        answer *= I;
+        break;
+    }
     case PotentialType::Ideal:
         answer = 0;
         break;
@@ -488,6 +494,12 @@ double Simulation::tail_correction_pressure_2d() const{
         break;
     case PotentialType::AthermalStar:{
         double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime;
+        answer *= I;
+        break;
+    }
+    case PotentialType::ThermalStar:{
+        double r = sqrt(r2cut);
+        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime + f_d_prime / kappa/kappa * exp(-kappa * r) * (kappa * kappa* r2cut + 2 * kappa * r + 2);
         answer *= I;
         break;
     }

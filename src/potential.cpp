@@ -146,6 +146,45 @@ double athermalStarForceDotR(double r2, float f_Dependant){
 }
 
 /**
+ * @brief Calculates the logarithmic potential energy.
+ * 
+ * @param f_dependant star polymer functtionality dependant part.
+ * @param r2 The squared distance between two particles.
+ * @return The potential energy between two star polymer.
+ */
+double thermalStarPotential(double r2, float f_dependant, float f_dependent_2, float kappa){
+    double e1;
+    double r = sqrt(r2);
+    if (r2<1) {  
+        e1 = -log(r) + 0.5;
+    }
+    else {
+        e1 = 0.5 * exp(1 - r2);
+    }
+    double e2;
+
+    e2 = f_dependent_2 * exp(-kappa * r);
+    return f_dependant * e1 - e2;
+}
+
+/**
+ * @brief Calculates the force between two star polymer cores.
+ * 
+ * @param f_dependant star polymer functtionality dependant part.
+ * @param r2 The squared distance between two particles.
+ * @return The magnitude of the force between two star polymer.
+ */
+double thermalStarForceDotR(double r2, float f_Dependant, float f_dependent_2, float kappa){
+    double f;
+    double r = sqrt(r2);
+    f = f_dependent_2 * kappa * exp(-kappa * r) * r;
+    if (r2<1) {
+        return f_Dependant + f;
+    }
+    return f_Dependant * r2 * exp(1 - r2) - f;
+}
+
+/**
  * @brief Selects the potential type based on a string input.
  * 
  * @param potentialName The name of the potential type as a string.
@@ -156,6 +195,7 @@ PotentialType selectPotentialType(const std::string &potentialName) {
     if (potentialName == "WCA") return PotentialType::WCA;
     if (potentialName == "Yukawa") return PotentialType::Yukawa;
     if (potentialName == "AthermalStar") return PotentialType::AthermalStar;
+    if (potentialName == "ThermalStar") return PotentialType::ThermalStar;
     if (potentialName == "Ideal") return PotentialType::Ideal;
     throw std::invalid_argument("Unknown potential type: " + potentialName);
 }
@@ -168,7 +208,7 @@ PotentialType selectPotentialType(const std::string &potentialName) {
  * @param f_prime for the case of the ultrasoft potential.
  * @return The amount of potential.
  */
-double computePairPotential(double r2, PotentialType potentialType, float f_prime) {
+double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa) {
     switch (potentialType) {
         case PotentialType::LennardJones:
             return lennardJonesPotential(r2);
@@ -178,6 +218,8 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
             return yukawaPotential(r2);
         case PotentialType::AthermalStar:
             return athermalStarPotential(r2, f_prime);
+        case PotentialType::ThermalStar:
+            return thermalStarPotential(r2, f_prime, f_d_prime, kappa);
         case PotentialType::Ideal:
             return idealPotential();
         default:
@@ -193,7 +235,7 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
  * @param f_prime for the case of the ultrasoft potential.
  * @return The amount of force dot r.
  */
-double computePairForce(double r2, PotentialType potentialType, float f_prime) {
+double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa) {
     switch (potentialType) {
         case PotentialType::LennardJones:
             return lennardJonesForceDotR(r2);
@@ -203,6 +245,8 @@ double computePairForce(double r2, PotentialType potentialType, float f_prime) {
             return yukawaForceDotR(r2);
         case PotentialType::AthermalStar:
             return athermalStarForceDotR(r2, f_prime);
+        case PotentialType::ThermalStar:
+            return thermalStarForceDotR(r2, f_prime, f_d_prime, kappa);
         case PotentialType::Ideal:
             return idealForceDotR();
         default:

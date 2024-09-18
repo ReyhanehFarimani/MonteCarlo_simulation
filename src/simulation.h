@@ -47,7 +47,9 @@ private:
     bool useCellList;                   ///< bool use cell list option for optimized energy compution
     int cellListUpdateFrequency;        ///< frquency of cell list updating.
     std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
-    float f_prime;                      ///< if one selectys the logarithmic potential
+    float f_prime;                      ///< if one selectys the logarithmic potentials
+    float f_d_prime;                    ///< if one selectys the thermal star
+    float kappa;                        ///< if one selectys the thermal star
     double mu;                          ///< if one selects the GCMC!
     int numCellsX;                      ///< number of cells in the box in x direction.
     int numCellsY;                      ///< number of cells in the box in y direction.
@@ -70,13 +72,15 @@ public:
  * @param numParticles The initial number of particles in the simulation.
  * @param maxDisplacement The maximum displacement allowed for particles in Monte Carlo steps.
  * @param r2cut The square of the cutoff distance beyond which interactions are neglected.
- * @param f_prime A parameter specific to certain potential types, such as the athermal star potential.
+ * @param f_prime A parameter specific to certain potential types, such as the athermal/thermal star potential.
+ * @param f_d_prime A parameter specific to certain potential types, such as the thermal star potential.
+ * @param kappa A parameter specific to certain potential types, such as the thermal star potential.
  * @param mu The chemical potential, relevant for grand canonical simulations.
  * @param seed The seed for the random number generator. A value of zero will result in seeding with the current time.
  * @param useCellList Boolean indicating whether to use a cell list for efficient neighbor searching.
  * @param cellListUpdateFrequency The frequency (in simulation steps) at which the cell list should be updated.
  */
-Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency);
+Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, float f_d_prime, float kappa, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency);
 
     /**
      * @brief Initializes particles in the simulation box.
