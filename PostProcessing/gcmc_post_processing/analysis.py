@@ -162,7 +162,7 @@ def compute_psi(all_points, box_size, order_number=6):
     return np.mean(sigma_abs), np.std(sigma_abs)/(len(sigma_abs) - 1)**0.5
 
 
-def compute_g6(all_positions, box, r_max=10.0, nbins=100):
+def compute_g6(all_positions, box_size, r_max=10.0, nbins=100):
     """
     Compute the g6 function for bond-orientational order using Freud.
 
@@ -183,13 +183,24 @@ def compute_g6(all_positions, box, r_max=10.0, nbins=100):
     nrmalize_vals = np.zeros_like(r_bins)
     
     for positions in all_positions:
-        [psi_6] = compute_sigma([positions], box, 6)
+        # Compute Voronoi neighbors and hexatic order parameter
+        voro = freud.locality.Voronoi()
+        voro.compute(
+            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, positions)
+        )
+
+        op = freud.order.Hexatic(k=6)
+        op.compute(
+            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, positions),
+            neighbors=voro.nlist,
+        )
+        psi_6 = np.abs(op.particle_order)
         
         for i, pos_i in enumerate(positions):
             for j, pos_j in enumerate(positions):
                 if i > j:
                     rij = pos_j - pos_i
-                    rij -= np.round(rij/box)*box
+                    rij -= np.round(rij/box_size)*box_size
                     rij = np.array([rij[0], rij[1]])
                     rij = np.linalg.norm(rij)
                     bin_idx = np.digitize(rij, r_bins) - 1
