@@ -181,35 +181,27 @@ def compute_g6(all_positions, box_size, r_max=10.0, nbins=100):
     r_bins = np.linspace(0, r_max, nbins)
     g6_vals = np.zeros_like(r_bins)
     nrmalize_vals = np.zeros_like(r_bins)
-    
-    for positions in all_positions:
+    box = freud.box.Box(Ly = box_size[1], Lx= box_size[0])
+    CF = []
+    for points in all_positions:
         # Compute Voronoi neighbors and hexatic order parameter
         voro = freud.locality.Voronoi()
-        voro.compute(
-            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, positions)
-        )
 
         op = freud.order.Hexatic(k=6)
         op.compute(
-            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, positions),
+            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, points),
             neighbors=voro.nlist,
         )
-        psi_6 = np.abs(op.particle_order)
+        values = op.particle_order
         
-        for i, pos_i in enumerate(positions):
-            for j, pos_j in enumerate(positions):
-                if i > j:
-                    rij = pos_j - pos_i
-                    rij -= np.round(rij/box_size)*box_size
-                    rij = np.array([rij[0], rij[1]])
-                    rij = np.linalg.norm(rij)
-                    bin_idx = np.digitize(rij, r_bins) - 1
-                    # print(rij, bin_idx)
-                    if bin_idx < len(g6_vals):
-                        g6_vals[bin_idx] += np.real(psi_6[i] * np.conj(psi_6[j]))
-                        nrmalize_vals[bin_idx] += 1
-    
-    return r_bins, g6_vals/(nrmalize_vals + 1E-10)
+        cf = freud.density.CorrelationFunction(bins=nbins, r_max=r_max)
+        
+        cf.compute(
+                    system=(box, points), values=values, query_points=points, query_values=values
+                )
+        g6_vals = np.real(cf.correlation)
+        CF.append(g6_vals)
+    return r_bins, CF
 
 
 
