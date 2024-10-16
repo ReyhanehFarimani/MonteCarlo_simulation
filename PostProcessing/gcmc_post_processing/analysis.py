@@ -186,7 +186,7 @@ def compute_g6(all_positions, box_size, r_max=10.0, nbins=100):
     for points in all_positions:
         # Compute Voronoi neighbors and hexatic order parameter
         voro = freud.locality.Voronoi()
-
+        voro.compute((box, points))
         op = freud.order.Hexatic(k=6)
         op.compute(
             system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, points),
