@@ -2,7 +2,9 @@
 #include <cstdlib>  // For rand() and srand()
 #include <ctime>    // For time()
 #include <iostream>
-
+#include <fstream>
+#include <sstream>
+#include <string>
 // Particle class methods
 Particle::Particle(double x_init, double y_init)
     : x(x_init), y(y_init) {}
@@ -94,5 +96,51 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
                 }
             }
         }
+    }
+}
+
+void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data){
+    particles.clear();  // Clear the vector before initializing new particles
+    particles.reserve(N);  // Reserve memory for N particles
+
+    double Lx = box.getLx();
+    double Ly = box.getLy();
+
+    std::ifstream infile(filename_data);  // Open the file for reading
+    if (!infile.is_open()) {
+        std::cerr << "Error: Could not open file " << filename_data << std::endl;
+        return;
+    }
+        
+    std::string line;
+    int particle_count = 0;
+
+    // Skip header lines (if any) depending on file format
+    // For an XYZ file, you may want to skip the first 2 lines
+    std::getline(infile, line);  // Skip the first line
+    std::getline(infile, line);  // Skip the second line (comment line)
+
+    // Read particle data
+    while (std::getline(infile, line) && particle_count < N) {
+        std::istringstream iss(line);
+        double x, y;
+
+        // For XYZ file format: expect x, y, z as columns 2, 3, 4 (ignoring the particle type in the first column)
+        
+        std::string atom_type;  // For XYZ files, first column might be atom type (string)
+        if (!(iss >> atom_type >> x >> y)) {
+            std::cerr << "Error reading line: " << line << std::endl;
+            continue;
+        }
+
+        // Check if the particle coordinates are inside the simulation box (optional)
+        if (x >= 0 && x <= Lx && y >= 0 && y <= Ly) {
+            particles.emplace_back(x, y);  // Add the particle to the list
+            particle_count++;
+        } 
+        else {
+            std::cerr << "Warning: Particle out of bounds (" << x << ", " << y << ")" << std::endl;
+        }
+
     }
 }

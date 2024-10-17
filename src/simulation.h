@@ -2,6 +2,7 @@
 #define SIMULATION_H
 
 #include <vector>
+#include <string>
 #include "initial.h"
 #include "potential.h"
 #include "logging.h"
@@ -86,8 +87,11 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @brief Initializes particles in the simulation box.
      * 
      * @param randomPlacement If true, particles are placed randomly; otherwise, in a grid.
+     * @param filename if not empty we'll read the data from the .xyz file.
      */
-    void initializeParticles(bool randomPlacement);
+    void initializeParticles(bool randomPlacement, std::string const &filename);
+
+
 
     /**
      * @brief Sets the position of a specific particle.

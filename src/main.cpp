@@ -23,7 +23,8 @@ int main(int argc, char *argv[]) {
     unsigned int seed = input.getConstant("seed");
     const bool useCellList = input.getConstant("useCellList");
     const int cellListUpdateFrequency = input.getConstant("cellListUpdateFrequency");
-
+    // input trajectory file:
+    std::string startFile = input.getFilename("startingPositionFile");
 
     // Retrieve the potential type from the input
     std::string potentialName = input.getFilename("potentialType");
@@ -62,7 +63,7 @@ int main(int argc, char *argv[]) {
 
     // Create and run the simulation
     Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
-    simulation.initializeParticles(randomPlacement);
+    simulation.initializeParticles(randomPlacement, startFile);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
 
     return 0;

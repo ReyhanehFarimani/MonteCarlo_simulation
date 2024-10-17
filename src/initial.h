@@ -94,5 +94,13 @@ public:
  */
 void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true, unsigned int seed = 0);
 
+/**
+ * @brief Initializes N particles in the simulation box, from an xyz file
+ * @param particles A vector to store the particles.
+ * @param box The simulation box where particles will be placed.
+ * @param N The number of particles to initialize.
+ * @param filename_data the file from which we are reading simulation data.
+ */
+void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data);
 
 #endif // INITIAL_H

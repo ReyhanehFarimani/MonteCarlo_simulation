@@ -38,13 +38,12 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, Si
 }
 
 
-/**
- * @brief Initializes particles in the simulation box.
- * 
- * @param randomPlacement If true, particles are placed randomly; otherwise, in a grid.
- */
-void Simulation::initializeParticles(bool randomPlacement) {
-    ::initializeParticles(particles, box, numParticles, randomPlacement, seed);
+
+void Simulation::initializeParticles(bool randomPlacement, std::string const &filename) {
+    if (filename == "")
+        ::initializeParticles(particles, box, numParticles, randomPlacement, seed);
+    else
+        ::initializeParticles_from_file(particles, box, numParticles, filename);
     if (useCellList) {
         buildCellList();
     }
