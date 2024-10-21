@@ -91,8 +91,11 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      */
     void initializeParticles(bool randomPlacement, std::string const &filename);
 
-
-
+    /**
+     * @brief Gather all particle data in rank 0.
+     * @param allParticles is the continugeus buffer of all data.
+     */
+    void gatherAllParticles(std::vector<Particle> &allParticles);
     /**
      * @brief Sets the position of a specific particle.
      * @param index The index of the particle to modify.
@@ -151,7 +154,7 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @param logger The logging object for output.
      * @param simType The type of simulation to run (e.g., Monte Carlo NVT).
      */
-    void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger);
+    void run(int numSteps, int equilibrationTime, int outputFrequency, Logging *logger);
 
     void buildCellList();
 

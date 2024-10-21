@@ -1,5 +1,6 @@
 #include "simulation.h"
 #include "iostream"
+#include "mpi.h"
 #include <cstdlib> // For srand() and rand()
 #include <cassert>
 /**
@@ -22,33 +23,112 @@
  */
 Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType simtype, double temperature, int numParticles, double maxDisplacement, double r2cut, float f_prime, float f_d_prime, float kappa, double mu, unsigned int seed, bool useCellList, int cellListUpdateFrequency)
     : box(box), simtype(simtype), potentialType(potentialType), temperature(temperature), numParticles(numParticles), maxDisplacement(maxDisplacement), rcut(r2cut), r2cut(r2cut * r2cut), f_prime(f_prime), f_d_prime(f_d_prime), kappa(kappa), mu(exp(mu/temperature)), energy(0.0), seed(seed), useCellList(useCellList), cellListUpdateFrequency(cellListUpdateFrequency) , numCellsX(1), numCellsY(1){
-    particles.resize(numParticles);
-    if (seed != 0) {
-        srand(seed); // Seed the random number generator
-    } else {
-        srand(static_cast<unsigned int>(time(nullptr))); // Use the current time as the seed
-    }
-    energy = computeEnergy(); // Compute and store the initial energy of the system
+    // Initialize MPI variables
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
     numCellsX = static_cast<int>(box.getLx() / rcut);
     numCellsY = static_cast<int>(box.getLy() / rcut);
     // Ensure that there are enough cells to cover the box
     if (box.getLx() > numCellsX * rcut) numCellsX++;
     if (box.getLy() > numCellsY * rcut) numCellsY++;
     maxNumParticle = int(box.getV() * 3);
-}
 
 
-
-void Simulation::initializeParticles(bool randomPlacement, std::string const &filename) {
-    if (filename == "")
-        ::initializeParticles(particles, box, numParticles, randomPlacement, seed);
-    else
-        ::initializeParticles_from_file(particles, box, numParticles, filename);
-    if (useCellList) {
-        buildCellList();
+    // Calculate local number of particles each rank will handle
+    int local_numParticles = numParticles / world_size;
+    int remainder = numParticles % world_size;
+    
+    // Rank 0 handles remainder if the number of particles isn't evenly divisible
+    if (world_rank < remainder) {
+        local_numParticles++;
     }
-    energy = computeEnergy();
+
+    particles.resize(local_numParticles);
+    if (seed != 0) {
+        srand(seed + world_rank * 13 + 71); // Seed the random number generator + word rank
+    } else {
+        srand(static_cast<unsigned int>(time(nullptr)) + world_rank * 13 + 71); // Use the current time as the seed and the world rank to make sure each rank is independent
+        
+    }
+    // std::cout<<seed + world_rank * 13 + 71<<std::endl;
+    // energy = computeEnergy(); // Compute and store the initial energy of the system
+    
 }
+
+
+// In Simulation::initializeParticles
+void Simulation::initializeParticles(bool randomPlacement, const std::string &filename) {
+    int world_rank, world_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    if (filename.empty()) {
+        ::initializeParticles(particles, box, numParticles, randomPlacement, seed, world_rank, world_size);
+    } else {
+        ::initializeParticles_from_file(particles, box, numParticles, filename, world_rank, world_size);
+    }
+
+    // if (useCellList) {
+    //     buildCellList();
+    // }
+    // Energy computation can be deferred or handled locally
+}
+
+void Simulation::gatherAllParticles(std::vector<Particle> &allParticles) {
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    // First, gather the number of particles on each rank
+    int local_numParticles = particles.size();
+    std::vector<int> allNumParticles(world_size);
+    MPI_Gather(&local_numParticles, 1, MPI_INT, allNumParticles.data(), 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Now, gather the particles
+    // Serialize the particles into a contiguous buffer
+    std::vector<double> localParticleData(local_numParticles * 2);  // Each particle has x and y
+    for (int i = 0; i < local_numParticles; ++i) {
+        localParticleData[2 * i] = particles[i].x;
+        localParticleData[2 * i + 1] = particles[i].y;
+    }
+
+    // Prepare to receive data on rank 0
+    std::vector<int> displs;
+    std::vector<int> recvCounts;
+    std::vector<double> allParticleData;  // Will hold all particle data on rank 0
+
+    if (world_rank == 0) {
+        recvCounts.resize(world_size);
+        displs.resize(world_size);
+        int totalParticles = 0;
+        for (int i = 0; i < world_size; ++i) {
+            recvCounts[i] = allNumParticles[i] * 2;  // Each particle has x and y
+            displs[i] = totalParticles;
+            totalParticles += recvCounts[i];
+        }
+        allParticleData.resize(totalParticles);
+    }
+
+    // Gather the particle data
+    MPI_Gatherv(localParticleData.data(), localParticleData.size(), MPI_DOUBLE,
+                allParticleData.data(), recvCounts.data(), displs.data(), MPI_DOUBLE,
+                0, MPI_COMM_WORLD);
+
+    // On rank 0, reconstruct the Particle objects
+    if (world_rank == 0) {
+        allParticles.clear();
+        int totalParticles = allParticleData.size() / 2;
+        allParticles.reserve(totalParticles);
+        for (int i = 0; i < totalParticles; ++i) {
+            double x = allParticleData[2 * i];
+            double y = allParticleData[2 * i + 1];
+            allParticles.emplace_back(x, y);
+        }
+    }
+}
+
 
 /**
  * @brief Sets the position of a specific particle.
@@ -267,36 +347,46 @@ double Simulation::computeEnergy() {
  * @param outputFrequency How often to log the results.
  * @param logger The logging object for output.
  */
-void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger) {
+void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging *logger) {
+        int world_rank;
+        MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
         int acceptedMoves = 0;
-        energy = computeEnergy();
+        // energy = computeEnergy();
         
-        // Calculate energy at each step using the appropriate method
+        // // Calculate energy at each step using the appropriate method
         for (int step = 0; step < numSteps + equilibrationTime; ++step) {
-            if (useCellList){
-            if (step%cellListUpdateFrequency == 0)
-            {
-                buildCellList();
-                energy = computeEnergy();
-            }
-            }
-            int n_run = particles.size();
-            for(int i = 0; i<n_run; ++i){
-                if (monteCarloMove()) {
-                    acceptedMoves++;
-                }    
+        //     if (useCellList){
+        //     if (step%cellListUpdateFrequency == 0)
+        //     {
+        //         buildCellList();
+        //         energy = computeEnergy();
+        //     }
+        //     }
+        //     int n_run = particles.size();
+        //     for(int i = 0; i<n_run; ++i){
+        //         if (monteCarloMove()) {
+        //             acceptedMoves++;
+        //         }    
                 
-            }
+        //     }
 
             // Other simulation types can be added here as additional conditions
             
             // Optionally log data
             if (step >= equilibrationTime && step % outputFrequency == 0) {
-                if (fabs(energy - computeEnergy())> 1){
-                std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
-                }   
-                logger.logPositions_xyz(particles, box, r2cut);
-                logger.logSimulationData(*this, step);
+                // if (fabs(energy - computeEnergy())> 1){
+                // std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
+                // }   
+
+                std::vector<Particle> allParticles;  // Will hold all particles on rank 0
+                gatherAllParticles(allParticles);
+
+
+                if (world_rank == 0){
+                    logger->logPositions_xyz(allParticles, box, r2cut);
+                    std::cout<<world_rank<<std::endl;
+                }
+                // logger.logSimulationData(*this, step);
             }
         }
         std::cout << "Monte Carlo simulation completed with " 
