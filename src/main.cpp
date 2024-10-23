@@ -118,6 +118,18 @@ int main(int argc, char *argv[]) {
     potentialType = static_cast<PotentialType>(potentialTypeInt);
     simType = static_cast<SimulationType>(simTypeInt);
 
+    if(world_size * r2cut * 2 > boxLengthX){
+        if (world_rank == 0)
+            std::cerr<<"small box length, too many CPU!!"<<std::endl;
+        MPI_Finalize();
+        return 1;
+    }
+    if(world_size<4){
+        if (world_rank == 0)
+            std::cerr<<"Increase the number of core for the case of optimization, this is not working."<<std::endl;
+        MPI_Finalize();
+        return 1;
+    }
 
     // Create a SimulationBox object in each and every cpu!
     SimulationBox simBox(boxLengthX, boxLengthY);

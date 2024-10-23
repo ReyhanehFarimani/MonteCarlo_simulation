@@ -28,9 +28,9 @@ Logging::~Logging() {
 
 void Logging::logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut) {
     outFile_position << particles.size() << "\n";
-    outFile_position.flush();
+
     outFile_position << "Cell index for each particle\n";
-    outFile_position.flush();
+
     if (!outFile_position) {
         std::cerr << "Error while writing the number of particles to the file." << std::endl;
         return;
@@ -41,16 +41,17 @@ void Logging::logPositions_xyz(const std::vector<Particle> &particles, const Sim
     // Ensure that there are enough cells to cover the box
     if (box.getLx() > numCellsX * rcut) numCellsX++;
     if (box.getLy() > numCellsY * rcut) numCellsY++;
-    int i = 0;
+
     for (const auto &particle : particles) {
-        i ++;
         int cellX = static_cast<int>(particle.x / rcut);
         int cellY = static_cast<int>(particle.y / rcut);
         int cellIndex = cellY * numCellsX + cellX;
-        std::cout<<i<<" "<<particle.x << " " << particle.y << "\n";
+        // std::cout<<i<<" "<<particle.x << " " << particle.y << "\n";
         outFile_position << "1" << " " << particle.x << " " << particle.y << "\n";
-        outFile_position.flush();
+        
     }
+    outFile_position.flush();
+
     if (!outFile_position) {
         std::cerr << "Error while writing the number of particles to the file." << std::endl;
         return;

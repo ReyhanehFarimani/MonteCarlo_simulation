@@ -96,6 +96,13 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @param allParticles is the continugeus buffer of all data.
      */
     void gatherAllParticles(std::vector<Particle> &allParticles);
+
+    /**
+     * @brief reassigning all the particles to the new cpu after moving
+     */
+    void reassignParticles();
+
+
     /**
      * @brief Sets the position of a specific particle.
      * @param index The index of the particle to modify.
@@ -139,6 +146,13 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @return True if the move is accepted, false otherwise.
      */
     bool monteCarloMove();
+
+    /**
+     * @brief Perform a single Monte Carlo move in parallel.
+     * @param id do the computation for even raw, otherwise odds.
+     * @return True if the move is accepted, false otherwise.
+     */
+    bool monteCarloMove_parallel(bool id);
      
     /**
      * @brief Attempt to exchange a particle with a resorvoir.
@@ -155,8 +169,16 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @param simType The type of simulation to run (e.g., Monte Carlo NVT).
      */
     void run(int numSteps, int equilibrationTime, int outputFrequency, Logging *logger);
-
+    /**
+     * @brief building cell-list in series
+     * 
+     */
     void buildCellList();
+    /**
+     * @brief building cell_ist in parallel
+     * 
+     */
+    void buildCellList_parallel();
 
     /**
      * @brief Clears the current cell list.

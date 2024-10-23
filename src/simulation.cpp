@@ -52,8 +52,6 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, Si
         srand(static_cast<unsigned int>(time(nullptr)) + world_rank * 13 + 71); // Use the current time as the seed and the world rank to make sure each rank is independent
         
     }
-    // std::cout<<seed + world_rank * 13 + 71<<std::endl;
-     // Compute and store the initial energy of the system
     
     
 }
@@ -76,7 +74,7 @@ void Simulation::initializeParticles(bool randomPlacement, const std::string &fi
     // }
     // Energy computation can be deferred or handled locally
     energy = computeEnergy();
-    // std::cout<<"totalenergy"<<energy<<std::endl;
+    std::cout<<"totalenergy"<<energy<<std::endl;
 }
 
 void Simulation::gatherAllParticles(std::vector<Particle> &allParticles) {
@@ -133,6 +131,101 @@ void Simulation::gatherAllParticles(std::vector<Particle> &allParticles) {
         }
     }
 }
+
+void Simulation::reassignParticles(){
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    double Lx = box.getLx();
+    double invLx = 1.0 / Lx;
+
+    // Compute the subdomain bounds for each rank
+    double subdomain_x_min = world_rank * box.getLx() / world_size;
+    double subdomain_x_max = (world_rank + 1) * box.getLx() / world_size;
+
+
+    double domain_length = subdomain_x_max - subdomain_x_min;
+    //assigning particles moved to left, assigning particles moved to right:
+    std::vector<Particle> particlesToSendLeft, particlesToSendRight;
+
+    //Identification of the particles:
+    for (auto it = particles.begin(); it != particles.end();){
+        //check for moving to the left from the min of the boundary
+        double left = it->x - subdomain_x_min;
+        left -= Lx * std::round(left * invLx);
+
+        double right = it->x - subdomain_x_max;
+        right -= Lx * std::round(right * invLx);
+
+        if (left < 0){
+            //checking if it has moved to much 
+            if(left< -domain_length)
+                std::cerr<<"The Domain-Update time should be increased!"<<std::endl;
+            // Particle has crossed to the left subdomain
+            // std::cout<<it->x<<" left "<<world_rank<<std::endl;
+            particlesToSendLeft.push_back(*it);
+            it = particles.erase(it);  // Remove particle from local list
+        }
+        else if(right > 0){
+            if (right > domain_length)
+                std::cerr<<"The Domain-Update time should be increased!"<<std::endl;
+            // std::cout<<it->x<<" left "<<world_rank<<std::endl;
+            particlesToSendRight.push_back(*it);
+            it = particles.erase(it);
+        }
+        else {
+            ++it;
+        }
+    }
+
+
+
+    int leftNeighbor = (world_rank - 1 + world_size) % world_size;
+    int rightNeighbor = (world_rank + 1) % world_size;
+
+    // Send the number of particles to be sent to left and right neighbors
+    int sendCountLeft = particlesToSendLeft.size();
+    int sendCountRight = particlesToSendRight.size();
+
+
+    // Receive counts from neighbors
+    int recvCountLeft = 0, recvCountRight = 0;
+    MPI_Sendrecv(&sendCountLeft, 1, MPI_INT, leftNeighbor, 0,
+                 &recvCountRight, 1, MPI_INT, rightNeighbor, 0,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    MPI_Sendrecv(&sendCountRight, 1, MPI_INT, rightNeighbor, 1,
+                 &recvCountLeft, 1, MPI_INT, leftNeighbor, 1,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+
+    // Prepare buffers to receive particles
+    std::vector<Particle> receivedParticlesLeft(recvCountLeft);
+    std::vector<Particle> receivedParticlesRight(recvCountRight);
+
+    // Send particles and receive particles from neighbors
+    MPI_Sendrecv(particlesToSendLeft.data(), sendCountLeft * sizeof(Particle), MPI_BYTE,
+                 leftNeighbor, 2,
+                 receivedParticlesRight.data(), recvCountRight * sizeof(Particle), MPI_BYTE,
+                 rightNeighbor, 2,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    MPI_Sendrecv(particlesToSendRight.data(), sendCountRight * sizeof(Particle), MPI_BYTE,
+                 rightNeighbor, 3,
+                 receivedParticlesLeft.data(), recvCountLeft * sizeof(Particle), MPI_BYTE,
+                 leftNeighbor, 3,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    // Add received particles to the local particle list
+    particles.insert(particles.end(), receivedParticlesLeft.begin(), receivedParticlesLeft.end());
+    particles.insert(particles.end(), receivedParticlesRight.begin(), receivedParticlesRight.end());
+
+    // std::cout<<particles.size()<< " in rank "<<world_rank<<std::endl;
+
+
+}
+
 
 
 /**
@@ -210,7 +303,34 @@ bool Simulation::monteCarloMove() {
         return acceptance;
     }
 }
+bool Simulation::monteCarloMove_parallel(bool id) {
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    if (particles.size() != 0){
+        // Randomly select a particle
+        size_t particleIndex = rand() % particles.size();
+        Particle &p = particles[particleIndex];
 
+        // Store the old position
+        double oldX = p.x;
+        double oldY = p.y;
+
+        // Propose a random displacement
+        double dx = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
+        double dy = (rand() / double(RAND_MAX) - 0.5) * maxDisplacement;
+
+        // Update the particle's position
+        p.x += dx;
+        p.y += dy;
+
+        // Apply periodic boundary conditions (PBC)
+        box.applyPBC(p);
+    }
+
+    return 1;
+            
+}
 /**
  * @brief Attempt to exchange a particle with a resorvoir.
  * @return True if the move is accepted, false otherwise.
@@ -353,11 +473,10 @@ void Simulation::identifyBoundaryParticles(std::vector<Particle>& boundaryPartic
     // Loop through all local particles and identify those near the subdomain boundaries
     for (const auto& particle : particles) {
         // Check if the particle is near the left or right boundary of the subdomain
-        if ((particle.x < subdomain_x_min + rcut) || 
-            (particle.x > subdomain_x_max - rcut)) {
+        if (1 == 1) {
             // If the particle is near the left or right boundary, add it to the boundaryParticles list
             boundaryParticles.push_back(particle);
-            // std::cout<<particle.x<<" "<<particle.y<<std::endl;
+
         }
     }
     
@@ -376,13 +495,14 @@ void exchangeBoundaryParticlesWithNextRank(std::vector<Particle> &boundaryPartic
     int sendCount = boundaryParticles.size();
     int recvCount = 0;
 
+    // std::cout<<sendCount<<std::endl;
     MPI_Sendrecv(&sendCount, 1, MPI_INT, nextRank, 0,
                  &recvCount, 1, MPI_INT, prevRank, 0,
                  MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 
     // Step 2: Resize the receivedParticles vector based on the number of particles to be received
     receivedParticles.resize(recvCount);
-
+    // std::cout<<recvCount<<std::endl;
     // Step 3: Send boundary particles and receive boundary particles from neighboring ranks
     MPI_Sendrecv(boundaryParticles.data(), sendCount * sizeof(Particle), MPI_BYTE, 
                  nextRank, 1,
@@ -394,16 +514,21 @@ void exchangeBoundaryParticlesWithNextRank(std::vector<Particle> &boundaryPartic
 
 double Simulation::computeBoundaryEnergy(const std::vector<Particle> &receivedParticles) {
     double boundaryEnergy = 0.0;
-
+    int world_rank, world_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     // Loop over all local particles and received boundary particles
+
     for (const auto &localParticle : particles) {
+        
         for (const auto &neighborParticle : receivedParticles) {
+            // std::cout<<world_rank<<" "<<localParticle.x<<" "<<neighborParticle.x<<std::endl;
             double r2 = box.minimumImageDistanceSquared(localParticle, neighborParticle);
-            // std::cout<<"r2"<<r2<<std::endl;
             if (r2 < r2cut) {
                 double potential = computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                 boundaryEnergy += potential;
             }
+            // std::cout<<boundaryEnergy<<std::endl;
         }
     }
 
@@ -412,20 +537,27 @@ double Simulation::computeBoundaryEnergy(const std::vector<Particle> &receivedPa
 
 
 double Simulation::computeEnergy() {
+    int world_rank, world_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     // Step 1: Compute local energy for particles in this rank
     double localEnergy = computeLocalEnergy_parallel();
-    
+    // std::cout<<world_rank<<" "<<localEnergy<<std::endl;
+    MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes are synched
+    // std::cout<<localEnergy<<std::endl;
     // Step 2: Exchange boundary particles with neighboring rank
     std::vector<Particle> boundaryParticles;  // Identify your boundary particles (e.g., those near boundary)
     std::vector<Particle> receivedParticles;
     // Identify boundary particles
     identifyBoundaryParticles(boundaryParticles);
-
+    
+    MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes are synched
     exchangeBoundaryParticlesWithNextRank(boundaryParticles, receivedParticles);
-
+    MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes are synched
     // Step 3: Compute energy between local particles and received boundary particles
     double boundaryEnergy = computeBoundaryEnergy(receivedParticles);
-    // std::cout<<boundaryEnergy<<std::endl;
+
+    MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes are synched
     // Step 4: Sum the energies across all ranks using MPI_Allreduce
     double totalEnergy = 0.0;
     double rankEnergy = localEnergy + boundaryEnergy;
@@ -452,6 +584,8 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
         
         // // Calculate energy at each step using the appropriate method
         for (int step = 0; step < numSteps + equilibrationTime; ++step) {
+            acceptedMoves += monteCarloMove_parallel(1);
+            MPI_Barrier(MPI_COMM_WORLD); 
         //     if (useCellList){
         //     if (step%cellListUpdateFrequency == 0)
         //     {
@@ -474,6 +608,10 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 // if (fabs(energy - computeEnergy())> 1){
                 // std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
                 // }   
+                reassignParticles();
+                MPI_Barrier(MPI_COMM_WORLD);
+                energy = computeEnergy();
+                std::cout<<energy<<std::endl;
                 MPI_Barrier(MPI_COMM_WORLD);  // Synchronize all processes
                 std::vector<Particle> allParticles;  // Will hold all particles on rank 0
                 gatherAllParticles(allParticles);
@@ -484,7 +622,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 }
                 // logger.logSimulationData(*this, step);
 
-                MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes finish writing
+                MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes are synched
             }
         }
         std::cout << "Monte Carlo simulation completed with " 
