@@ -1,7 +1,7 @@
 # Makefile for the main application
 
 # Compiler and flags
-CXX = g++
+CXX = mpic++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
 # Executable name

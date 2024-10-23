@@ -31,6 +31,10 @@ int main(int argc, char *argv[]) {
     SimulationType simType;
     double mu = 0.0;
     std::string startFile, positionFile, dataFile;
+    
+
+    int potentialTypeInt, simTypeInt;  // To hold enum values as int for MPI_Bcast
+
     if (world_rank == 0){
         // Parse input from file and command line
         Input input("input.txt");
@@ -80,6 +84,11 @@ int main(int argc, char *argv[]) {
         // Create a Logging object
         positionFile = input.getFilename("positionFile");
         dataFile = input.getFilename("dataFile");
+
+        potentialTypeInt = static_cast<int>(potentialType);  // Convert enum to int for the broadcasting
+        simTypeInt = static_cast<int>(simType);  // Convert enum to int
+
+
     }
 
     MPI_Bcast(&boxLengthX, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
@@ -99,6 +108,16 @@ int main(int argc, char *argv[]) {
     MPI_Bcast(&f_d_prime, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&kappa, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
     MPI_Bcast(&mu, 1, MPI_DOUBLE, 0, MPI_COMM_WORLD);
+
+
+    // Broadcast the enums as integers
+    MPI_Bcast(&potentialTypeInt, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Bcast(&simTypeInt, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    // Convert back from int to enum
+    potentialType = static_cast<PotentialType>(potentialTypeInt);
+    simType = static_cast<SimulationType>(simTypeInt);
+
 
     // Create a SimulationBox object in each and every cpu!
     SimulationBox simBox(boxLengthX, boxLengthY);

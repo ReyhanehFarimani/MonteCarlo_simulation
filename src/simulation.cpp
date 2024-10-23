@@ -53,7 +53,8 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, Si
         
     }
     // std::cout<<seed + world_rank * 13 + 71<<std::endl;
-    // energy = computeEnergy(); // Compute and store the initial energy of the system
+     // Compute and store the initial energy of the system
+    
     
 }
 
@@ -74,6 +75,8 @@ void Simulation::initializeParticles(bool randomPlacement, const std::string &fi
     //     buildCellList();
     // }
     // Energy computation can be deferred or handled locally
+    energy = computeEnergy();
+    // std::cout<<"totalenergy"<<energy<<std::endl;
 }
 
 void Simulation::gatherAllParticles(std::vector<Particle> &allParticles) {
@@ -125,6 +128,8 @@ void Simulation::gatherAllParticles(std::vector<Particle> &allParticles) {
             double x = allParticleData[2 * i];
             double y = allParticleData[2 * i + 1];
             allParticles.emplace_back(x, y);
+            // std::cout<<i<<" "<<x<<" "<<y<<std::endl;
+            // std::cout<<allParticles.size()<<std::endl;
         }
     }
 }
@@ -313,30 +318,122 @@ bool Simulation::monteCarloAddRemove() {
     
 }
 
-/**
- * @brief Calculates the total energy of the system.
- * 
- * @return The total energy of the system.
- */
 
-double Simulation::computeEnergy() {
-    double tmp_energy = 0.0;
+double Simulation::computeLocalEnergy_parallel() {
+    //helper function for computing the energy in parallel first we compute the energy in each subdomain!
+    double localEnergy = 0.0;
     
+    // Loop over all local particles in this rank
     for (size_t i = 0; i < particles.size(); ++i) {
+        // std::cout<<particles[i].x<<std::endl;
         for (size_t j = i + 1; j < particles.size(); ++j) {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
             
             if (r2 < r2cut) {
                 double potential = computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
-                tmp_energy += potential;
-                
+                localEnergy += potential;
             }
         }
-        
-    } 
-    return tmp_energy;
+    }
+    // std::cout<<localEnergy<<std::endl;
+    return localEnergy;
+}
+
+void Simulation::identifyBoundaryParticles(std::vector<Particle>& boundaryParticles) {
+    int world_size, world_rank;
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+
+    boundaryParticles.clear();
+
+    // Compute the subdomain bounds for each rank
+    double subdomain_x_min = world_rank * box.getLx() / world_size;
+    double subdomain_x_max = (world_rank + 1) * box.getLx() / world_size;
+    // std::cout<<subdomain_x_min<<std::endl;
+    // Loop through all local particles and identify those near the subdomain boundaries
+    for (const auto& particle : particles) {
+        // Check if the particle is near the left or right boundary of the subdomain
+        if ((particle.x < subdomain_x_min + rcut) || 
+            (particle.x > subdomain_x_max - rcut)) {
+            // If the particle is near the left or right boundary, add it to the boundaryParticles list
+            boundaryParticles.push_back(particle);
+            // std::cout<<particle.x<<" "<<particle.y<<std::endl;
+        }
+    }
     
 }
+
+void exchangeBoundaryParticlesWithNextRank(std::vector<Particle> &boundaryParticles, std::vector<Particle> &receivedParticles) {
+    int world_rank, world_size;
+    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &world_size);
+
+    // The next rank (with periodic boundary)
+    int nextRank = (world_rank + 1) % world_size;
+    int prevRank = (world_rank - 1 + world_size) % world_size;
+
+    // Step 1: Exchange the number of boundary particles
+    int sendCount = boundaryParticles.size();
+    int recvCount = 0;
+
+    MPI_Sendrecv(&sendCount, 1, MPI_INT, nextRank, 0,
+                 &recvCount, 1, MPI_INT, prevRank, 0,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+
+    // Step 2: Resize the receivedParticles vector based on the number of particles to be received
+    receivedParticles.resize(recvCount);
+
+    // Step 3: Send boundary particles and receive boundary particles from neighboring ranks
+    MPI_Sendrecv(boundaryParticles.data(), sendCount * sizeof(Particle), MPI_BYTE, 
+                 nextRank, 1,
+                 receivedParticles.data(), recvCount * sizeof(Particle), MPI_BYTE, 
+                 prevRank, 1,
+                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+}
+
+
+double Simulation::computeBoundaryEnergy(const std::vector<Particle> &receivedParticles) {
+    double boundaryEnergy = 0.0;
+
+    // Loop over all local particles and received boundary particles
+    for (const auto &localParticle : particles) {
+        for (const auto &neighborParticle : receivedParticles) {
+            double r2 = box.minimumImageDistanceSquared(localParticle, neighborParticle);
+            // std::cout<<"r2"<<r2<<std::endl;
+            if (r2 < r2cut) {
+                double potential = computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                boundaryEnergy += potential;
+            }
+        }
+    }
+
+    return boundaryEnergy;
+}
+
+
+double Simulation::computeEnergy() {
+    // Step 1: Compute local energy for particles in this rank
+    double localEnergy = computeLocalEnergy_parallel();
+    
+    // Step 2: Exchange boundary particles with neighboring rank
+    std::vector<Particle> boundaryParticles;  // Identify your boundary particles (e.g., those near boundary)
+    std::vector<Particle> receivedParticles;
+    // Identify boundary particles
+    identifyBoundaryParticles(boundaryParticles);
+
+    exchangeBoundaryParticlesWithNextRank(boundaryParticles, receivedParticles);
+
+    // Step 3: Compute energy between local particles and received boundary particles
+    double boundaryEnergy = computeBoundaryEnergy(receivedParticles);
+    // std::cout<<boundaryEnergy<<std::endl;
+    // Step 4: Sum the energies across all ranks using MPI_Allreduce
+    double totalEnergy = 0.0;
+    double rankEnergy = localEnergy + boundaryEnergy;
+    MPI_Allreduce(&rankEnergy, &totalEnergy, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
+
+    return totalEnergy;
+}
+
 
 
 /**
@@ -377,16 +474,17 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 // if (fabs(energy - computeEnergy())> 1){
                 // std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
                 // }   
-
+                MPI_Barrier(MPI_COMM_WORLD);  // Synchronize all processes
                 std::vector<Particle> allParticles;  // Will hold all particles on rank 0
                 gatherAllParticles(allParticles);
 
 
                 if (world_rank == 0){
                     logger->logPositions_xyz(allParticles, box, r2cut);
-                    std::cout<<world_rank<<std::endl;
                 }
                 // logger.logSimulationData(*this, step);
+
+                MPI_Barrier(MPI_COMM_WORLD);  // Ensure all processes finish writing
             }
         }
         std::cout << "Monte Carlo simulation completed with " 

@@ -68,10 +68,11 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
 
 
     // Each rank gets a portion of the total particles
+    
     int local_N = N / world_size;
     int remainder = N % world_size;
     if (rank < remainder) local_N++;
-
+    std::cout<<local_N<<std::endl;
     particles.reserve(local_N);  // Reserve memory for N particles
 
     // Compute the subdomain bounds for each rank
@@ -82,7 +83,7 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
 
     if (random) {
         if (seed == 0){
-        srand(static_cast<unsigned>(time(0)) + rank * 13 + 71);  // Seed the random number generator
+        srand(static_cast<unsigned>(time(0)) + rank * 13 );  // Seed the random number generator
         }
         else{
             srand(seed + 10 + rank * 13 + 71);
@@ -91,6 +92,7 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
             double x = subdomain_x_min + static_cast<double>(rand()) / RAND_MAX * (subdomain_x_max - subdomain_x_min);
             double y = subdomain_y_min + static_cast<double>(rand()) / RAND_MAX * (subdomain_y_max - subdomain_y_min);
             particles.emplace_back(x, y);
+            std::cout<<particles[i].x<<std::endl;
         }
     } else {
         // Grid-based particle initialization within the subdomain

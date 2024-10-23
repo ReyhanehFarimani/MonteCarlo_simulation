@@ -170,6 +170,15 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      */
     double computeLocalEnergy(int particleIndex) const;
 
+    double computeBoundaryEnergy(const std::vector<Particle> &receivedParticles);
+    void identifyBoundaryParticles(std::vector<Particle>& boundaryParticles);
+
+
+    /**
+     * @brief compute local energy in one subdomain in each rank
+     * 
+     */
+    double computeLocalEnergy_parallel();
     /**
      * @brief Computes the interaction forces of all particles.
      * @return The computed interaction froces.
