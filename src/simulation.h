@@ -36,7 +36,8 @@ SimulationType selectSimulationType(const std::string &simulationName);
 class Simulation {
 private:
     SimulationBox box;                   ///< The simulation box
-    std::vector<Particle> particles;     ///< Particles in the simulation
+    std::vector<Particle> particles;     ///< Particles in the simulation in each domain
+    std::vector<Particle> boundaryParticlesLeft, boundaryParticlesRight; ///< Particles in the simulation in the boundaries of domains.
     SimulationType simtype;             ///< The selected ensemble in the simulation
     PotentialType potentialType;         ///< The type of potential used in the simulation
     double temperature;                  ///< Temperature of the simulation
@@ -55,6 +56,7 @@ private:
     int numCellsX;                      ///< number of cells in the box in x direction.
     int numCellsY;                      ///< number of cells in the box in y direction.
     int maxNumParticle;                 ///<maximum number of particles in a box.
+    double adjusted_rcut_x;             ///<for the case of parallel work in subdomains
 
 public:
     double energy;
@@ -192,6 +194,28 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      */
     double computeLocalEnergy(int particleIndex) const;
 
+    /**
+     * @brief Computes the interaction energy of a particle with particles in its cell and neighboring cells.
+     * @param particleIndex The index of the particle.
+     * @return The computed interaction energy.
+     */
+    double computeLocalCellsEnergy_parallel(int particleIndex) const;
+
+    /**
+     * @brief send a cell info of a particular rank to the current rank
+     * 
+     * @param neighborRank 
+     * @param cellX 
+     * @param cellY 
+     * @return std::vector<Particle> 
+     */
+    std::vector<Particle> receiveBoundaryParticlesFromNeighbor(int neighborRank, int cellX, int cellY) const;
+    /**
+     * @brief 
+     * 
+     * @param receivedParticles 
+     * @return double 
+     */
     double computeBoundaryEnergy(const std::vector<Particle> &receivedParticles);
     void identifyBoundaryParticles(std::vector<Particle>& boundaryParticles);
 

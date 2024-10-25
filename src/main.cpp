@@ -118,7 +118,7 @@ int main(int argc, char *argv[]) {
     potentialType = static_cast<PotentialType>(potentialTypeInt);
     simType = static_cast<SimulationType>(simTypeInt);
 
-    if(world_size * r2cut * 2 > boxLengthX){
+    if(world_size * r2cut * 4 > boxLengthX){
         if (world_rank == 0)
             std::cerr<<"small box length, too many CPU!!"<<std::endl;
         MPI_Finalize();
