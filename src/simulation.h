@@ -154,7 +154,7 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @param id do the computation for even raw, otherwise odds.
      * @return True if the move is accepted, false otherwise.
      */
-    bool monteCarloMove_parallel(bool id);
+    bool monteCarloMove_parallel(int id);
      
     /**
      * @brief Attempt to exchange a particle with a resorvoir.
