@@ -303,8 +303,8 @@ bool Simulation::monteCarloMove_parallel(int id) {
     int world_size, world_rank;
     MPI_Comm_size(MPI_COMM_WORLD, &world_size);
     MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-    if (world_rank % 2 == 0){
-        if (particles.size() != id){
+    if (world_rank % 2 == id){
+        if (particles.size() != 0){
             // Randomly select a particle
             size_t particleIndex = rand() % particles.size();
             Particle &p = particles[particleIndex];
@@ -323,6 +323,7 @@ bool Simulation::monteCarloMove_parallel(int id) {
             // Update the particle's position
             p.x += dx;
             p.y += dy;
+            box.applyPBC(p);
 
             double post_update_energy = computeLocalCellsEnergy_parallel(particleIndex);
 
@@ -347,6 +348,8 @@ bool Simulation::monteCarloMove_parallel(int id) {
                     box.applyPBC(p);
 
                 }
+
+                return false;
         }
     }
             
@@ -605,29 +608,23 @@ double Simulation::computeEnergy() {
 void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, Logging *logger) {
         int world_rank;
         MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-        int acceptedMoves = 0;
+        float acceptedMoves = 0;
         // energy = computeEnergy();
         
         // // Calculate energy at each step using the appropriate method
         for (int step = 0; step < numSteps + equilibrationTime; ++step) {
-            acceptedMoves += monteCarloMove_parallel(0);
-            MPI_Barrier(MPI_COMM_WORLD); 
-            acceptedMoves += monteCarloMove_parallel(1);
-            std::cout<<step<<std::endl;
-        //     if (useCellList){
-        //     if (step%cellListUpdateFrequency == 0)
-        //     {
-        //         buildCellList();
-        //         energy = computeEnergy();
-        //     }
-        //     }
-        //     int n_run = particles.size();
-        //     for(int i = 0; i<n_run; ++i){
-        //         if (monteCarloMove()) {
-        //             acceptedMoves++;
-        //         }    
-                
-        //     }
+            for (int tmp = 0 ; tmp<numParticles; tmp++){
+                acceptedMoves += monteCarloMove_parallel(0);
+                MPI_Barrier(MPI_COMM_WORLD); 
+                acceptedMoves += monteCarloMove_parallel(1);
+                MPI_Barrier(MPI_COMM_WORLD); 
+            }
+            if (step%cellListUpdateFrequency == 0)
+            {
+                reassignParticles();
+                MPI_Barrier(MPI_COMM_WORLD);
+            }
+
 
             // Other simulation types can be added here as additional conditions
             
@@ -654,7 +651,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
             }
         }
         std::cout << "Monte Carlo simulation completed with " 
-                    << acceptedMoves << " accepted moves out of " << (numSteps + equilibrationTime) << " steps." << std::endl;
+                    <<  " accepted moves out of " << (acceptedMoves/(numSteps + equilibrationTime)) << " steps." << std::endl;
         
 }
 
@@ -774,9 +771,11 @@ void Simulation::clearCellList() {
         newNode->next = cellList[cellIndex];
         cellList[cellIndex] = newNode;
 
-        std::cout << "Rank " << world_rank << " - Left Boundary Particle " << i
-                  << " at (" << boundaryParticlesLeft[i].x << ", " << boundaryParticlesLeft[i].y
-                  << ") -> CellIndex: " << cellIndex << "\n";
+        // std::cout << "Left boundaryRank " << world_rank << " - Particle " << i
+        //   << " at (" << boundaryParticlesLeft[i].x << ", " << boundaryParticlesLeft[i].y
+        //   << ") assigned to Cell (" << cellX << ", " << cellY << ") with CellIndex " << cellIndex << "\n";
+
+
     }
 
     for (size_t i = 0; i < boundaryParticlesRight.size(); ++i) {
@@ -795,9 +794,9 @@ void Simulation::clearCellList() {
         newNode->next = cellList[cellIndex];
         cellList[cellIndex] = newNode;
 
-        std::cout << "Rank " << world_rank << " - Right Boundary Particle " << i
-                  << " at (" << boundaryParticlesRight[i].x << ", " << boundaryParticlesRight[i].y
-                  << ") -> CellIndex: " << cellIndex << "\n";
+
+
+
     }
 }
 
@@ -812,9 +811,11 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
 
     // Compute the subdomain size in the x-direction
     double Lx_total = box.getLx();
+    double invLx = 1/Lx_total;
     double subdomain_x_length = Lx_total / world_size;
 
     double local_x = p.x - world_rank * subdomain_x_length;
+    local_x -= Lx_total * std::round(local_x * invLx);
     int cellX = static_cast<int>(local_x / adjusted_rcut_x) + 2;
     int cellY = static_cast<int>(p.y / rcut);
 
@@ -863,24 +864,17 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
 
 
-            std::cout << "Rank " << world_rank << " - Computing local energy for Particle " << particleIndex 
-              << " at (" << p.x << ", " << p.y << ") assigned to Cell (" << cellX << ", " << cellY << ")\n";
-               std::cout << "Particle " << particleIndex << " is in boundary region, CellX: " << cellX << "\n";
             
             
             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
 
-                int computed_node = static_cast<int>(-((node->particleIndex + 1) / 2));
+                int computed_node = static_cast<int>(-((node->particleIndex + 2) / 2));
                 
-                double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesRight[computed_node]);
+                double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesLeft[computed_node]);
                 if (r2 < r2cut) {
                     localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                     }
-                std::cout << "Checking boundary right, Particle index " << computed_node 
-                << " position: (" << boundaryParticlesRight[computed_node].x << ", "
-                << boundaryParticlesRight[computed_node].y << "), r^2: " << r2 << "\n";
 
-                    
                 }
 
         }
@@ -913,13 +907,22 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
 
                 for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
                     // std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
-                    int computed_node = static_cast<int>(-((node->particleIndex + 1) / 2));
+                    int computed_node = static_cast<int>(-((node->particleIndex + 2) / 2));
                     // std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
-                    double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesRight[computed_node]);
+                    double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesLeft[computed_node]);
                     if (r2 < r2cut) {
                         localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                         }
+
+            //     std::cout << "Rank " << world_rank << " - Computing local energy for Particle " << particleIndex 
+            //   << " at (" << p.x << ", " << p.y << ") assigned to Cell (" << cellX << ", " << cellY << ")\n";
+            //     std::cout << "Checking boundary right, Particle index " << computed_node 
+            //     << " position: (" << boundaryParticlesLeft[computed_node].x << ", "
+            //     << boundaryParticlesLeft[computed_node].y << "), r^2: " << r2 <<" neighbor cell x and y"<<neighborCellX<<" "<<neighborCellY<<"\n";
+                
+                        
                     }
+                    
             }
 
         }
@@ -953,12 +956,13 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
 
                 for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
                     // std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
-                    int computed_node = static_cast<int>(-((node->particleIndex + 1) / 2));
+                    int computed_node = static_cast<int>(-((node->particleIndex + 2) / 2));
                     // std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
-                    double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesRight[computed_node]);
+                    double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesLeft[computed_node]);
                     if (r2 < r2cut) {
                         localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                         }
+
                     }
             }
 
@@ -972,7 +976,7 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
             int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
             for (int offsetX = -2; offsetX <= 1; ++offsetX) {
                 int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
-                int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+                int neighborCellIndex = neighborCellY * (numCellsX) + neighborCellX;
 
                 for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
                     if (node->particleIndex != particleIndex) {
@@ -991,10 +995,10 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
 
             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
-                std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
-                int computed_node = static_cast<int>(-((node->particleIndex + 2) / 2));
-                std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
-                double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesLeft[computed_node]);
+                // std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
+                int computed_node = static_cast<int>(-((node->particleIndex + 1) / 2));
+                // std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
+                double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesRight[computed_node]);
                 if (r2 < r2cut) {
                     localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                     }
@@ -1005,84 +1009,92 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
 
     }
 
-    //     else if (cellX == numCellsX - 3){
-    //     for (int offsetY = -2; offsetY <= 2; ++offsetY) {
-    //         int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
-    //         for (int offsetX = -2; offsetX <= 0; ++offsetX) {
-    //             int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
-    //             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+        else if (cellX == numCellsX - 3){
+        for (int offsetY = -2; offsetY <= 2; ++offsetY) {
+            int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+    // Inside this loop, check individual particle positions
+            for (int offsetX = -2; offsetX <= 0; ++offsetX) {
+                int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
 
-    //             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
-    //                 if (node->particleIndex != particleIndex) {
-    //                     // std::cout<<node->particleIndex<<std::endl;
-    //                     double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
-    //                     if (r2 < r2cut) {
-    //                         localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
-    //                     }
-    //                 }
-    //             }
-    //         }
+                for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                    if (node->particleIndex != particleIndex) {
+                        // std::cout<<node->particleIndex<<std::endl;
+                        double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
+                        if (r2 < r2cut) {
+                            localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                        }
+                        
+                    }
+                }
+            }
 
-    //         //doing offset 1, 2 by hand:
-    //         for (int offsetX = 1; offsetX <= 2; ++offsetX) {
-    //             int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
-    //             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+            //doing offset 1, 2 by hand:
+            for (int offsetX = 1; offsetX <= 2; ++offsetX) {
+                int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                int neighborCellIndex = (neighborCellY) * numCellsX + neighborCellX;
 
-    //             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
-    //                 std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
-    //                 int computed_node = static_cast<int>(-((node->particleIndex + 2) / 2));
-    //                 std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
-    //                 double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesLeft[computed_node]);
-    //                 if (r2 < r2cut) {
-    //                     localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
-    //                     }
-    //                 }
-    //         }
+                for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                    // std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
+                    int computed_node = static_cast<int>(-((node->particleIndex + 1) / 2));
+                    // std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
+                    double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesRight[computed_node]);
+                    if (r2 < r2cut) {
+                        localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                        }
 
-    //     }
+            //     std::cout << "Rank " << world_rank << " - Computing local energy for Particle " << particleIndex 
+            //   << " at (" << p.x << ", " << p.y << ") assigned to Cell (" << cellX << ", " << cellY << ")\n";
+            //     std::cout << "Checking boundary right, Particle index " << computed_node 
+            //     << " position: (" << boundaryParticlesRight[computed_node].x << ", "
+            //     << boundaryParticlesRight[computed_node].y << "), r^2: " << r2 <<" neighbor cell x and y"<<neighborCellX<<" "<<neighborCellY<<"\n";
+                    }
+            }
 
-
-    // }
-
-
-    //     else if (cellX == numCellsX - 2){
-    //     for (int offsetY = -2; offsetY <= 2; ++offsetY) {
-    //         int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
-    //         for (int offsetX = -2; offsetX <= -1; ++offsetX) {
-    //             int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
-    //             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
-
-    //             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
-    //                 if (node->particleIndex != particleIndex) {
-    //                     // std::cout<<node->particleIndex<<std::endl;
-    //                     double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
-    //                     if (r2 < r2cut) {
-    //                         localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
-    //                     }
-    //                 }
-    //             }
-    //         }
-
-    //         //doing offset 1, 0 by hand:
-    //         for (int offsetX = 0; offsetX <= 1; ++offsetX) {
-    //             int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
-    //             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
-
-    //             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
-    //                 std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
-    //                 int computed_node = static_cast<int>(-((node->particleIndex + 2) / 2));
-    //                 std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
-    //                 double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesLeft[computed_node]);
-    //                 if (r2 < r2cut) {
-    //                     localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
-    //                     }
-    //                 }
-    //         }
-
-    //     }
+        }
 
 
-    // }
+    }
+
+
+        else if (cellX == numCellsX - 2){
+        for (int offsetY = -2; offsetY <= 2; ++offsetY) {
+            int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+            for (int offsetX = -2; offsetX <= -1; ++offsetX) {
+                int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+
+                for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                    if (node->particleIndex != particleIndex) {
+                        // std::cout<<node->particleIndex<<std::endl;
+                        double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
+                        if (r2 < r2cut) {
+                            localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                        }
+                    }
+                }
+            }
+
+            //doing offset 1, 0 by hand:
+            for (int offsetX = 0; offsetX <= 1; ++offsetX) {
+                int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+
+                for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                    // std::cout<<"mpi node of neighbors"<<node->particleIndex<<std::endl;
+                    int computed_node = static_cast<int>(-((node->particleIndex + 1) / 2));
+                    // std::cout<<"computed node of neighbors"<<computed_node<<std::endl;
+                    double r2 = box.minimumImageDistanceSquared(p, boundaryParticlesRight[computed_node]);
+                    if (r2 < r2cut) {
+                        localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                        }
+                    }
+            }
+
+        }
+
+
+    }
     else{
         std::cout<<"cellx"<<cellX<<std::endl;
         std::cerr<<"Particles are outside the decomposed CPU area! Please Repeat the simulation using higher decomposition reassignment rate."<<std::endl;
@@ -1093,43 +1105,6 @@ double Simulation::computeLocalCellsEnergy_parallel(int particleIndex) const {
 
     return localEnergy;
 }
-
-std::vector<Particle> Simulation::receiveBoundaryParticlesFromNeighbor(int neighborRank, int cellX, int cellY) const {
-    int world_rank;
-    MPI_Comm_rank(MPI_COMM_WORLD, &world_rank);
-
-    // Step 1: Identify the particles in the given cellX, cellY on the neighbor rank
-    std::vector<Particle> particlesInBoundaryCell;
-    if (neighborRank != world_rank) {
-        // Only gather particles from the boundary if we are not the same rank
-        int localCellIndex = cellY * numCellsX + cellX;
-        for (CellListNode* node = cellList[localCellIndex]; node != nullptr; node = node->next) {
-            particlesInBoundaryCell.push_back(particles[node->particleIndex]);
-        }
-    }
-
-    // Step 2: Exchange particle counts
-    int sendCount = particlesInBoundaryCell.size();
-    int recvCount = 0;
-    MPI_Sendrecv(&sendCount, 1, MPI_INT, neighborRank, 0,
-                 &recvCount, 1, MPI_INT, neighborRank, 0,
-                 MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-
-    // Step 3: Prepare to send/receive particle data
-    std::vector<Particle> receivedParticles(recvCount);
-    if (recvCount > 0) {
-        // Send the particle data to the neighbor
-        MPI_Sendrecv(particlesInBoundaryCell.data(), sendCount * sizeof(Particle), MPI_BYTE,
-                     neighborRank, 1,
-                     receivedParticles.data(), recvCount * sizeof(Particle), MPI_BYTE,
-                     neighborRank, 1,
-                     MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-    }
-
-    // Return the particles received from the neighboring rank
-    return receivedParticles;
-}
-
 
 SimulationType selectSimulationType(const std::string &simulationName) {
     if (simulationName == "NVT") return SimulationType::MonteCarloNVT;
