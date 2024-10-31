@@ -36,7 +36,8 @@ SimulationType selectSimulationType(const std::string &simulationName);
 class Simulation {
 private:
     SimulationBox box;                   ///< The simulation box
-    std::vector<Particle> particles;     ///< Particles in the simulation
+    std::vector<Particle> particles;     ///< Particles in the simulation in each domain
+    std::vector<Particle> boundaryParticlesLeft, boundaryParticlesRight; ///< Particles in the simulation in the boundaries of domains.
     SimulationType simtype;             ///< The selected ensemble in the simulation
     PotentialType potentialType;         ///< The type of potential used in the simulation
     double temperature;                  ///< Temperature of the simulation
@@ -55,6 +56,7 @@ private:
     int numCellsX;                      ///< number of cells in the box in x direction.
     int numCellsY;                      ///< number of cells in the box in y direction.
     int maxNumParticle;                 ///<maximum number of particles in a box.
+    double adjusted_rcut_x;             ///<for the case of parallel work in subdomains
 
 public:
     double energy;
@@ -91,6 +93,16 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      */
     void initializeParticles(bool randomPlacement, std::string const &filename);
 
+    /**
+     * @brief Gather all particle data in rank 0.
+     * @param allParticles is the continugeus buffer of all data.
+     */
+    void gatherAllParticles(std::vector<Particle> &allParticles);
+
+    /**
+     * @brief reassigning all the particles to the new cpu after moving
+     */
+    void reassignParticles();
 
 
     /**
@@ -136,6 +148,13 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @return True if the move is accepted, false otherwise.
      */
     bool monteCarloMove();
+
+    /**
+     * @brief Perform a single Monte Carlo move in parallel.
+     * @param id do the computation for even raw, otherwise odds.
+     * @return True if the move is accepted, false otherwise.
+     */
+    bool monteCarloMove_parallel(int id);
      
     /**
      * @brief Attempt to exchange a particle with a resorvoir.
@@ -151,9 +170,17 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      * @param logger The logging object for output.
      * @param simType The type of simulation to run (e.g., Monte Carlo NVT).
      */
-    void run(int numSteps, int equilibrationTime, int outputFrequency, Logging &logger);
-
+    void run(int numSteps, int equilibrationTime, int outputFrequency, Logging *logger);
+    /**
+     * @brief building cell-list in series
+     * 
+     */
     void buildCellList();
+    /**
+     * @brief building cell_ist in parallel
+     * 
+     */
+    void buildCellList_parallel();
 
     /**
      * @brief Clears the current cell list.
@@ -167,6 +194,37 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
      */
     double computeLocalEnergy(int particleIndex) const;
 
+    /**
+     * @brief Computes the interaction energy of a particle with particles in its cell and neighboring cells.
+     * @param particleIndex The index of the particle.
+     * @return The computed interaction energy.
+     */
+    double computeLocalCellsEnergy_parallel(int particleIndex) const;
+
+    /**
+     * @brief send a cell info of a particular rank to the current rank
+     * 
+     * @param neighborRank 
+     * @param cellX 
+     * @param cellY 
+     * @return std::vector<Particle> 
+     */
+    std::vector<Particle> receiveBoundaryParticlesFromNeighbor(int neighborRank, int cellX, int cellY) const;
+    /**
+     * @brief 
+     * 
+     * @param receivedParticles 
+     * @return double 
+     */
+    double computeBoundaryEnergy(const std::vector<Particle> &receivedParticles);
+    void identifyBoundaryParticles(std::vector<Particle>& boundaryParticles);
+
+
+    /**
+     * @brief compute local energy in one subdomain in each rank
+     * 
+     */
+    double computeLocalEnergy_parallel();
     /**
      * @brief Computes the interaction forces of all particles.
      * @return The computed interaction froces.

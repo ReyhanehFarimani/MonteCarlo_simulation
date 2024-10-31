@@ -2,6 +2,7 @@
 #include "simulation.h"
 #include <iomanip>  // For setting precision in output
 #include <cmath>
+#include <iostream>
 
 Logging::Logging(const std::string &filename_position, const std::string &filename_data)
     : filename_position(filename_position), filename_data(filename_data) {
@@ -27,7 +28,13 @@ Logging::~Logging() {
 
 void Logging::logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut) {
     outFile_position << particles.size() << "\n";
+
     outFile_position << "Cell index for each particle\n";
+
+    if (!outFile_position) {
+        std::cerr << "Error while writing the number of particles to the file." << std::endl;
+        return;
+    }
     double rcut = sqrt(r2cut);
     int numCellsX = static_cast<int>(box.getLx() / rcut);
     int numCellsY = static_cast<int>(box.getLy() / rcut);
@@ -39,8 +46,15 @@ void Logging::logPositions_xyz(const std::vector<Particle> &particles, const Sim
         int cellX = static_cast<int>(particle.x / rcut);
         int cellY = static_cast<int>(particle.y / rcut);
         int cellIndex = cellY * numCellsX + cellX;
-
+        // std::cout<<i<<" "<<particle.x << " " << particle.y << "\n";
         outFile_position << "1" << " " << particle.x << " " << particle.y << "\n";
+        
+    }
+    outFile_position.flush();
+
+    if (!outFile_position) {
+        std::cerr << "Error while writing the number of particles to the file." << std::endl;
+        return;
     }
 }
 
