@@ -1,6 +1,6 @@
 #ifndef INITIAL_H
 #define INITIAL_H
-
+#include <string>
 #include <vector>
 #include <cmath>
 
