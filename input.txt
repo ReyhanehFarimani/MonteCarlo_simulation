@@ -3,7 +3,7 @@ boxLengthX 20.0
 boxLengthY 20.0
 
 # Number of particles in the simulation
-numParticles 200
+numParticles 40
 
 # Particle initialization: 1 for random placement, 0 for grid placement
 randomPlacement 1
@@ -18,19 +18,19 @@ numSteps 100000
 timeStep 0.1
 
 # Output frequency: how often to log the results
-outputFrequency 10000
+outputFrequency 100
 
 # Equilibration time: number of steps before starting to log
-equilibrationTime 100000
+equilibrationTime 1
 
 # Cutoff squared distance for potential calculations
 r2cut 2.5
 
 # Type of potential: LennardJones, WCA, Yukawa, AthermalStar, Ideal
-potentialType WCA
-
+potentialType AthermalStar
+f 10
 # Type of simulation: NVT, GCMC
-simulationType GCMC
+simulationType NVT
 mu 500.0
 
 seed 123
@@ -39,7 +39,7 @@ seed 123
 useCellList 1
 
 # Frequency for updating the cell list
-cellListUpdateFrequency 1000
+cellListUpdateFrequency 50
 # File names for logging
-positionFile particle_positions.xyz
-dataFile simulation_data.dat
+positionFile particle_positions_seed123_to_compare.xyz
+dataFile simulation_data_seed123_to_compare.txt
