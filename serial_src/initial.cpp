@@ -29,8 +29,9 @@ void Particle::updateFeffective(double f, std::vector<double> d_array)
         
     }
     if (number_of_interaction_point > 1){
-        f_effective = 9 * (f * (M_PI - sum)/ (M_PI)) * (f * (M_PI - sum)/ (M_PI)) + 2; 
+        f_effective = 9 * (f * (M_PI)/ (M_PI - sum)) * (f * (M_PI)/ (M_PI - sum)) + 2; 
         f_effective /= 24; 
+        // std::cout<<f_effective<<std::endl;
     }else{
         f_effective = 9 * f * f + 2;
         f_effective /= 24; 

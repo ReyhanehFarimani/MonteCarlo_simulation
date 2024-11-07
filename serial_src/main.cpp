@@ -63,6 +63,7 @@ int main(int argc, char *argv[]) {
     Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement, startFile);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
+    std::cout<<"checking"<<std::endl;
 
     return 0;
 }

@@ -282,6 +282,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
             if (step%cellListUpdateFrequency == 0)
             {
                 buildCellList();
+                update_functionality();
                 energy = computeEnergy();
             }
             }
@@ -384,6 +385,36 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
     }
     // std::cout<<localEnergy<<std::endl;
     return localEnergy;
+}
+
+void Simulation::update_functionality(){
+    
+    for (size_t p1 = 0; p1 < particles.size(); ++p1) {
+
+        std::vector <double> d_array;
+        d_array.clear();
+        Particle& p = particles[p1];
+        // Get the current cell of the particle
+        int cellX = static_cast<int>(p.x / rcut);
+        int cellY = static_cast<int>(p.y / rcut);
+        // Iterate over neighboring cells
+        for (int offsetY = -1; offsetY <= 1; ++offsetY) {
+            int neighborCellY = (cellY + offsetY + numCellsY) % numCellsY;
+            for (int offsetX = -1; offsetX <= 1; ++offsetX) {
+                int neighborCellX = (cellX + offsetX + numCellsX) % numCellsX;
+                int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
+
+                for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                    if (node->particleIndex != p1) {
+                        double r = box.minimumImageDistance(p, particles[node->particleIndex]);
+                        d_array.emplace_back(r);  
+                    }
+                }
+            }
+            p.updateFeffective(f, d_array);
+ 
+        }
+    }
 }
 
 

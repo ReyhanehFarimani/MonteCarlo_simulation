@@ -155,6 +155,8 @@ Simulation(const SimulationBox &box, PotentialType potentialType, SimulationType
 
     void buildCellList();
 
+    void update_functionality();
+
     /**
      * @brief Clears the current cell list.
      */
