@@ -86,10 +86,11 @@ double SimulationBox::getV() const {
 
 
 
-void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random, unsigned int seed) {
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, float f, bool random, unsigned int seed) {
     particles.clear();  // Clear the vector before initializing new particles
     particles.reserve(N);  // Reserve memory for N particles
-
+    double f_edited = 9 * f * f +2;
+    f_edited /= 24;
     if (random) {
         if (seed == 0){
         srand(static_cast<unsigned>(time(0)));  // Seed the random number generator
@@ -100,7 +101,8 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
         for (int i = 0; i < N; ++i) {
             double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
             double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
-            particles.emplace_back(x, y);
+            
+            particles.emplace_back(x, y, f_edited);
         }
     } else {
         // Place particles in a simple grid pattern
@@ -115,19 +117,22 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
                     double x = i * spacingX;
                     double y = j * spacingY;
                     // std::cout<<x<<","<<y<<std::endl;
-                    particles.emplace_back(x, y);
+                    particles.emplace_back(x, y, f_edited);
                 }
             }
         }
     }
 }
 
-void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data){
+void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, float f, const std::string &filename_data){
     particles.clear();  // Clear the vector before initializing new particles
     particles.reserve(N);  // Reserve memory for N particles
 
     double Lx = box.getLx();
     double Ly = box.getLy();
+
+    double f_modify = 9 * f * f + 2;
+    f_modify /= 24;
 
     std::ifstream infile(filename_data);  // Open the file for reading
     if (!infile.is_open()) {
@@ -158,7 +163,7 @@ void initializeParticles_from_file(std::vector<Particle> &particles, const Simul
 
         // Check if the particle coordinates are inside the simulation box (optional)
         if (x >= 0 && x <= Lx && y >= 0 && y <= Ly) {
-            particles.emplace_back(x, y);  // Add the particle to the list
+            particles.emplace_back(x, y, f_modify);  // Add the particle to the list
             particle_count++;
         } 
         else {

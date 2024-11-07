@@ -99,7 +99,7 @@ public:
  * @param N The number of particles to initialize.
  * @param random If true, particles are placed randomly; if false, they are placed in a grid.
  */
-void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true, unsigned int seed = 0);
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, float f, bool random = true, unsigned int seed = 0);
 
 /**
  * @brief Initializes N particles in the simulation box, from an xyz file
@@ -108,6 +108,6 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
  * @param N The number of particles to initialize.
  * @param filename_data the file from which we are reading simulation data.
  */
-void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data);
+void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, float f, const std::string &filename_data);
 
 #endif // INITIAL_H

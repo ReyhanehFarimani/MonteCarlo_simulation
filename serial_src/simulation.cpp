@@ -41,9 +41,9 @@ Simulation::Simulation(const SimulationBox &box, PotentialType potentialType, Si
 
 void Simulation::initializeParticles(bool randomPlacement, std::string const &filename) {
     if (filename == "")
-        ::initializeParticles(particles, box, numParticles, randomPlacement, seed);
+        ::initializeParticles(particles, box, numParticles, f, randomPlacement, seed);
     else
-        ::initializeParticles_from_file(particles, box, numParticles, filename);
+        ::initializeParticles_from_file(particles, box, numParticles, f, filename);
     if (useCellList) {
         buildCellList();
     }
@@ -137,7 +137,7 @@ bool Simulation::monteCarloAddRemove() {
             // random position for the partile:
             double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
             double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
-            Particle newParticle(x, y);
+            Particle newParticle(x, y, (9 * f * f + 2)/24);
 
             double dE = 0;
             //computing particle cell index:
@@ -155,7 +155,7 @@ bool Simulation::monteCarloAddRemove() {
                         for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
                             double r2 = box.minimumImageDistanceSquared(newParticle, particles[node->particleIndex]);
                             if (r2 < r2cut) {
-                                dE += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa); 
+                                dE += computePairPotential(r2, potentialType, newParticle.f_effective, particles[node->particleIndex].f_effective,  f_d_prime, kappa); 
                             }
                         }
                     }
@@ -165,7 +165,7 @@ bool Simulation::monteCarloAddRemove() {
                 for (size_t i = 0; i < particles.size(); ++i) {
                     double r2 = box.minimumImageDistanceSquared(newParticle, particles[i]);
                     if (r2 < r2cut) {
-                        dE += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa); 
+                        dE += computePairPotential(r2, potentialType, newParticle.f_effective, particles[i].f_effective, f_d_prime, kappa); 
                     }
                 }
             }//adding particle to the new cell and compute the energy (no cell list)
@@ -192,6 +192,7 @@ bool Simulation::monteCarloAddRemove() {
             //choosing a particle
             size_t particleIndex = rand() % (particles.size());
             Particle &p = particles[particleIndex];
+            double f1 = particles[particleIndex].f_effective;
             double dE = 0;
             //computing particle cell index:
             int cellX = static_cast<int>(p.x / rcut);
@@ -203,10 +204,12 @@ bool Simulation::monteCarloAddRemove() {
             }//removing particle to the new cell and compute the energy (using cell list)
             else {
                 for (size_t i = 0; i < particles.size(); ++i) {
+
                     if (i != particleIndex){
+                        double f2 = particles[i].f_effective;
                         double r2 = box.minimumImageDistanceSquared(p, particles[i]);
                         if (r2 < r2cut) {
-                            dE -= computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa); 
+                            dE -= computePairPotential(r2, potentialType, f1, f2, f_d_prime, kappa); 
                         }
                     }
                 }
@@ -243,11 +246,13 @@ double Simulation::computeEnergy() {
     double tmp_energy = 0.0;
     
     for (size_t i = 0; i < particles.size(); ++i) {
+        double f1 = particles[i].f_effective;
         for (size_t j = i + 1; j < particles.size(); ++j) {
+            double f2 = particles[j].f_effective;
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
             
             if (r2 < r2cut) {
-                double potential = computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                double potential = computePairPotential(r2, potentialType, f1, f2, f_d_prime, kappa);
                 tmp_energy += potential;
                 
             }
@@ -352,6 +357,7 @@ void Simulation::buildCellList() {
 double Simulation::computeLocalEnergy(int particleIndex) const {
     double localEnergy = 0.0;
     const Particle& p = particles[particleIndex];
+    double f1 = particles[particleIndex].f_effective;
     // Get the current cell of the particle
     int cellX = static_cast<int>(p.x / rcut);
     int cellY = static_cast<int>(p.y / rcut);
@@ -365,11 +371,12 @@ double Simulation::computeLocalEnergy(int particleIndex) const {
             int neighborCellIndex = neighborCellY * numCellsX + neighborCellX;
 
             for (CellListNode* node = cellList[neighborCellIndex]; node != nullptr; node = node->next) {
+                double f2 = particles[node->particleIndex].f_effective;
                 if (node->particleIndex != particleIndex) {
                     // std::cout<<node->particleIndex<<std::endl;
                     double r2 = box.minimumImageDistanceSquared(p, particles[node->particleIndex]);
                     if (r2 < r2cut) {
-                        localEnergy += computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
+                        localEnergy += computePairPotential(r2, potentialType, f1, f2, f_d_prime, kappa);
                     }
                 }
             }
@@ -390,10 +397,12 @@ SimulationType selectSimulationType(const std::string &simulationName) {
 double Simulation::computeTotalForce() const{
     double forceSum = 0.0;
     for (size_t p1 = 0; p1 < particles.size(); ++p1){
+        double f1 = particles[p1].f_effective;
         for (size_t p2 = p1 + 1; p2 < particles.size(); ++p2){
+            double f2 = particles[p2].f_effective;
             double r2 = box.minimumImageDistanceSquared(particles[p1], particles[p2]);
             if (r2<r2cut){
-                forceSum += computePairForce(r2, potentialType, f_prime, f_d_prime, kappa);
+                forceSum += computePairForce(r2, potentialType, f1, f2, f_d_prime, kappa);
             }
         }
     }
@@ -452,13 +461,13 @@ double Simulation::tail_correction_energy_2d() const{
         answer = 0;
         break;
     case PotentialType::AthermalStar:{
-        double I  =  -exp(1 - r2cut)/4.0 * f_prime;
+        double I  =  -exp(1 - r2cut)/4.0 * (9 * f * f + 2) / 24;
         answer *= I;
         break;
     }
     case PotentialType::ThermalStar:{
         double r = sqrt(r2cut);
-        double I  =  -exp(1 - r2cut)/4.0 * f_prime - f_d_prime/kappa/kappa * exp(-kappa * r) * (kappa * r + 1);
+        double I  =  -exp(1 - r2cut)/4.0 *  (9 * f * f + 2) / 24 - f_d_prime/kappa/kappa * exp(-kappa * r) * (kappa * r + 1);
         answer *= I;
         break;
     }
@@ -492,13 +501,13 @@ double Simulation::tail_correction_pressure_2d() const{
         answer = 0;
         break;
     case PotentialType::AthermalStar:{
-        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime;
+        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * (9 * f * f + 2) / 24;
         answer *= I;
         break;
     }
     case PotentialType::ThermalStar:{
         double r = sqrt(r2cut);
-        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime + f_d_prime / kappa/kappa * exp(-kappa * r) * (kappa * kappa* r2cut + 2 * kappa * r + 2);
+        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * (9 * f * f + 2) / 24 + f_d_prime / kappa/kappa * exp(-kappa * r) * (kappa * kappa* r2cut + 2 * kappa * r + 2);
         answer *= I;
         break;
     }
