@@ -89,19 +89,21 @@ double yukawaForceDotR(double r2);
  * @brief Calculates the logarithmic potential energy.
  * 
  * @param r2 The squared distance between two particles.
- * @param f_dependant star polymer functtionality dependant part.
+ * @param f_dependant_1 star polymer 1 functtionality dependant part.
+ * @param f_dependant_2 star polymer 2 functionality dependanr part.
  * @return The potential energy between two star polymer.
  */
-double athermalStarPotential(double r2, float f_dependenat);
+double athermalStarPotential(double r2, float f_dependenat_1, , float f_dependenat_2);
 
 /**
  * @brief Calculates the force between two star polymer cores.
  * 
  * @param r2 The squared distance between two particles.
- * @param f_dependant star polymer functtionality dependant part.
+ * @param f_dependant_1 star polymer 1 functtionality dependant part.
+ * @param f_dependant_2 star polymer 2 functtionality dependant part.
  * @return The magnitude of the force between two star polymer.
  */
-double athermalStarForceDotR(double r2, float f_dependant);
+double athermalStarForceDotR(double r2, float f_dependant_1, float f_dependant_2);
 
 /**
  * @brief Calculates the logarithmic potential energy + yukawa attraction.
@@ -143,7 +145,7 @@ PotentialType selectPotentialType(const std::string &potentialName);
  * @param kappa attraction exponential decay connenction connected to lambda.
  * @return The amount of potential.
  */
-double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa);
+double computePairPotential(double r2, PotentialType potentialType, float f_prime_1, float f_prime_2, float f_d_prime, float kappa);
 
 /**
  * @brief Returns the pair potential betwen two particles
@@ -155,6 +157,6 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
  * @param kappa attraction exponential decay connenction connected to lambda.
  * @return The amount of force dot r.
  */
-double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa);
+double computePairForce(double r2, PotentialType potentialType, float f_prime_1, float f_prime_2, float f_d_prime, float kappa);
 
 #endif // POTENTIAL_H
