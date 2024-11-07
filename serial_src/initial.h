@@ -3,20 +3,20 @@
 #include <string>
 #include <vector>
 #include <cmath>
-
+# define M_PI           3.14159265358979323846  /* pi */
 /**
  * @brief Represents a particle in the 2D simulation box.
  */
 class Particle {
 public:
-    double x, y;  ///< Position of the particle
+    double x, y, f_effective;  ///< Position of the particle
 
     /**
      * @brief Constructs a Particle with the given initial position.
      * @param x_init Initial x-coordinate of the particle.
      * @param y_init Initial y-coordinate of the particle.
      */
-    Particle(double x_init = 0.0, double y_init = 0.0);
+    Particle(double x_init = 0.0, double y_init = 0.0, double f = 0.0);
 
     /**
      * @brief Updates the position of the particle.
@@ -24,6 +24,13 @@ public:
      * @param dy Displacement in the y-direction.
      */
     void updatePosition(double dx, double dy);
+    /**
+     * @brief Updates the effective functionality based on the interacting particles
+     * 
+     * @param f 
+     * @param d_array
+     */
+    void updateFeffective(double f, std::vector<double> d_array);
 };
 /**
  * @brief Manages the 2D simulation box, including periodic boundary conditions.

@@ -6,12 +6,35 @@
 #include <sstream>
 #include <string>
 // Particle class methods
-Particle::Particle(double x_init, double y_init)
-    : x(x_init), y(y_init) {}
+Particle::Particle(double x_init, double y_init, double f)
+    : x(x_init), y(y_init), f_effective(f){}
 
 void Particle::updatePosition(double dx, double dy) {
     x += dx;
     y += dy;
+}
+
+void Particle::updateFeffective(double f, std::vector<double> d_array)
+{
+    double sum = 0.0;
+    int number_of_interaction_point = 0;
+    for (size_t i = 0; i < d_array.size(); ++i){
+        double d  = d_array[i];
+        if (d<2){
+            number_of_interaction_point ++;
+            double alpha = 2 * acos( d/2);
+            sum += alpha;
+            sum -= sin(alpha)/2;
+        }
+        
+    }
+    if (number_of_interaction_point > 1){
+        f_effective = 9 * (f * (M_PI - sum)/ (M_PI)) * (f * (M_PI - sum)/ (M_PI)) + 2; 
+        f_effective /= 24; 
+    }else{
+        f_effective = 9 * f * f + 2;
+        f_effective /= 24; 
+    }
 }
 
 // Constructor for SimulationBox
