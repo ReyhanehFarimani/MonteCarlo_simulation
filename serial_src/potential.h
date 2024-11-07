@@ -93,7 +93,7 @@ double yukawaForceDotR(double r2);
  * @param f_dependant_2 star polymer 2 functionality dependanr part.
  * @return The potential energy between two star polymer.
  */
-double athermalStarPotential(double r2, float f_dependenat_1, , float f_dependenat_2);
+double athermalStarPotential(double r2, float f_dependenat_1, float f_dependenat_2);
 
 /**
  * @brief Calculates the force between two star polymer cores.

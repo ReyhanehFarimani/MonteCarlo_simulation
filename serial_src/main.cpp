@@ -29,18 +29,16 @@ int main(int argc, char *argv[]) {
     // Retrieve the potential type from the input
     std::string potentialName = input.getFilename("potentialType");
     PotentialType potentialType = selectPotentialType(potentialName);
-    float f_prime = 0.0;
+    float f = 0.0;
     if (potentialType == PotentialType::AthermalStar)
     {
-        int f = input.getConstant("f");
-        f_prime = (2.0 + 9.0 * f * f) / 24.0;
+        f = input.getConstant("f");
     }
     float f_d_prime = 0.0;
     float kappa = 0.0;
     if (potentialType == PotentialType::ThermalStar)
     {
-        int f = input.getConstant("f");
-        f_prime = (2.0 + 9.0 * f * f) / 24.0;
+        f = input.getConstant("f");
         float A_0 = input.getConstant("A_0");
         kappa = input.getConstant("kappa");
         f_d_prime = A_0 * f * f / kappa; 
@@ -62,7 +60,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
+    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement, startFile);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
 

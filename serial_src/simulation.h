@@ -48,7 +48,7 @@ private:
     bool useCellList;                   ///< bool use cell list option for optimized energy compution
     int cellListUpdateFrequency;        ///< frquency of cell list updating.
     std::vector<CellListNode*> cellList;  ///< A vector of pointers to linked lists for each cell
-    float f_prime;                      ///< if one selectys the logarithmic potentials
+    float f;                        ///< if one selectys the logarithmic potentials
     float f_d_prime;                    ///< if one selectys the thermal star
     float kappa;                        ///< if one selectys the thermal star
     double mu;                          ///< if one selects the GCMC!
