@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
     Logging logger(positionFile, dataFile);
 
     // Create and run the simulation
-    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
+    Simulation simulation(simBox, potentialType, simType, temperature, numParticles, timeStep, r2cut, f_prime, alpha, f_d_prime, kappa, mu, seed, useCellList, cellListUpdateFrequency);
     simulation.initializeParticles(randomPlacement, startFile);
     simulation.run(numSteps, equilibrationTime, outputFrequency, logger);
 
