@@ -143,9 +143,10 @@ PotentialType selectPotentialType(const std::string &potentialName);
  * @param f_prime for the case of the ultrasoft potential.
  * @param f_dependent2 attration of star plymer term connented to (lambda, f)
  * @param kappa attraction exponential decay connenction connected to lambda.
+ * @param alpha tail strength.
  * @return The amount of potential.
  */
-double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa);
+double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa, float alpha);
 
 /**
  * @brief Returns the pair potential betwen two particles
@@ -155,8 +156,9 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
  * @param f_prime for the case of the ultrasoft potential.
  * @param f_dependent2 attration of star plymer term connented to (lambda, f)
  * @param kappa attraction exponential decay connenction connected to lambda.
+ * @param alpha tail strength.
  * @return The amount of force dot r.
  */
-double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa);
+double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa, float alpha);
 
 #endif // POTENTIAL_H

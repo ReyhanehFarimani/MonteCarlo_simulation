@@ -208,7 +208,7 @@ PotentialType selectPotentialType(const std::string &potentialName) {
  * @param f_prime for the case of the ultrasoft potential.
  * @return The amount of potential.
  */
-double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa) {
+double computePairPotential(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa, float alpha) {
     switch (potentialType) {
         case PotentialType::LennardJones:
             return lennardJonesPotential(r2);
@@ -217,7 +217,7 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
         case PotentialType::Yukawa:
             return yukawaPotential(r2);
         case PotentialType::AthermalStar:
-            return athermalStarPotential(r2, f_prime);
+            return athermalStarPotential(r2, f_prime, alpha);
         case PotentialType::ThermalStar:
             return thermalStarPotential(r2, f_prime, f_d_prime, kappa);
         case PotentialType::Ideal:
@@ -235,7 +235,7 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
  * @param f_prime for the case of the ultrasoft potential.
  * @return The amount of force dot r.
  */
-double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa) {
+double computePairForce(double r2, PotentialType potentialType, float f_prime, float f_d_prime, float kappa, float alpha) {
     switch (potentialType) {
         case PotentialType::LennardJones:
             return lennardJonesForceDotR(r2);
@@ -244,7 +244,7 @@ double computePairForce(double r2, PotentialType potentialType, float f_prime, f
         case PotentialType::Yukawa:
             return yukawaForceDotR(r2);
         case PotentialType::AthermalStar:
-            return athermalStarForceDotR(r2, f_prime);
+            return athermalStarForceDotR(r2, f_prime, alpha);
         case PotentialType::ThermalStar:
             return thermalStarForceDotR(r2, f_prime, f_d_prime, kappa);
         case PotentialType::Ideal:
