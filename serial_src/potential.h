@@ -90,18 +90,20 @@ double yukawaForceDotR(double r2);
  * 
  * @param r2 The squared distance between two particles.
  * @param f_dependant star polymer functtionality dependant part.
+ * @param alpha tail strength.
  * @return The potential energy between two star polymer.
  */
-double athermalStarPotential(double r2, float f_dependenat);
+double athermalStarPotential(double r2, float f_dependenat, float alpha);
 
 /**
  * @brief Calculates the force between two star polymer cores.
  * 
  * @param r2 The squared distance between two particles.
  * @param f_dependant star polymer functtionality dependant part.
+ * @param alpha tail strength.
  * @return The magnitude of the force between two star polymer.
  */
-double athermalStarForceDotR(double r2, float f_dependant);
+double athermalStarForceDotR(double r2, float f_dependant, float alpha);
 
 /**
  * @brief Calculates the logarithmic potential energy + yukawa attraction.

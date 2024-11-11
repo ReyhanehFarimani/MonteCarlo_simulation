@@ -118,14 +118,14 @@ double yukawaForceDotR(double r2) {
  * @param r2 The squared distance between two particles.
  * @return The potential energy between two star polymer.
  */
-double athermalStarPotential(double r2, float f_dependant){
+double athermalStarPotential(double r2, float f_dependant, float alpha){
     double e;
     if (r2<1) {
         double r = sqrt(r2);
-        e = -log(r) + 0.5;
+        e = -log(r) + alpha;
     }
     else {
-        e = 0.5 * exp(1 - r2);
+        e = alpha * exp((1 - r2)/ 2 / alpha);
     }
     return f_dependant * e;
 }
@@ -137,12 +137,12 @@ double athermalStarPotential(double r2, float f_dependant){
  * @param r2 The squared distance between two particles.
  * @return The magnitude of the force between two star polymer.
  */
-double athermalStarForceDotR(double r2, float f_Dependant){
+double athermalStarForceDotR(double r2, float f_Dependant, float alpha){
     double f;
     if (r2<1) {
         return f_Dependant;
     }
-    return f_Dependant * r2 * exp(1 - r2);
+    return f_Dependant * r2 * exp((1 - r2)/2/alpha);
 }
 
 /**

@@ -107,14 +107,16 @@ bool Simulation::monteCarloMove() {
         // double test_e_old = computeEnergy();
         // Calculate the energy difference
         double deltaE = newEnergy - initialEnergy;
-        // std::cout<<deltaE<<"   "<<test_e_old - test_e_new<<std::endl;
+        // std::cout<<deltaE<<std::endl;
         // Decide whether to accept or reject the move
-        if (deltaE < 0 || exp(-deltaE / temperature) > (rand() / double(RAND_MAX))) {
+        if (deltaE < 0 || exp(-deltaE / temperature) > (rand() / double(RAND_MAX) + 0.001)) {
             // Accept the move
             energy += deltaE;
+            // std::cout<<"Accepted:   "<<deltaE<<std::endl;
             return true;
         } else {
             // Reject the move, restore the old position
+            // std::cout<<"Rejected:   "<<deltaE<<std::endl;
             p.x = oldX;
             p.y = oldY;
             return false;
@@ -247,8 +249,15 @@ double Simulation::computeEnergy() {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
             
             if (r2 < r2cut) {
+                
                 double potential = computePairPotential(r2, potentialType, f_prime, f_d_prime, kappa);
                 tmp_energy += potential;
+                // if (r2<4){
+                //     if (i ==0)
+                //         std::cout<<" "<<r2<<","<<potential<<std::endl;
+                // }
+                // else
+                // std::cout<<"no"<<std::endl;
                 
             }
         }
@@ -273,6 +282,7 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
         
         // Calculate energy at each step using the appropriate method
         for (int step = 0; step < numSteps + equilibrationTime; ++step) {
+            
             if (useCellList){
             if (step%cellListUpdateFrequency == 0)
             {
