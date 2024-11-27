@@ -5,16 +5,16 @@ CXX = mpic++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
 # Executable name
-EXEC = simulation
+EXEC = Monte_carlo_serial
 
 # Source files
-SRCS = src/main.cpp src/initial.cpp src/input.cpp src/logging.cpp src/potential.cpp src/simulation.cpp
+SRCS = serial_src/main.cpp serial_src/initial.cpp serial_src/input.cpp serial_src/logging.cpp serial_src/potential.cpp serial_src/simulation.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
 
 # Header files
-HEADERS = src/initial.h src/input.h src/logging.h src/potential.h src/simulation.h
+HEADERS = serial_src/initial.h serial_src/input.h serial_src/logging.h serial_src/potential.h serial_src/simulation.h
 
 # Default target (builds the main executable)
 all: $(EXEC)
@@ -24,7 +24,7 @@ $(EXEC): $(OBJS)
 	$(CXX) $(CXXFLAGS) -o $@ $^
 
 # Compile source files
-src/%.o: src/%.cpp $(HEADERS)
+serial_src/%.o: serial_src/%.cpp $(HEADERS)
 	$(CXX) $(CXXFLAGS) -c $< -o $@
 
 # Clean build artifacts
