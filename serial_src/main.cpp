@@ -34,7 +34,8 @@ int main(int argc, char *argv[]) {
     if (potentialType == PotentialType::AthermalStar)
     {
         int f = input.getConstant("f");
-        float alpha = input.getConstant("alpha");
+        alpha = input.getConstant("alpha");
+        std::cout<<"alpha is "<<alpha<<std::endl;
         f_prime = (2.0 + 9.0 * f * f) / 24.0;
     }
     float f_d_prime = 0.0;
@@ -46,6 +47,8 @@ int main(int argc, char *argv[]) {
         float A_0 = input.getConstant("A_0");
         kappa = input.getConstant("kappa");
         f_d_prime = A_0 * f * f / kappa; 
+        alpha = input.getConstant("alpha");
+        std::cout<<"alpha is "<<alpha<<std::endl;
     }
     // Retrieve the simulation type from the input
     std::string simName = input.getFilename("simulationType");

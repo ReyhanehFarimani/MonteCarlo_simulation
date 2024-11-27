@@ -112,9 +112,10 @@ double athermalStarForceDotR(double r2, float f_dependant, float alpha);
  * @param f_dependant star polymer functtionality dependant part.
  * @param f_dependent2 attration of star plymer term connented to (lambda, f)
  * @param kappa attraction exponential decay connenction connected to lambda.
+ * @param alpha tail strength.
  * @return The potential energy between two star polymer times r.
  */
-double thermalStarPotential(double r2, float f_dependenat, float f_dependenat2, float kappa);
+double thermalStarPotential(double r2, float f_dependenat, float f_dependenat2, float kappa, float alpha);
 
 /**
  * @brief Calculates the force between two thermal star polymer cores.
@@ -123,9 +124,10 @@ double thermalStarPotential(double r2, float f_dependenat, float f_dependenat2, 
  * @param f_dependant star polymer functtionality dependant part.
  * @param f_dependent2 attration of star plymer term connented to (lambda, f)
  * @param kappa attraction exponential decay connenction connected to lambda.
+ * @param alpha tail strength. 
  * @return The magnitude of the force between two star polymer times r.
  */
-double thermalStarForceDotR(double r2, float f_dependant, float f_dependenat2, float kappa);
+double thermalStarForceDotR(double r2, float f_dependant, float f_dependenat2, float kappa, float alpha);
 
 /**
  * @brief Selects the potential type based on a string input.

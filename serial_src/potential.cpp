@@ -1,7 +1,7 @@
 #include "potential.h"
 #include <stdexcept>
 #include <cmath>
-
+#include <iostream>
 
 /**
  * @brief Calculates the Ideal potential energy.
@@ -120,6 +120,7 @@ double yukawaForceDotR(double r2) {
  */
 double athermalStarPotential(double r2, float f_dependant, float alpha){
     double e;
+    // std::cout<<alpha<<std::endl;
     if (r2<1) {
         double r = sqrt(r2);
         e = -log(r) + alpha;
@@ -152,14 +153,14 @@ double athermalStarForceDotR(double r2, float f_Dependant, float alpha){
  * @param r2 The squared distance between two particles.
  * @return The potential energy between two star polymer.
  */
-double thermalStarPotential(double r2, float f_dependant, float f_dependent_2, float kappa){
+double thermalStarPotential(double r2, float f_dependant, float f_dependent_2, float kappa, float alpha){
     double e1;
     double r = sqrt(r2);
     if (r2<1) {  
-        e1 = -log(r) + 0.5;
+        e1 = -log(r) + alpha;
     }
     else {
-        e1 = 0.5 * exp(1 - r2);
+        e1 = alpha * exp((1 - r2)/ 2 / alpha);
     }
     double e2;
 
@@ -174,14 +175,14 @@ double thermalStarPotential(double r2, float f_dependant, float f_dependent_2, f
  * @param r2 The squared distance between two particles.
  * @return The magnitude of the force between two star polymer.
  */
-double thermalStarForceDotR(double r2, float f_Dependant, float f_dependent_2, float kappa){
+double thermalStarForceDotR(double r2, float f_Dependant, float f_dependent_2, float kappa, float alpha){
     double f;
     double r = sqrt(r2);
     f = f_dependent_2 * kappa * exp(-kappa * r) * r;
     if (r2<1) {
         return f_Dependant + f;
     }
-    return f_Dependant * r2 * exp(1 - r2) - f;
+    return f_Dependant * r2 * exp((1 - r2)/2/alpha) - f;
 }
 
 /**
@@ -219,7 +220,7 @@ double computePairPotential(double r2, PotentialType potentialType, float f_prim
         case PotentialType::AthermalStar:
             return athermalStarPotential(r2, f_prime, alpha);
         case PotentialType::ThermalStar:
-            return thermalStarPotential(r2, f_prime, f_d_prime, kappa);
+            return thermalStarPotential(r2, f_prime, f_d_prime, kappa, alpha);
         case PotentialType::Ideal:
             return idealPotential();
         default:
@@ -246,7 +247,7 @@ double computePairForce(double r2, PotentialType potentialType, float f_prime, f
         case PotentialType::AthermalStar:
             return athermalStarForceDotR(r2, f_prime, alpha);
         case PotentialType::ThermalStar:
-            return thermalStarForceDotR(r2, f_prime, f_d_prime, kappa);
+            return thermalStarForceDotR(r2, f_prime, f_d_prime, kappa, alpha);
         case PotentialType::Ideal:
             return idealForceDotR();
         default:
