@@ -51,6 +51,57 @@ def load_xyz(filename):
     
     return timesteps_positions
 
+def load_xyz_crpt_check(filename:str):
+    """
+    Loads particle positions from an .xyz file, handling variable particle counts per timestep.
+
+    Parameters
+    ----------
+    filename : str
+        The path to the .xyz file.
+    n: int 
+        Number of particles in case it is const.
+    Returns
+    -------
+    timesteps_positions : list of np.ndarray
+        A list where each element is an array of particle positions for a timestep.
+    """
+
+    
+    timesteps_positions = []
+    
+    with open(filename, 'r') as file:
+        lines = file.readlines()
+        if len(lines) == 0:
+            print('file empty')
+            return 0
+        n_particles = int(lines[0].strip())
+        if (len(lines)< n_particles + 2):
+            print('file empty')
+            return 0
+        i = 0
+        line_counter = len(lines)
+        while i < len(lines):
+            n_particles = int(lines[i].strip())
+            positions = []
+            i += 1 # Skip the comment line and move to the next timestep
+            line_counter -= 2
+            if line_counter < n_particles:
+                return timesteps_positions
+            for j in range(n_particles):
+                i += 1
+                parts = lines[i].strip().split()
+                try:
+                    positions.append([float(parts[1]), float(parts[2]), 0.0])
+                except:
+                    return timesteps_positions
+                line_counter -= 1
+            timesteps_positions.append(np.array(positions))
+            i += 1  # Skip the comment line and move to the next timestep
+    
+    return timesteps_positions
+
+
 def load_txt_data(filename, maximum_energy_per_particle = 10):
     """
     Loads and processes simulation data from a .txt file.
