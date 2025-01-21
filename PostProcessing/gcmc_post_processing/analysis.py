@@ -228,8 +228,7 @@ def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
         The computed g_G(r) values (complex).
     """
     # Compute the average RDF over all timesteps
-    avg_rdf, r_bins = average_rdf_over_trajectory(all_positions, box_size, dr=300, rcutoff=6)
-
+    avg_rdf, r_bins = average_rdf_over_trajectory(all_positions, box_size, dr=0.0001, rcutoff=0.5)
     # Find the first peak of the RDF using scipy's find_peaks
     peaks, _ = find_peaks(avg_rdf)
 
@@ -246,11 +245,11 @@ def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
     # Compute reciprocal lattice vectors based on lattice_constant
     ratio = (3 ** 0.5) / 2
     if np.abs(Lx / Ly - ratio) < 1e-4:
-        b1 = np.array([0, 4 * np.pi / (3 ** 0.5) / lattice_constant])
-        b2 = np.array([1, -1 / (3 ** 0.5)]) * (2 * np.pi / lattice_constant)
+        b1 = np.array([0, 4 * np.pi / (3 ** 0.5) / lattice_constant, 0])
+        b2 = np.array([1, -1 / (3 ** 0.5), 0]) * (2 * np.pi / lattice_constant)
     elif np.abs(Ly / Lx - ratio) < 1e-4:
-        b1 = np.array([4 * np.pi / (3 ** 0.5) / lattice_constant, 0])
-        b2 = np.array([1 / (3 ** 0.5), -1]) * (2 * np.pi / lattice_constant)
+        b1 = np.array([4 * np.pi / (3 ** 0.5) / lattice_constant, 0, 0])
+        b2 = np.array([1 / (3 ** 0.5), -1, 0]) * (2 * np.pi / lattice_constant)
     else:
         raise ValueError("Box does not match the triangular lattice symmetry.")
 

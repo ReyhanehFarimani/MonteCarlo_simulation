@@ -12,4 +12,5 @@ gcmc_post_processing.egg-info/requires.txt
 gcmc_post_processing.egg-info/top_level.txt
 test/test_data_loader.py
 test/test_g_r.py
+test/test_positional_order.py
 test/test_voronoi.py
