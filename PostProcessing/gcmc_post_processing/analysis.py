@@ -1,6 +1,6 @@
 import numpy as np
 import freud
-
+from scipy.signal import find_peaks
 
 def compute_rdf(particles, box_length, dr, rcutoff=0.9):
     """
@@ -205,3 +205,78 @@ def compute_g6(all_positions, box_size, r_max=10.0, nbins=100):
 
 
 
+def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
+    """
+    Compute g_G(r) for the given reciprocal lattice vector G using freud.density.CorrelationFunction.
+
+    Parameters
+    ----------
+    all_positions : list of np.ndarray
+        List of particle positions for each time step.
+    box_size : tuple of float
+        The size of the simulation box (Lx, Ly).
+    r_max : float, optional
+        Maximum distance for computing g_G(r).
+    n_bins : int, optional
+        Number of bins for the radial distance.
+
+    Returns
+    -------
+    r_bins : np.ndarray
+        The radial distance bins.
+    gG_r : np.ndarray
+        The computed g_G(r) values (complex).
+    """
+    # Compute the average RDF over all timesteps
+    avg_rdf, r_bins = average_rdf_over_trajectory(all_positions, box_size, dr=300, rcutoff=6)
+
+    # Find the first peak of the RDF using scipy's find_peaks
+    peaks, _ = find_peaks(avg_rdf)
+
+    if len(peaks) == 0:
+        raise ValueError("No peaks found in the RDF. Check the input data or parameters.")
+
+    # Extract the lattice constant as the radius corresponding to the first peak
+    lattice_constant = r_bins[peaks[0]]
+    print(f"lattice_constan is {lattice_constant}.")
+    
+    
+    Lx = box_size[0]
+    Ly = box_size[1]
+    # Compute reciprocal lattice vectors based on lattice_constant
+    ratio = (3 ** 0.5) / 2
+    if np.abs(Lx / Ly - ratio) < 1e-4:
+        b1 = np.array([0, 4 * np.pi / (3 ** 0.5) / lattice_constant])
+        b2 = np.array([1, -1 / (3 ** 0.5)]) * (2 * np.pi / lattice_constant)
+    elif np.abs(Ly / Lx - ratio) < 1e-4:
+        b1 = np.array([4 * np.pi / (3 ** 0.5) / lattice_constant, 0])
+        b2 = np.array([1 / (3 ** 0.5), -1]) * (2 * np.pi / lattice_constant)
+    else:
+        raise ValueError("Box does not match the triangular lattice symmetry.")
+
+    # Define the wave vector G (e.g., b1 or b2, or a combination)
+    G_vector = b1 + b2 
+
+    # Initialize CorrelationFunction
+    cf = freud.density.CorrelationFunction(bins=n_bins, r_max=r_max)
+
+    # Initialize the box
+    box = freud.box.Box(Lx=Lx, Ly=Ly)
+
+    # Accumulate g_G(r) over all time steps
+    gG_values = []
+    for positions in all_positions:
+        # Compute the dot product of G_vector with particle positions
+        values = np.exp(1j * np.dot(positions, G_vector))
+
+        # Compute g_G(r) using freud's CorrelationFunction
+        cf.compute(
+            system=(box, positions), values=values, query_points=positions, query_values=values
+        )
+
+        gG_values.append(cf.correlation)
+
+    # Average g_G(r) over all time steps
+    gG_avg = np.mean(gG_values, axis=0)
+
+    return cf.bin_centers, gG_avg
