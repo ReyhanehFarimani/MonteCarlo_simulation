@@ -30,18 +30,9 @@ Logging::~Logging() {
 
 void Logging::logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut) {
     outFile_position << particles.size() << "\n";
-    outFile_position << "Cell index for each particle\n";
-    double rcut = sqrt(r2cut);
-    int numCellsX = static_cast<int>(box.getLx() / rcut);
-    int numCellsY = static_cast<int>(box.getLy() / rcut);
-    // Ensure that there are enough cells to cover the box
-    if (box.getLx() > numCellsX * rcut) numCellsX++;
-    if (box.getLy() > numCellsY * rcut) numCellsY++;
 
     for (const auto &particle : particles) {
-        int cellX = static_cast<int>(particle.x / rcut);
-        int cellY = static_cast<int>(particle.y / rcut);
-        int cellIndex = cellY * numCellsX + cellX;
+
 
         outFile_position << "1" << " " << particle.x << " " << particle.y << "\n";
     }
@@ -51,16 +42,37 @@ void Logging::logPositions_xyz(const std::vector<Particle> &particles, const Sim
 
 }
 
-void Logging::logPositions_dump(const std::vector<Particle> &particles) {
+void Logging::logPositions_dump(const std::vector<Particle> &particles, const SimulationBox &box, int timestep) {
     if (!outFile_position.is_open()) {
         throw std::runtime_error("Position log file is not open");
     }
 
-    for (const auto &particle : particles) {
-        outFile_position << std::fixed << std::setprecision(5) 
-                         << particle.x << " " << particle.y << "\n";
-    }
-    outFile_position << "\n";  // Separate each time step with a blank line
+    // 1) Header
+    outFile_position << "ITEM: TIMESTEP\n"
+        << timestep << "\n"
+        << "ITEM: NUMBER OF ATOMS\n"
+        << particles.size() << "\n";
+
+    // 2) Box bounds (2D → use a dummy z-range [0,0])
+    double xlo = 0.0, xhi = box.getLx();
+    double ylo = 0.0, yhi = box.getLy();
+    double zlo = 0.0, zhi = 0.0;
+    outFile_position << "ITEM: BOX BOUNDS pp pp pp\n"
+    << xlo << " " << xhi << "\n"
+    << ylo << " " << yhi << "\n"
+    << zlo << " " << zhi << "\n";
+
+    // 3) Per‐atom lines: id, x, y, z
+    outFile_position << "ITEM: ATOMS id x y z\n";
+    int id = 1;
+    for (const auto &p : particles) {
+        outFile_position 
+            << id++      << " "
+            << p.x       << " "
+            << p.y       << " "
+            << 0.0       // z‐coordinate dummy
+            << "\n";
+        }
 
     outFile_position.flush();
     // fsync(fileno(outFile_position));

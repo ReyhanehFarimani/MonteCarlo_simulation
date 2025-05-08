@@ -36,10 +36,12 @@ public:
     void logPositions_xyz(const std::vector<Particle> &particles, const SimulationBox &box, double r2cut);
 
     /**
-     * @brief Logs the positions of all particles to the file.
-     * @param particles The vector of particles whose positions will be logged in the dump format.
+     * @brief Logs particle positions in LAMMPS dump format.
+     * @param particles Vector of particles to log.
+     * @param box The simulation box (for bounds).
+     * @param timestep The current timestep number.
      */
-    void logPositions_dump(const std::vector<Particle> &particles);
+    void logPositions_dump(const std::vector<Particle> &particles, const SimulationBox &box, int timestep);
 
     /**
      * @brief Logs the simularion data like energy pressure, number of particles of the system to the data file.
