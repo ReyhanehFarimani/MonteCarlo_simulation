@@ -30,7 +30,7 @@ int main(int argc, char *argv[]) {
     std::string potentialName = input.getFilename("potentialType");
     PotentialType potentialType = selectPotentialType(potentialName);
     float f_prime = 0.0;
-    float alpha = 0.0;
+    float alpha = 0.1;
     if (potentialType == PotentialType::AthermalStar)
     {
         int f = input.getConstant("f");

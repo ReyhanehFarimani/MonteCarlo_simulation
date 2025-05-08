@@ -134,7 +134,7 @@ bool Simulation::monteCarloMove() {
  */
 bool Simulation::monteCarloAddRemove() {
     double r_decide = rand() / double(RAND_MAX);
-    if (r_decide < 0.5) { 
+    if (r_decide < 1) { 
         if (numParticles < maxNumParticle){
             // random position for the partile:
             double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
@@ -462,13 +462,13 @@ double Simulation::tail_correction_energy_2d() const{
         answer = 0;
         break;
     case PotentialType::AthermalStar:{
-        double I  =  -exp(1 - r2cut)/4.0 * f_prime;
+        double I  =  -exp((1 - r2cut)/2/alpha)*alpha*alpha * f_prime;
         answer *= I;
         break;
     }
     case PotentialType::ThermalStar:{
         double r = sqrt(r2cut);
-        double I  =  -exp(1 - r2cut)/4.0 * f_prime - f_d_prime/kappa/kappa * exp(-kappa * r) * (kappa * r + 1);
+        double I  =  -exp((1 - r2cut)/2/alpha)*alpha*alpha * f_prime + f_d_prime/kappa/kappa * exp(-kappa * r) * (kappa * r + 1);
         answer *= I;
         break;
     }
@@ -502,13 +502,13 @@ double Simulation::tail_correction_pressure_2d() const{
         answer = 0;
         break;
     case PotentialType::AthermalStar:{
-        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime;
+        double I  =  f_prime * alpha * (r2cut  + 2 * alpha ) * exp( 1/2/alpha - r2cut/2/alpha);
         answer *= I;
         break;
     }
     case PotentialType::ThermalStar:{
         double r = sqrt(r2cut);
-        double I  =  -exp(1.0 - r2cut) / 2.0 * (1.0 + r2cut) * f_prime + f_d_prime / kappa/kappa * exp(-kappa * r) * (kappa * kappa* r2cut + 2 * kappa * r + 2);
+        double I  =  f_prime * alpha * (r2cut  + 2 * alpha ) * exp( 1/2/alpha - r2cut/2/alpha) - f_d_prime / kappa/kappa * exp(-kappa * r) * (kappa * kappa* r2cut + 2 * kappa * r + 2);
         answer *= I;
         break;
     }

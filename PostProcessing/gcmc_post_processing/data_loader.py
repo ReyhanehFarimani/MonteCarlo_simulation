@@ -136,7 +136,7 @@ def load_txt_data(filename, maximum_energy_per_particle = 10):
             number_of_particles = int(parts[4].split(':')[1].strip())
             pressure = float(parts[3].split(':')[1].strip())
             energy = float(parts[1].split(':')[1].strip())
-            if energy < maximum_energy_per_particle * number_of_particles:  # Data cleaning as per your original script
+            if np.abs(energy) < maximum_energy_per_particle * number_of_particles:  # Data cleaning as per your original script
                 timesteps.append(timestep)
                 num_particles.append(number_of_particles)
                 pressures.append(pressure)

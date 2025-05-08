@@ -180,7 +180,7 @@ double thermalStarForceDotR(double r2, float f_Dependant, float f_dependent_2, f
     double r = sqrt(r2);
     f = f_dependent_2 * kappa * exp(-kappa * r) * r;
     if (r2<1) {
-        return f_Dependant + f;
+        return f_Dependant - f;
     }
     return f_Dependant * r2 * exp((1 - r2)/2/alpha) - f;
 }

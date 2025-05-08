@@ -23,7 +23,6 @@ void SimulationBox::applyPBC(Particle &p) const {
     p.x -= Lx * std::floor(p.x * invLx);
     p.y -= Ly * std::floor(p.y * invLy);
 }
-
 // Calculate the minimum image distance between two particles considering PBC
 double SimulationBox::minimumImageDistance(const Particle &p1, const Particle &p2) const {
     double dx = p1.x - p2.x;

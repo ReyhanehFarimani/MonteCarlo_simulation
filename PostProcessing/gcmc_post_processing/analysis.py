@@ -1,6 +1,7 @@
 import numpy as np
 import freud
 from scipy.signal import find_peaks
+import matplotlib.pyplot as plt
 
 def compute_rdf(particles, box_length, dr, rcutoff=0.9):
     """
@@ -32,7 +33,7 @@ def compute_rdf(particles, box_length, dr, rcutoff=0.9):
 
     # Define the box
     box = freud.box.Box(Lx=box_size[0], Ly=box_size[1], Lz=0.0)
-
+    box_size = np.array([box_size[0], box_size[1]])
     # Calculate the maximum radius
     r_max = (min(box_size) / 2) * rcutoff
 
@@ -205,7 +206,7 @@ def compute_g6(all_positions, box_size, r_max=10.0, nbins=100):
 
 
 
-def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
+def compute_gG(all_positions, box_size, density = 0, r_max = 10.0, n_bins = 100):
     """
     Compute g_G(r) for the given reciprocal lattice vector G using freud.density.CorrelationFunction.
 
@@ -228,15 +229,22 @@ def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
         The computed g_G(r) values (complex).
     """
     # Compute the average RDF over all timesteps
-    avg_rdf, r_bins = average_rdf_over_trajectory(all_positions, box_size, dr=0.0001, rcutoff=0.5)
-    # Find the first peak of the RDF using scipy's find_peaks
-    peaks, _ = find_peaks(avg_rdf)
+    if density ==0:
+        avg_rdf, r_bins = average_rdf_over_trajectory(all_positions, box_size, dr=0.1, rcutoff=0.9)
+        # plt.plot(r_bins, avg_rdf)
+        # plt.show()
+        # Find the first peak of the RDF using scipy's find_peaks
+        peaks, _ = find_peaks(avg_rdf)
 
-    if len(peaks) == 0:
-        raise ValueError("No peaks found in the RDF. Check the input data or parameters.")
+        if len(peaks) == 0:
+            raise ValueError("No peaks found in the RDF. Check the input data or parameters.")
 
-    # Extract the lattice constant as the radius corresponding to the first peak
-    lattice_constant = r_bins[peaks[0]]
+        # Extract the lattice constant as the radius corresponding to the first peak
+        lattice_constant = r_bins[peaks[0]]
+    
+    else:
+        lattice_constant = np.sqrt(2 / density / 3**0.5)
+    
     print(f"lattice_constan is {lattice_constant}.")
     
     
@@ -249,7 +257,7 @@ def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
         b2 = np.array([1, -1 / (3 ** 0.5), 0]) * (2 * np.pi / lattice_constant)
     elif np.abs(Ly / Lx - ratio) < 1e-4:
         b1 = np.array([4 * np.pi / (3 ** 0.5) / lattice_constant, 0, 0])
-        b2 = np.array([1 / (3 ** 0.5), -1, 0]) * (2 * np.pi / lattice_constant)
+        b2 = np.array([-1 / (3 ** 0.5), 1, 0]) * (2 * np.pi / lattice_constant)
     else:
         raise ValueError("Box does not match the triangular lattice symmetry.")
 
@@ -279,3 +287,64 @@ def compute_gG(all_positions, box_size, r_max = 10.0, n_bins = 100):
     gG_avg = np.mean(gG_values, axis=0)
 
     return cf.bin_centers, gG_avg
+
+def sub_system_translational(all_positions, box_size, Lb):
+    
+    
+# Compute the average RDF over all timesteps
+    avg_rdf, r_bins = average_rdf_over_trajectory(all_positions, box_size, dr=0.01, rcutoff=0.9)
+    # plt.plot(r_bins, avg_rdf)
+    # plt.show()
+    # Find the first peak of the RDF using scipy's find_peaks
+    peaks, _ = find_peaks(avg_rdf)
+
+    if len(peaks) == 0:
+        raise ValueError("No peaks found in the RDF. Check the input data or parameters.")
+
+    # Extract the lattice constant as the radius corresponding to the first peak
+    lattice_constant = r_bins[peaks[0]]
+    print(f"lattice_constan is {lattice_constant}.")
+    
+    Lx = box_size[0]
+    Ly = box_size[1]
+    # Compute reciprocal lattice vectors based on lattice_constant
+    ratio = (3 ** 0.5) / 2
+    if np.abs(Lx / Ly - ratio) < 1e-4:
+        b1 = np.array([0, 4 * np.pi / (3 ** 0.5) / lattice_constant, 0])
+        b2 = np.array([1, -1 / (3 ** 0.5), 0]) * (2 * np.pi / lattice_constant)
+    elif np.abs(Ly / Lx - ratio) < 1e-4:
+        b1 = np.array([4 * np.pi / (3 ** 0.5) / lattice_constant, 0, 0])
+        b2 = np.array([1 / (3 ** 0.5), -1, 0]) * (2 * np.pi / lattice_constant)
+    else:
+        raise ValueError("Box does not match the triangular lattice symmetry.")
+
+    # Define the wave vector G (e.g., b1 or b2, or a combination)
+    G_vector = b1 + b2 
+    Psi_G = []
+    if Lb == 1:
+        for points in all_positions:
+            values = np.mean(np.exp(1j * np.dot(points, G_vector)))
+            Psi_G.append(values)
+        return Psi_G
+    sub_systems_0 = np.arange(Lb/2, 1.0 - Lb, Lb/2)
+
+    sub_systems_1 = sub_systems_0 + Lb
+
+    for points in all_positions:
+        for sub_system_0, sub_system_1 in zip(sub_systems_0, sub_systems_1):
+            x_bound = [sub_system_0 * Lx, sub_system_1 * Lx]
+            y_bound = [sub_system_0 * Ly, sub_system_1 * Ly]
+            bounded_point = points[points[:, 0]<x_bound[1]]
+            bounded_point = bounded_point[bounded_point[:,0]>x_bound[0]]
+            bounded_point = bounded_point[bounded_point[:,1]<y_bound[1]]
+            bounded_point = bounded_point[bounded_point[:,1]<y_bound[0]]
+            
+            ### computing \psi_G
+            if bounded_point != np.array([]):
+                values = np.mean(np.exp(1j * np.dot(bounded_point, G_vector)))
+                if ~np.isnan(values).all():
+                    Psi_G.append(values)
+    
+    
+    return Psi_G
+
