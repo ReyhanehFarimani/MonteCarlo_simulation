@@ -46,8 +46,20 @@ SER_SRC     := $(filter-out serial_src/main.cpp, $(ALL_SER_SRC))
 SER_TESTS   := $(wildcard unit_test_serial/*.cpp)
 SER_BIN     := unit_test_serial/run_serial_tests
 
-.PHONY: test_serial
+.PHONY: test_unit_serial
 test_serial: $(SER_SRC) $(SER_TESTS)
 	$(CXX) $(CXXFLAGS) $^ -o $(SER_BIN)
 	@echo "---- Running serial unit tests ----"
 	$(SER_BIN)
+
+
+	# Integration‐test target
+INTFLAGS    := -Iintegration_test_serial
+SER_INTG    := $(wildcard integration_test_serial/*.cpp)
+INTG_BIN    := integration_test_serial/run_integration_tests
+
+.PHONY: test_integration_serial
+test_integration_serial: $(SER_SRC) $(SER_INTG)
+	$(CXX) $(CXXFLAGS) $(INTFLAGS) $^ -o $(INTG_BIN)
+	@echo "---- Running serial integration tests ----"
+	$(INTG_BIN)
