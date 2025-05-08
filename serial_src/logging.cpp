@@ -2,6 +2,9 @@
 #include "simulation.h"
 #include <iomanip>  // For setting precision in output
 #include <cmath>
+#include <unistd.h>     // for fsync
+#include <fcntl.h>      // for file descriptor
+
 
 Logging::Logging(const std::string &filename_position, const std::string &filename_data)
     : filename_position(filename_position), filename_data(filename_data) {
@@ -42,6 +45,10 @@ void Logging::logPositions_xyz(const std::vector<Particle> &particles, const Sim
 
         outFile_position << "1" << " " << particle.x << " " << particle.y << "\n";
     }
+
+    outFile_position.flush();
+    // fsync(fileno(outFile_position));  // POSIX safe flush to disk
+
 }
 
 void Logging::logPositions_dump(const std::vector<Particle> &particles) {
@@ -54,19 +61,30 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles) {
                          << particle.x << " " << particle.y << "\n";
     }
     outFile_position << "\n";  // Separate each time step with a blank line
+
+    outFile_position.flush();
+    // fsync(fileno(outFile_position));
+
 }
 void Logging::logSimulationData(const Simulation &sim, int timestep){
     outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
             << ",\tEnergy:"<< sim.getEnergy() + sim.tail_correction_energy_2d() << ",\tTempreture:" << sim.getTemperature() << 
             ",\tPressure:" << sim.getPressure() + sim.tail_correction_pressure_2d() <<
             ",\tNumberofParticles:"<<sim.getNumParticles()<< "\n";
+
+    outFile_data.flush();
+    // fsync(fileno(outFile_data));
 }
 
 void Logging::close() {
     if (outFile_position.is_open()) {
+        outFile_position.flush();
+        // fsync(fileno(outFile_position));
         outFile_position.close();  // Close the position file when logging is done
     }
     if (outFile_data.is_open()) {
+        outFile_position.flush();
+        // fsync(fileno(outFile_data));
         outFile_data.close();  // Close the data file when logging is done
     }
 }
