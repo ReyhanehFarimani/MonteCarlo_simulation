@@ -30,3 +30,13 @@
 *.exe
 *.out
 *.app
+
+# outputfiles:
+*.dat
+*.xyz
+*.pdf
+docs/*
+site/*
+*.txt
+*.zip
+*.Doxyfile
