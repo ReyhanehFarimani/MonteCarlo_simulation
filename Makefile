@@ -33,3 +33,21 @@ clean:
 
 # Phony targets
 .PHONY: all clean
+
+# --- serial‐mode unit tests -------------------------------------
+CXX         := g++
+CXXFLAGS    := -std=c++17 -Iserial_src -Iunit_test_serial
+
+# Grab all serial_src sources...
+ALL_SER_SRC := $(wildcard serial_src/*.cpp)
+# ...but filter out the one that has main()
+SER_SRC     := $(filter-out serial_src/main.cpp, $(ALL_SER_SRC))
+
+SER_TESTS   := $(wildcard unit_test_serial/*.cpp)
+SER_BIN     := unit_test_serial/run_serial_tests
+
+.PHONY: test_serial
+test_serial: $(SER_SRC) $(SER_TESTS)
+	$(CXX) $(CXXFLAGS) $^ -o $(SER_BIN)
+	@echo "---- Running serial unit tests ----"
+	$(SER_BIN)
