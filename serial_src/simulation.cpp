@@ -305,8 +305,8 @@ void Simulation::run(int numSteps, int equilibrationTime, int outputFrequency, L
                 if (fabs(energy - computeEnergy())> 1){
                 std::cerr<<energy<<"   local energy computation is not working.   "<<computeEnergy()<<std::endl;
                 }   
-                logger.logPositions_xyz(particles, box, r2cut);
-                logger.logSimulationData(*this, step);
+                // logger.logPositions_xyz(particles, box, r2cut);
+                // logger.logSimulationData(*this, step);
             }
         }
         std::cout << "Monte Carlo simulation completed with " 

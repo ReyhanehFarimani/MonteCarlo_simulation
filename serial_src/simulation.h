@@ -5,7 +5,8 @@
 #include <string>
 #include "initial.h"
 #include "potential.h"
-#include "logging.h"
+// #include "logging.h"
+class Logging;
 struct CellListNode {
     int particleIndex;      ///< Index of the particle in the particles vector
     CellListNode* next;     ///< Pointer to the next node in the linked list
