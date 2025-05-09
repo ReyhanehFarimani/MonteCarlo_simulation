@@ -1,5 +1,4 @@
 #include "logging.h"
-#include "simulation.h"
 #include <iomanip>  // For setting precision in output
 #include <cmath>
 #include <unistd.h>     // for fsync
@@ -78,11 +77,11 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles, const Si
     // fsync(fileno(outFile_position));
 
 }
-void Logging::logSimulationData(const Simulation &sim, int timestep){
+void Logging::logSimulationData(const std::vector<Particle> &particles, const SimulationBox &box, const ThermodynamicCalculator &cal, int timestep){
     outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
-            << ",\tEnergy:"<< sim.getEnergy() + sim.tail_correction_energy_2d() << ",\tTempreture:" << sim.getTemperature() << 
-            ",\tPressure:" << sim.getPressure() + sim.tail_correction_pressure_2d() <<
-            ",\tNumberofParticles:"<<sim.getNumParticles()<< "\n";
+            << ",\tEnergy:"<< cal.computeTotalEnergy(particles, box) << ",\tTempreture:" << cal.getTemperature() << 
+            ",\tPressure:" << cal.computePressure(particles, box) <<
+            ",\tNumberofParticles:"<<cal.getNumParticles(particles)<< "\n";
 
     outFile_data.flush();
     // fsync(fileno(outFile_data));

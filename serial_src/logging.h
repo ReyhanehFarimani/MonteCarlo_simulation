@@ -4,8 +4,9 @@
 #include <fstream>
 #include <vector>
 #include "initial.h"  // Include the Particle class definition
+#include "thermodynamic_calculator.h"
 // Forward declaration of the Simulation class
-class Simulation;
+
 
 /**
  * @brief Manages logging of simulation data to files.
@@ -48,7 +49,7 @@ public:
      * @param energy The total energy of the system.
      * @param timestep The current timestep in the simulation.
      */
-    void logSimulationData(const Simulation &sim, int timestep);
+    void logSimulationData(const std::vector<Particle> &particles, const SimulationBox &box, const ThermodynamicCalculator &cal, int timestep);
 
     /**
      * @brief Closes the log file.
