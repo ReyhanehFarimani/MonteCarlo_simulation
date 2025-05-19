@@ -92,7 +92,21 @@ public:
     double computeLocalEnergy(size_t particleIndex,
                               const std::vector<Particle>& particles,
                               const SimulationBox& box,
-                              const NeighborList& neighborList) const;
+                              const NeighborList& neighbors) const{
+        double U = 0.0;
+        for (const auto& pr : neighbors) {
+            // pr.second is r_sq
+            U += computePairPotential(
+                pr.second,
+                potentialType_,
+                f_prime_,
+                f_d_prime_,
+                kappa_,
+                alpha_
+            );
+        }
+        return U;
+    }
 
     /**
      * @brief Compute the total virial (sum of r_ij · f_ij) for pressure calculations.
