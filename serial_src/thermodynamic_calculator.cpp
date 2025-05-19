@@ -50,7 +50,7 @@ double ThermodynamicCalculator::computeTotalEnergy(const std::vector<Particle>& 
     for (size_t i = 0; i < N; ++i) {
         for (size_t j = i + 1; j < N; ++j) {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
-            if (r2 < r2cut_) {
+            if (r2 <= r2cut_) {
                 totalEnergy += computePairPotential(
                     r2,
                     potentialType_,
@@ -74,7 +74,7 @@ double ThermodynamicCalculator::computeTotalVirial(const std::vector<Particle>& 
     for (size_t i = 0; i < N; ++i) {
         for (size_t j = i + 1; j < N; ++j) {
             double r2 = box.minimumImageDistanceSquared(particles[i], particles[j]);
-            if (r2 < r2cut_) {
+            if (r2 <= r2cut_) {
                 // computePairForce returns r_ij·f_ij directly
                 virial += computePairForce(
                     r2,
@@ -171,3 +171,57 @@ double ThermodynamicCalculator::computeTailCorrectionPressure2D(const std::vecto
     }
     return correction;
 }
+
+
+// CellList-based energy
+// --------------------------------------------------
+double ThermodynamicCalculator::computeTotalEnergyCellList(
+    const std::vector<Particle>& particles,
+    const SimulationBox& box) const
+{
+    CellList cl(box, rcut_);
+    cl.build(particles);
+    double U = 0.0;
+    const size_t N = particles.size();
+    for (size_t i = 0; i < N; ++i) {
+        auto neigh = cl.getNeighbors(i, particles);
+        for (auto& pr : neigh) {
+            U += computePairPotential(
+                pr.second, potentialType_, f_prime_, f_d_prime_, kappa_, alpha_
+            );
+        }
+    }
+    return 0.5 * U;
+}
+
+// CellList-based virial
+// --------------------------------------------------
+double ThermodynamicCalculator::computeTotalVirialCellList(
+    const std::vector<Particle>& particles,
+    const SimulationBox& box) const
+{
+    CellList cl(box, rcut_);
+    cl.build(particles);
+    double W = 0.0;
+    const size_t N = particles.size();
+    for (size_t i = 0; i < N; ++i) {
+        auto neigh = cl.getNeighbors(i, particles);
+        for (auto& pr : neigh) {
+            W += computePairForce(
+                pr.second, potentialType_, f_prime_, f_d_prime_, kappa_, alpha_
+            );
+        }
+    }
+    return 0.5 * W;
+}
+
+// Pressure in 2D: P = ρ T + W / (2 V)
+double ThermodynamicCalculator::computePressureCellList(const std::vector<Particle>& particles,
+                                                const SimulationBox& box) const {
+    double V = getVolume(box);
+    double rho = computeDensity(particles, box);
+    double W = computeTotalVirialCellList(particles, box);
+    // virial theorem in 2D: PV = N T + W/2  (Allen & Tildesley, Eqn. 2.60)
+    return rho * temperature_ + W / (2.0 * V);
+}
+

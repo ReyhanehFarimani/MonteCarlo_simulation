@@ -4,7 +4,7 @@
 #include <vector>
 #include "initial.h"       ///< For Particle
 #include "potential.h"     ///< For PotentialType and computePairPotential
-#include "simulation.h"    ///< For SimulationBox
+#include "cell_list.h"
 
 /**
  * @class ThermodynamicCalculator
@@ -149,6 +149,32 @@ public:
     double computeTailCorrectionPressure2D(const std::vector<Particle>& particles,
             const SimulationBox& box) const;
 
+    /**
+     * @brief Compute total potential energy using a CellList for neighbor queries.
+     * @param particles Particle positions.
+     * @param box SimulationBox defining PBC.
+     * @return Total potential energy (unique pairs).
+     */
+    double computeTotalEnergyCellList(const std::vector<Particle>& particles,
+                                      const SimulationBox& box) const;
+
+    /**
+     * @brief Compute total virial using a CellList for neighbor queries.
+     * @param particles Particle positions.
+     * @param box SimulationBox defining PBC.
+     * @return Total virial W = Σ_{i<j} r_ij·f_ij.
+     */
+    double computeTotalVirialCellList(const std::vector<Particle>& particles,
+                                      const SimulationBox& box) const;
+
+                                          /**
+     * @brief Compute pressure using a CellList for neighbor queries.
+     * @param particles Particle positions.
+     * @param box SimulationBox defining PBC.
+     * @return System pressure.
+     */
+    double computePressureCellList(const std::vector<Particle>& particles,
+                                      const SimulationBox& box) const;
 private:
     //── Thermodynamic parameters ───────────────────────────────────────
     double temperature_;          ///< System temperature (T)
