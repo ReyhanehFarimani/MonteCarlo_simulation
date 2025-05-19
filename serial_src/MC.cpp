@@ -1,0 +1,122 @@
+#include "MC.h"
+#include <cmath>
+
+MonteCarlo::MonteCarlo(const SimulationBox& box,
+                       std::vector<Particle>& particles,
+                       ThermodynamicCalculator& calc,
+                       double rcut,
+                       Ensemble ensemble,
+                       Logging& logger,
+                       RNG& rng)
+    : box_(box),
+      particles_(particles),
+      calc_(calc),
+      cellList_(box, rcut),
+      rng_(rng),
+      rcut_(rcut),
+      delta_(0.1 * rcut),
+      ensemble_(ensemble),
+      logger_(logger),
+      beta(1.0 / calc_.getTemperature()),
+      energy(calc_.computeTotalEnergy(particles, box))
+{
+    cellList_.build(particles_);
+}
+
+void MonteCarlo::run(size_t nSteps) {
+    const size_t N = particles_.size();
+    for (size_t step = 0; step < nSteps; ++step) {
+        for (size_t i = 0; i < N; ++i) {
+            displacementMove_cell_list_dE();
+        }
+        if (ensemble_ == Ensemble::GCMC) {
+            grandCanonicalMove();
+        }
+    }
+    logger_.close();
+}
+
+bool MonteCarlo::stepCellList() {
+    return displacementMove_cell_list_dE();
+}
+
+bool MonteCarlo::stepBruteForce() {
+    return displacementMove_no_cell_list();
+}
+
+double MonteCarlo::getEnergy() const {
+    return energy;
+}
+
+const std::vector<Particle>& MonteCarlo::getParticles() const {
+    return particles_;
+}
+
+bool MonteCarlo::displacementMove_cell_list_dE() {
+    size_t idx = rng_.uniformInt(0, static_cast<int>(particles_.size() - 1));
+    Particle oldPos = particles_[idx];
+
+    double dx = rng_.uniform(-delta_, delta_);
+    double dy = rng_.uniform(-delta_, delta_);
+    auto neighbors = cellList_.getNeighbors(idx, particles_);
+    double U_old = calc_.computeLocalEnergy(idx, particles_, box_, neighbors);
+
+    particles_[idx].updatePosition(dx, dy);
+    box_.applyPBC(particles_[idx]);
+    neighbors = cellList_.getNeighbors(idx, particles_);
+    double U_new = calc_.computeLocalEnergy(idx, particles_, box_, neighbors);
+    double dU = U_new - U_old;
+    energy += dU;
+    bool accept = false;
+    if (dU <= 0.0) {
+        accept = true;
+    } else {
+        double p = std::exp(-beta * dU);
+        accept = (rng_.uniform01() < p);
+    }
+    if (!accept) {
+        particles_[idx] = oldPos;
+        energy -= dU;
+    }
+    return accept;
+}
+
+bool MonteCarlo::displacementMove_no_cell_list() {
+    size_t idx = rng_.uniformInt(0, static_cast<int>(particles_.size() - 1));
+    Particle oldPos = particles_[idx];
+
+    double dx = rng_.uniform(-delta_, delta_);
+    double dy = rng_.uniform(-delta_, delta_);
+    double U_old = calc_.computeTotalEnergy(particles_, box_);
+
+    particles_[idx].updatePosition(dx, dy);
+    box_.applyPBC(particles_[idx]);
+
+    double U_new = calc_.computeTotalEnergy(particles_, box_);
+    double dU = U_new - U_old;
+    energy += dU;
+    bool accept = false;
+    if (dU <= 0.0) {
+        accept = true;
+    } else {
+        double p = std::exp(-beta * dU);
+        accept = (rng_.uniform01() < p);
+    }
+    if (!accept) {
+        particles_[idx] = oldPos;
+        energy -= dU;
+    }
+    return accept;
+}
+
+bool MonteCarlo::grandCanonicalMove() {
+    return false;
+}
+
+void MonteCarlo::updateCellList() {
+    cellList_.build(particles_);
+}
+
+void MonteCarlo::recordObservables(size_t step) {
+    // no-op for now
+}
