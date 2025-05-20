@@ -43,8 +43,10 @@ public:
     /**
      * @brief Run MC simulation for a number of cycles.
      * @param nSteps Number of MC cycles (each cycle = N displacements + possible GC move)
+     * @param fOutputStep Frequecy of writing outputs
+     * @param fUpdateCell Frequency of updating cell list
      */
-    void run(size_t nSteps);
+    void run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
 
     // --- Testing interfaces ---
     /**

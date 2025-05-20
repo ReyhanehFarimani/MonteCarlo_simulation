@@ -23,15 +23,20 @@ MonteCarlo::MonteCarlo(const SimulationBox& box,
     cellList_.build(particles_);
 }
 
-void MonteCarlo::run(size_t nSteps) {
-    const size_t N = particles_.size();
-    for (size_t step = 0; step < nSteps; ++step) {
-        for (size_t i = 0; i < N; ++i) {
-            displacementMove_cell_list_dE();
-        }
-        if (ensemble_ == Ensemble::GCMC) {
-            grandCanonicalMove();
-        }
+void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
+        for (size_t step = 0; step < nSteps; ++step) {
+            
+            size_t N = particles_.size();
+
+            for (size_t i = 0; i < N; ++i) {
+                displacementMove_cell_list_dE();
+            }
+            if (ensemble_ == Ensemble::GCMC) {
+                grandCanonicalMove();
+            }
+            if (step%fUpdateCell == 0) updateCellList();
+            if (step%fOutputStep == 0) recordObservables(step);
+            
     }
     logger_.close();
 }
@@ -118,5 +123,6 @@ void MonteCarlo::updateCellList() {
 }
 
 void MonteCarlo::recordObservables(size_t step) {
-    // no-op for now
+    logger_.logSimulationData(particles_, box_, calc_, static_cast<int>(step));
+    logger_.logPositions_dump(particles_, box_, step);
 }
