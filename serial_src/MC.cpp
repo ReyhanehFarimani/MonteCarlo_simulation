@@ -1,6 +1,6 @@
 #include "MC.h"
 #include <cmath>
-
+#include <iostream>
 MonteCarlo::MonteCarlo(const SimulationBox& box,
                        std::vector<Particle>& particles,
                        ThermodynamicCalculator& calc,
@@ -25,7 +25,7 @@ MonteCarlo::MonteCarlo(const SimulationBox& box,
 
 void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
         for (size_t step = 0; step < nSteps; ++step) {
-            
+
             size_t N = particles_.size();
 
             for (size_t i = 0; i < N; ++i) {
@@ -34,11 +34,21 @@ void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
             if (ensemble_ == Ensemble::GCMC) {
                 grandCanonicalMove();
             }
-            if (step%fUpdateCell == 0) updateCellList();
+            if (step%fUpdateCell == 0){
+                updateCellList();
+                double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
+                if (abs(energy - e_tmp)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy = e_tmp;
+                std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
+            }
             if (step%fOutputStep == 0) recordObservables(step);
             
+            
     }
-    logger_.close();
+    // logger_.close();
 }
 
 bool MonteCarlo::stepCellList() {

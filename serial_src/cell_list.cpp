@@ -35,8 +35,8 @@ std::vector<std::pair<int,double>> CellList::getNeighbors(int idx, const std::ve
     int cy = ci / nx_;
 
     // loop over this cell and 8 neighbors for periodic cells
-    for (int ddx = -1; ddx <= 1; ++ddx) {
-        for (int ddy = -1; ddy <= 1; ++ddy) {
+    for (int ddx = -2; ddx <= 2; ++ddx) {
+        for (int ddy = -2; ddy <= 2; ++ddy) {
             int ncx = (cx + ddx + nx_) % nx_;
             int ncy = (cy + ddy + ny_) % ny_;
             int nci = ncx + ncy * nx_;
