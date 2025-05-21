@@ -30,7 +30,13 @@ public:
      * @return Vector of pairs (neighbor index, r_sq) excluding self.
      */
     std::vector<std::pair<int,double>> getNeighbors(int idx, const std::vector<Particle>& particles) const;
-
+    /**
+     * @brief Get neighbor indices and squared distances of a given particle (within cutoff).
+     * @param particle the particle itself.
+     * @param particles Vector of Particle objects (for position lookup).
+     * @return Vector of pairs (neighbor index, r_sq) excluding self.
+     */
+    std::vector<std::pair<int,double>> getNeighbors2(const Particle& p, const std::vector<Particle>& particles) const;
 private:
     const SimulationBox& box_;
     double rcut_;

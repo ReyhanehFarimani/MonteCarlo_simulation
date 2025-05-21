@@ -5,6 +5,7 @@
 ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
                                                  PotentialType potentialType,
                                                  double rcut,
+                                                 double mu,
                                                  double f_prime,
                                                  double alpha,
                                                  double f_d_prime,
@@ -16,7 +17,8 @@ ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
       f_prime_(f_prime),
       alpha_(alpha),
       f_d_prime_(f_d_prime),
-      kappa_(kappa) {
+      kappa_(kappa),
+      mu_(mu) {
     // Validate parameters
     assert(rcut_ >= 0.0 && "Cutoff distance must be non-negative");
 }
@@ -28,7 +30,9 @@ size_t ThermodynamicCalculator::getNumParticles(const std::vector<Particle>& par
 double ThermodynamicCalculator::getTemperature() const {
     return temperature_;
 }
-
+double ThermodynamicCalculator::getActivity() const {
+    return mu_;
+}
 double ThermodynamicCalculator::getVolume(const SimulationBox& box) const {
     double V = box.getV();
     assert(V > 0.0 && "Simulation box volume must be positive");

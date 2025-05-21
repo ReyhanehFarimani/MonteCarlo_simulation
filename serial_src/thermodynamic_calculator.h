@@ -33,6 +33,7 @@ public:
     ThermodynamicCalculator(double temperature,
                              PotentialType potentialType,
                              double rcut,
+                             double mu = 0.0,
                              double f_prime = 0.0,
                              double alpha   = 0.0,
                              double f_d_prime = 0.0,
@@ -51,7 +52,11 @@ public:
      * @return Temperature provided at construction.
      */
     double getTemperature() const;
-
+    /**
+     * @brief Get the system Activity.
+     * @return  provided at construction.
+     */
+    double getActivity() const;
     /**
      * @brief Compute the volume of the simulation box.
      * @param box SimulationBox describing system dimensions.
@@ -192,6 +197,7 @@ public:
 private:
     //── Thermodynamic parameters ───────────────────────────────────────
     double temperature_;          ///< System temperature (T)
+    double mu_;                    ///< System chemical Potential
     double rcut_;                 ///< Cutoff distance (r_cut)
     double r2cut_;                ///< Square of cutoff distance (r_cut^2)
 

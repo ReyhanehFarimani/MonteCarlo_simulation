@@ -35,8 +35,8 @@ std::vector<std::pair<int,double>> CellList::getNeighbors(int idx, const std::ve
     int cy = ci / nx_;
 
     // loop over this cell and 8 neighbors for periodic cells
-    for (int ddx = -2; ddx <= 2; ++ddx) {
-        for (int ddy = -2; ddy <= 2; ++ddy) {
+    for (int ddx = -1; ddx <= 1; ++ddx) {
+        for (int ddy = -1; ddy <= 1; ++ddy) {
             int ncx = (cx + ddx + nx_) % nx_;
             int ncy = (cy + ddy + ny_) % ny_;
             int nci = ncx + ncy * nx_;
@@ -45,6 +45,37 @@ std::vector<std::pair<int,double>> CellList::getNeighbors(int idx, const std::ve
                 // compute dx, dy with PBC
                 double dx = particles[j].x - particles[idx].x;
                 double dy = particles[j].y - particles[idx].y;
+                dx -= box_.getLx() * std::round(dx/box_.getLx());
+                dy -= box_.getLy() * std::round(dy/box_.getLy());
+                double r_sq = dx*dx + dy*dy;
+                if (r_sq <= rcutsq_) {
+                    neighbors.emplace_back(j, r_sq);
+                }
+            }
+        }
+    }
+    return neighbors;
+}
+
+std::vector<std::pair<int,double>> CellList::getNeighbors2(const Particle& p, const std::vector<Particle>& particles) const {
+    std::vector<std::pair<int,double>> neighbors;
+    double x = p.x;
+    double y = p.y;
+    int cx = static_cast<int>(std::floor(x / cell_dx_));
+    int cy = static_cast<int>(std::floor(y / cell_dy_));
+    cx = (cx % nx_ + nx_) % nx_;
+    cy = (cy % ny_ + ny_) % ny_;
+
+    // loop over this cell and 8 neighbors for periodic cells
+    for (int ddx = -1; ddx <= 1; ++ddx) {
+        for (int ddy = -1; ddy <= 1; ++ddy) {
+            int ncx = (cx + ddx + nx_) % nx_;
+            int ncy = (cy + ddy + ny_) % ny_;
+            int nci = ncx + ncy * nx_;
+            for (int j : cells_[nci]) {
+                // compute dx, dy with PBC
+                double dx = particles[j].x - x;
+                double dy = particles[j].y - y;
                 dx -= box_.getLx() * std::round(dx/box_.getLx());
                 dy -= box_.getLy() * std::round(dy/box_.getLy());
                 double r_sq = dx*dx + dy*dy;

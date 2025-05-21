@@ -80,6 +80,7 @@ private:
     Logging& logger_;
     double beta;
     double energy;
+    double z;
 
     // Internal move implementations
     bool displacementMove_cell_list_dE();
