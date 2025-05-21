@@ -29,6 +29,8 @@ r2cut 2.5
 # Type of potential: LennardJones, WCA, Yukawa, AthermalStar, Ideal
 potentialType AthermalStar
 f 10
+alpha 0.7
+
 # Type of simulation: NVT, GCMC
 simulationType NVT
 mu 500.0
