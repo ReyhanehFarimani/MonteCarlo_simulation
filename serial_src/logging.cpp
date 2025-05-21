@@ -79,8 +79,8 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles, const Si
 }
 void Logging::logSimulationData(const std::vector<Particle> &particles, const SimulationBox &box, const ThermodynamicCalculator &cal, int timestep){
     outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
-            << ",\tEnergy:"<< cal.computeTotalEnergy(particles, box) << ",\tTempreture:" << cal.getTemperature() << 
-            ",\tPressure:" << cal.computePressure(particles, box) <<
+            << ",\tEnergy:"<< cal.computeTotalEnergyCellList(particles, box) << ",\tTempreture:" << cal.getTemperature() << 
+            ",\tPressure:" << cal.computePressureCellList(particles, box) <<
             ",\tNumberofParticles:"<<cal.getNumParticles(particles)<< "\n";
 
     outFile_data.flush();

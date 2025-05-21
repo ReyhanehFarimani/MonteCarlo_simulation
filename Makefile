@@ -46,7 +46,7 @@ SER_SRC     := $(filter-out serial_src/main.cpp, $(ALL_SER_SRC))
 SER_TESTS   := $(wildcard unit_test_serial/*.cpp)
 SER_BIN     := unit_test_serial/run_serial_tests
 
-.PHONY: test_unit_serial
+.PHONY: test_serial
 test_serial: $(SER_SRC) $(SER_TESTS)
 	$(CXX) $(CXXFLAGS) $^ -o $(SER_BIN)
 	@echo "---- Running serial unit tests ----"
@@ -63,3 +63,20 @@ test_integration_serial: $(SER_SRC) $(SER_INTG)
 	$(CXX) $(CXXFLAGS) $(INTFLAGS) $^ -o $(INTG_BIN)
 	@echo "---- Running serial integration tests ----"
 	$(INTG_BIN)
+
+
+# Automatically collect all .cpp in serial_src
+SERIAL_SRCS := $(wildcard serial_src/*.cpp)
+SERIAL_OBJS := $(patsubst serial_src/%.cpp,serial_src/%.o,$(SERIAL_SRCS))
+# Exclude simulation main.o to avoid duplicate main()
+BENCH_OBJS := $(filter-out serial_src/main.o,$(SERIAL_OBJS))
+
+# Benchmark build target
+bench/benchmark_thermo: $(BENCH_OBJS) bench/benchmark_thermo.cpp
+	$(CXX) $(CXXFLAGS) $^ -o $@
+
+.PHONY: bench-test
+bench-test: bench/benchmark_thermo
+	@echo "Running benchmark..."
+	@./bench/benchmark_thermo
+	@echo "Benchmark completed."

@@ -4,7 +4,7 @@
 #include <vector>
 #include "initial.h"       ///< For Particle
 #include "potential.h"     ///< For PotentialType and computePairPotential
-#include "simulation.h"    ///< For SimulationBox
+#include "cell_list.h"
 
 /**
  * @class ThermodynamicCalculator
@@ -33,6 +33,7 @@ public:
     ThermodynamicCalculator(double temperature,
                              PotentialType potentialType,
                              double rcut,
+                             double mu = 0.0,
                              double f_prime = 0.0,
                              double alpha   = 0.0,
                              double f_d_prime = 0.0,
@@ -51,7 +52,11 @@ public:
      * @return Temperature provided at construction.
      */
     double getTemperature() const;
-
+    /**
+     * @brief Get the system Activity.
+     * @return  provided at construction.
+     */
+    double getActivity() const;
     /**
      * @brief Compute the volume of the simulation box.
      * @param box SimulationBox describing system dimensions.
@@ -92,7 +97,21 @@ public:
     double computeLocalEnergy(size_t particleIndex,
                               const std::vector<Particle>& particles,
                               const SimulationBox& box,
-                              const NeighborList& neighborList) const;
+                              const NeighborList& neighbors) const{
+        double U = 0.0;
+        for (const auto& pr : neighbors) {
+            // pr.second is r_sq
+            U += computePairPotential(
+                pr.second,
+                potentialType_,
+                f_prime_,
+                f_d_prime_,
+                kappa_,
+                alpha_
+            );
+        }
+        return U;
+    }
 
     /**
      * @brief Compute the total virial (sum of r_ij · f_ij) for pressure calculations.
@@ -149,9 +168,36 @@ public:
     double computeTailCorrectionPressure2D(const std::vector<Particle>& particles,
             const SimulationBox& box) const;
 
+    /**
+     * @brief Compute total potential energy using a CellList for neighbor queries.
+     * @param particles Particle positions.
+     * @param box SimulationBox defining PBC.
+     * @return Total potential energy (unique pairs).
+     */
+    double computeTotalEnergyCellList(const std::vector<Particle>& particles,
+                                      const SimulationBox& box) const;
+
+    /**
+     * @brief Compute total virial using a CellList for neighbor queries.
+     * @param particles Particle positions.
+     * @param box SimulationBox defining PBC.
+     * @return Total virial W = Σ_{i<j} r_ij·f_ij.
+     */
+    double computeTotalVirialCellList(const std::vector<Particle>& particles,
+                                      const SimulationBox& box) const;
+
+                                          /**
+     * @brief Compute pressure using a CellList for neighbor queries.
+     * @param particles Particle positions.
+     * @param box SimulationBox defining PBC.
+     * @return System pressure.
+     */
+    double computePressureCellList(const std::vector<Particle>& particles,
+                                      const SimulationBox& box) const;
 private:
     //── Thermodynamic parameters ───────────────────────────────────────
     double temperature_;          ///< System temperature (T)
+    double mu_;                    ///< System chemical Potential
     double rcut_;                 ///< Cutoff distance (r_cut)
     double r2cut_;                ///< Square of cutoff distance (r_cut^2)
 
