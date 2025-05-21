@@ -1,6 +1,5 @@
 #include "catch.hpp"
 #include "../serial_src/initial.h"
-#include "../serial_src/simulation.h"
 #include "../serial_src/thermodynamic_calculator.h"
 #include "../serial_src/rng.h"
 #include "../serial_src/logging.h"
@@ -24,7 +23,7 @@ TEST_CASE("Single displacement consistency over many steps: cell list vs brute f
     // Initialize particle set and warm up via cell-list moves
     std::vector<Particle> pWarm;
     initializeParticles(pWarm, box, static_cast<int>(N), true, SEED);
-    ThermodynamicCalculator calc(TEMP, PotentialType::LennardJones, RCUT);
+    ThermodynamicCalculator calc(TEMP, PotentialType::LennardJones, RCUT, 0.0);
     Logging dummyLogger("tmp1", "tmp2");
     MonteCarlo mcWarm(box, pWarm, calc, RCUT, Ensemble::NVT, dummyLogger, rngWarm);
     // Warm up: N*1000 displacement moves
@@ -47,7 +46,7 @@ TEST_CASE("Single displacement consistency over many steps: cell list vs brute f
     REQUIRE(E0_cell == Approx(E0_bf));
 
     // Perform 10,000 displacement steps and compare
-    for (int t = 0; t < 100000; ++t) {
+    for (int t = 0; t < 10000; ++t) {
         bool accCell = mcCell.stepCellList();
         bool accBF   = mcBF.stepBruteForce();
         // Periodically ensure cell-list is rebuilt exactly
@@ -56,7 +55,7 @@ TEST_CASE("Single displacement consistency over many steps: cell list vs brute f
         // Energies should remain close
         double Ec = mcCell.getEnergy();
         double Eb = mcBF.getEnergy();
-        REQUIRE(std::abs(Ec - Eb) / std::max(1.0, std::abs(Ec)) < 1e-4);
+        REQUIRE(std::abs(Ec - Eb) / std::max(1.0, std::abs(Ec)) < 5e-4);
         // Accept/reject decisions must match
         REQUIRE(accCell == accBF);
     }

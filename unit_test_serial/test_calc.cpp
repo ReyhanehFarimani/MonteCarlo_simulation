@@ -92,7 +92,7 @@ TEST_CASE("AthermalStar on 2x2 lattice", "[Thermo][AthermalStar][Lattice]") {
     std::vector<Particle> P;
     for(size_t i=0;i<Nx;++i) for(size_t j=0;j<Ny;++j) P.emplace_back(i*d, j*d);
     double f_prime=10.0, alpha=0.5;
-    ThermodynamicCalculator calc(1.0, PotentialType::AthermalStar, 1.4, f_prime, alpha);
+    ThermodynamicCalculator calc(1.0, PotentialType::AthermalStar, 1.0001,0.0, f_prime, alpha);
     double Upair = f_prime*alpha, Wpair = f_prime;
     double pairCount = (P.size()*4.0)/2.0;
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(pairCount*Upair));
@@ -108,7 +108,7 @@ TEST_CASE("ThermalStar on 4x8 lattice", "[Thermo][ThermalStar][Lattice]") {
     std::vector<Particle> P;
     for(size_t i=0;i<Nx;++i) for(size_t j=0;j<Ny;++j) P.emplace_back(i*d, j*d);
     double f_prime=8.0, f_d_prime=2.0, kappa=1.2, alpha=0.3;
-    ThermodynamicCalculator calc(1.0, PotentialType::ThermalStar, 1.4, f_prime, alpha, f_d_prime, kappa);
+    ThermodynamicCalculator calc(1.0, PotentialType::ThermalStar, 1.4,0.0, f_prime, alpha, f_d_prime, kappa);
     double e2 = f_d_prime * std::exp(-kappa);
     double Upair = f_prime*alpha - e2;
     double Wpair = f_prime - (f_d_prime * kappa * std::exp(-kappa));
