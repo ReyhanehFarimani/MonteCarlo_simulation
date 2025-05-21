@@ -3,7 +3,6 @@
 
 #include <vector>
 #include "initial.h"
-#include "simulation.h"
 #include "cell_list.h"
 #include "thermodynamic_calculator.h"
 #include "logging.h"
