@@ -121,6 +121,9 @@ double ThermodynamicCalculator::computeTailCorrectionEnergy2D(const std::vector<
         case PotentialType::WCA:
             correction = 0.0;
             break;
+        case PotentialType::Yukawa:
+            correction = 0.0;
+            break;
         case PotentialType::AthermalStar: {
             double I = -std::exp((1.0 - r2cut_) / (2.0 * alpha_)) * alpha_ * alpha_ * f_prime_;
             correction = factor * I;
@@ -170,6 +173,9 @@ double ThermodynamicCalculator::computeTailCorrectionPressure2D(const std::vecto
             break;
         }
         case PotentialType::Ideal:
+            correction = 0.0;
+            break;
+        case PotentialType::Yukawa:
             correction = 0.0;
             break;
     }

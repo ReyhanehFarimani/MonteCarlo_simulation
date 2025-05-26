@@ -31,10 +31,11 @@ void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
 
             for (size_t i = 0; i < N; ++i) {
                 displacementMove_cell_list_dE();
+                simulation_step_time += 1;
             }
             if (ensemble_ == Ensemble::GCMC) {
                 grandCanonicalMove();
-                updateCellList();
+                // updateCellList();
             }
             if (step%fUpdateCell == 0){
                 updateCellList();
@@ -47,7 +48,7 @@ void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
                 // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
             }
             if ((step + 1) % fOutputStep == 0 || step == nSteps - 1)
-                recordObservables(step);    
+                recordObservables(simulation_step_time);    
             
     }
     // logger_.close();
@@ -133,6 +134,7 @@ bool MonteCarlo::grandCanonicalMove() {
 //  50/50 chance to insert or delete
     double check = rng_.uniform01();
     if (check < 0.3) {
+        simulation_step_time += 1;
         // Insertion attempt
         Particle pnew(rng_.uniform(0, box_.getLx()), rng_.uniform(0, box_.getLy()));
         auto new_neighbors = cellList_.getNeighbors2(pnew, particles_);  // neighbors for the new particle
@@ -140,20 +142,23 @@ bool MonteCarlo::grandCanonicalMove() {
         double acc =  (z * V) / (N + 1) * std::exp(- beta * dU);
         if (acc >= 1){
             energy += dU;
+            // cellList_.addParticle(pnew, N);
             particles_.push_back(pnew);
-            // cellList_.build(particles_);  // rebuild to reflect addition
+            updateCellList();
             return true;
         }
         else if (rng_.uniform01() < acc) {
             energy += dU;
+            // cellList_.addParticle(pnew, N);
             particles_.push_back(pnew);
-            // cellList_.build(particles_);  // rebuild to reflect addition
+            updateCellList();
             return true;
         } 
         else {
             return false;
         }
     } else if (check <0.6){
+        simulation_step_time += 1;
         // Deletion attempt
         if (N == 0) return false;
         size_t idx = rng_.uniformInt(0, N - 1);
@@ -162,14 +167,16 @@ bool MonteCarlo::grandCanonicalMove() {
         double acc =  N / (z * V) * std::exp(- beta * dU);
         if (acc >= 1)
         {
+            // cellList_.removeParticle(idx);
             particles_.erase(particles_.begin() + idx);
+            updateCellList();
             energy += dU;
-            // cellList_.build(particles_);  // rebuild to reflect reduction
             return true;
         }
         else if (rng_.uniform01() < acc) {
+            // cellList_.removeParticle(idx);
             particles_.erase(particles_.begin() + idx);
-            // cellList_.build(particles_);  // rebuild to reflect reduction
+            updateCellList();
             energy += dU;
             return true;
         } else {

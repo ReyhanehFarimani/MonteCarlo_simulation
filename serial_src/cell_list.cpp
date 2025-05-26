@@ -95,3 +95,38 @@ int CellList::cellIndex(double x, double y) const {
     cy = (cy % ny_ + ny_) % ny_;
     return cx + cy * nx_;
 }
+
+void CellList::addParticle(const Particle& p, int index) {
+    int cellIdx = cellIndex(p.x, p.y);
+    if (index >= particle_cell_.size()) {
+        particle_cell_.resize(index + 1);  // accommodate new index
+    }
+    particle_cell_[index] = cellIdx;
+    cells_[cellIdx].push_back(index);
+}
+
+void CellList::removeParticle(int index) {
+    if (index < 0 || index >= static_cast<int>(particle_cell_.size()))
+        return;
+
+    int cellIdx = particle_cell_[index];
+
+    // 1. Remove from the appropriate cell
+    auto& cell = cells_[cellIdx];
+    cell.erase(std::remove(cell.begin(), cell.end(), index), cell.end());
+
+    // 2. Fix remaining indices in all cells
+    for (auto& c : cells_) {
+        for (int& i : c) {
+            if (i > index) {
+                i -= 1;
+            }
+        }
+    }
+
+    // 3. Fix particle_cell_ entries
+    for (size_t i = index + 1; i < particle_cell_.size(); ++i) {
+        particle_cell_[i - 1] = particle_cell_[i];
+    }
+    particle_cell_.pop_back();  // remove the extra entry at the end
+}

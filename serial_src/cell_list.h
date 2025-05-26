@@ -37,7 +37,21 @@ public:
      * @return Vector of pairs (neighbor index, r_sq) excluding self.
      */
     std::vector<std::pair<int,double>> getNeighbors2(const Particle& p, const std::vector<Particle>& particles) const;
-private:
+
+    /**
+     * @brief Adds a new particle to the appropriate cell.
+     * @param p The particle to be added.
+     * @param index Index of the particle in the main particle vector.
+     */
+    void addParticle(const Particle& p, int index);
+
+    /**
+     * @brief Removes a particle from its current cell.
+     * @param index Index of the particle in the main particle vector.
+     */
+    void removeParticle(int index);
+
+    private:
     const SimulationBox& box_;
     double rcut_;
     double rcutsq_;

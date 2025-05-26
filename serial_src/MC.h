@@ -80,6 +80,7 @@ private:
     double beta;
     double energy;
     double z;
+    int simulation_step_time = 0;
 
     // Internal move implementations
     bool displacementMove_cell_list_dE();
