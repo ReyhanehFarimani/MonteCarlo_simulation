@@ -144,3 +144,20 @@ def load_txt_data(filename, maximum_energy_per_particle = 10):
     
     return timesteps, num_particles, pressures, energies
 
+def load_dump_file(file_name):
+    return_value = []
+    from ovito.io import import_file
+    # Load the LAMMPS dump file
+    pipeline = import_file(file_name)
+    for t in range(pipeline.num_frames):
+        data = pipeline.compute(t)
+        # Extract positions
+        positions = data.particles.positions
+
+        # Convert to NumPy array
+        positions_np = np.array(positions)
+        
+        return_value.append(positions_np)
+    box = np.array([data.cell[0][0], data.cell[1][1]])
+    
+    return return_value, box

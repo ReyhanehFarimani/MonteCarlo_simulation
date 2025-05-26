@@ -3,6 +3,22 @@ import freud
 from scipy.signal import find_peaks
 import matplotlib.pyplot as plt
 
+def compute_local_density(particles, box_length, rcutoff=0.9, diameter = 1):
+    if isinstance(box_length, float) or isinstance(box_length, int):
+        box_size = [box_length, box_length]
+    else:
+        box_size = box_length
+
+    # Define the box
+    box = freud.box.Box(Lx=box_size[0], Ly=box_size[1], Lz=0.0)
+    box_size = np.array([box_size[0], box_size[1]])
+    # Calculate the maximum radius
+    r_max = (min(box_size) / 2) * rcutoff
+
+    ld = freud.density.LocalDensity(r_max=r_max, diameter=diameter)
+    ld.compute(system= (box, particles), query_points = particles)
+    
+    return ld
 def compute_rdf(particles, box_length, dr, rcutoff=0.9):
     """
     Computes the 2D radial distribution function g(r) of a set of particle coordinates,

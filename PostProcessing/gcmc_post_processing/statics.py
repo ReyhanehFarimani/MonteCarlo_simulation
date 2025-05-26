@@ -55,6 +55,8 @@ def read_simulation_input(input_file):
                     params['boxLengthY'] = float(parts[-1])
                 elif "temperature" in line:
                     params['T'] = float(parts[-1])
+                elif "kappa" in line:
+                    params['kappa'] = float(parts[-1])
             except ValueError:
                 # print(f"Skipping line due to conversion error: {line}")
                 pass
@@ -82,6 +84,9 @@ def process_simulation_data(data_files, input_files, lag):
         print(filename)
         f = params['f']
         mu = params['mu']
+        l = -(params['kappa'] - 6.56 )/7.71
+        if (l==6.56/7.71):
+            l = 0
         box_area = params['boxLengthX'] * params['boxLengthY']
         temperature = params['T']
         # Load simulation data
@@ -109,6 +114,7 @@ def process_simulation_data(data_files, input_files, lag):
                     'pressure': p,
                     'energy': e,
                     'f': f,
+                    'l': l,
                     'bx_area' : box_area
                 })
 
@@ -116,6 +122,7 @@ def process_simulation_data(data_files, input_files, lag):
             avg_records.append({
                 'mu': mu,
                 'temperature': temperature,
+                'l': l,
                 'sim_avgN': sim_avgN,
                 'avg_pressure': avg_pressure,
                 'avg_energy': avg_energy,
