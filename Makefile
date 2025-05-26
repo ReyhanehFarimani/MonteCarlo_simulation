@@ -5,16 +5,18 @@ CXX = mpic++
 CXXFLAGS = -std=c++11 -Wall -Wextra -O2
 
 # Executable name
-EXEC = Monte_carlo_serial
+EXEC = Monte_carlo_serial.o
 
 # Source files
-SRCS = serial_src/main.cpp serial_src/initial.cpp serial_src/input.cpp serial_src/logging.cpp serial_src/potential.cpp serial_src/simulation.cpp
+SRCS = serial_src/main.cpp serial_src/rng.cpp serial_src/initial.cpp serial_src/input.cpp serial_src/logging.cpp serial_src/potential.cpp serial_src/thermodynamic_calculator.cpp serial_src/MC.cpp serial_src/cell_list.cpp
 
 # Object files
 OBJS = $(SRCS:.cpp=.o)
 
 # Header files
-HEADERS = serial_src/initial.h serial_src/input.h serial_src/logging.h serial_src/potential.h serial_src/simulation.h
+HEADERS = serial_src/rng.h serial_src/initial.h serial_src/input.h serial_src/logging.h serial_src/potential.h serial_src/thermodynamic_calculator.h serial_src/MC.h serial_src/cell_list.h
+
+
 
 # Default target (builds the main executable)
 all: $(EXEC)
