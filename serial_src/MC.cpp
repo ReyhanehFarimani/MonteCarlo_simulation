@@ -131,7 +131,8 @@ bool MonteCarlo::grandCanonicalMove() {
     size_t N = particles_.size();
     bool accept = false;
 //  50/50 chance to insert or delete
-    if (rng_.uniform01() < 0.5) {
+    double check = rng_.uniform01();
+    if (check < 0.3) {
         // Insertion attempt
         Particle pnew(rng_.uniform(0, box_.getLx()), rng_.uniform(0, box_.getLy()));
         auto new_neighbors = cellList_.getNeighbors2(pnew, particles_);  // neighbors for the new particle
@@ -152,7 +153,7 @@ bool MonteCarlo::grandCanonicalMove() {
         else {
             return false;
         }
-    } else {
+    } else if (check <0.6){
         // Deletion attempt
         if (N == 0) return false;
         size_t idx = rng_.uniformInt(0, N - 1);
@@ -174,6 +175,8 @@ bool MonteCarlo::grandCanonicalMove() {
         } else {
             return false;
         }
+    } else {
+        return false;
     }
 
     return false;
