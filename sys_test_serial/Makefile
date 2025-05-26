@@ -1,48 +1,41 @@
-# ----------- CONFIG -------------
-CXX = g++
-CXXFLAGS = -O3 -std=c++17 -Wall
-SRC_DIR = ../serial_src
-TEST_SRCS1 = $(wildcard test_system_nvt_*.cpp)
-EXECUTABLES1 = $(TEST_SRCS1:.cpp=)
-TEST_SRCS2 = $(wildcard test_system_gcmc_*.cpp)
-EXECUTABLES2 = $(TEST_SRCS2:.cpp=)
-# ----------- COMMON SOURCES ------------
-COMMON_SRCS = $(SRC_DIR)/MC.cpp \
-              $(SRC_DIR)/cell_list.cpp \
-              $(SRC_DIR)/potential.cpp \
-              $(SRC_DIR)/thermodynamic_calculator.cpp \
-              $(SRC_DIR)/initial.cpp \
-              $(SRC_DIR)/logging.cpp \
-              $(SRC_DIR)/rng.cpp \
-              $(SRC_DIR)/input.cpp
+# Compiler and flags
+CXX = mpic++
+CXXFLAGS = -std=c++17 -Wall -Wextra -O2
 
-# ----------- RULES --------------
-nvt: $(EXECUTABLES1)
+# Executable name
+EXEC = Monte_carlo_serial
 
-%: %.cpp $(COMMON_SRCS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ 
+# Source files
+SRCS = ../serial_src/main.cpp ../serial_src/initial.cpp ../serial_src/input.cpp \
+       ../serial_src/logging.cpp ../serial_src/potential.cpp ../serial_src/MC.cpp \
+       ../serial_src/thermodynamic_calculator.cpp ../serial_src/rng.cpp
 
-runnvt: nvt
-	@for exe in $(EXECUTABLES1); do \
-		echo "Running $$exe..."; \
-		./$$exe & \
+# Object files
+OBJS = $(SRCS:.cpp=.o)
+
+# Header files
+HEADERS = ../serial_src/*.h
+
+# Default target
+all: $(EXEC)
+
+# Rule to build the main executable
+$(EXEC): $(OBJS)
+	$(CXX) $(CXXFLAGS) -o $@ $^
+
+# Rule to compile each .cpp file
+../serial_src/%.o: ../serial_src/%.cpp $(HEADERS)
+	$(CXX) $(CXXFLAGS) -c $< -o $@
+
+# Run simulation on all generated input files
+run-inputs: $(EXEC)
+	@for f in input_*.txt; do \\
+		echo "Running $$f"; \\
+		../$(EXEC) $$f; \\
 	done
-	wait
 
-cleannvt:
-	rm -f $(EXECUTABLES1) *.o *.xyz *.txt
+# Clean build artifacts
+clean:
+	rm -f $(OBJS) $(EXEC)
 
-gc: $(EXECUTABLES2)
-
-%: %.cpp $(COMMON_SRCS)
-	$(CXX) $(CXXFLAGS) -o $@ $^ 
-
-rungc: gc
-	@for exe in $(EXECUTABLES2); do \
-		echo "Running $$exe..."; \
-		./$$exe & \
-	done
-	wait
-
-cleangc:
-	rm -f $(EXECUTABLES2) *.o
+.PHONY: all clean run-inputs

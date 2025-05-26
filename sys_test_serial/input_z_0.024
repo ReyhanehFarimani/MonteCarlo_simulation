@@ -1,0 +1,23 @@
+# Required constants
+Lx 20.0
+Ly 20.0
+N 50
+rcut 2.5
+T 0.47
+nSteps 100000
+eSteps 40000
+outputFreq 10000
+cellUpdateFreq 50
+
+# Optional constants
+mu 0.0305
+seed 42
+
+# Filenames (must be valid paths)
+potential LennardJones
+out_xyz traj_z_0.024_T_0.45.dump
+out_data data_z_0.024_T_0.45.txt
+
+# Optional: for reading particle positions or choosing ensemble
+# position_file positions.xyz
+ensemble GCMC
