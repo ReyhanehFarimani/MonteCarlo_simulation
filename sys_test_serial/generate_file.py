@@ -1,12 +1,12 @@
 from pathlib import Path
 
 def generate_input_file(
-    Lx=30.0,
-    Ly=30.0,
+    Lx=50.0,
+    Ly=50.0,
     N=50,
     rcut=2.5,
     T=0.45,
-    nSteps=100000,
+    nSteps=1000000,
     eSteps=60000,
     outputFreq=10000,
     cellUpdateFreq=50,
@@ -18,7 +18,7 @@ def generate_input_file(
     output_dir="."
 ):
     # Construct filenames based on parameters
-    mu_tag = f"{mu:.3f}".replace('.', '_')
+    mu_tag = f"{mu:4f}".replace('.', '_')
     T_tag = f"{T:.2f}".replace('.', '_')
     out_xyz = f"traj_z_{mu_tag}_T_{T_tag}.dump"
     out_data = f"data_z_{mu_tag}_T_{T_tag}.txt"
