@@ -1,5 +1,6 @@
 #include "cell_list.h"
 #include <cmath>
+#include <algorithm>
 
 CellList::CellList(const SimulationBox& box, double rcut)
     : box_(box), rcut_(rcut), rcutsq_(rcut*rcut) {
