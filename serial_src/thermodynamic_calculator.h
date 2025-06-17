@@ -34,9 +34,9 @@ public:
                              PotentialType potentialType,
                              double rcut,
                              double mu = 0.0,
-                             double f_prime = 0.0,
+                             double f = 0.0,
                              double alpha   = 0.0,
-                             double f_d_prime = 0.0,
+                             double A_0 = 0.0,
                              double kappa    = 0.0);
 
     //── State Accessors ──────────────────────────────────────────────────

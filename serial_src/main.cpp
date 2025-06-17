@@ -55,7 +55,7 @@ int main(int argc, char* argv[]) {
         double mu = getOrDefault(input, "mu");
         double f = getOrDefault(input, "f");
         double alpha = getOrDefault(input, "alpha");
-        double lambda = getOrDefault(input, "lambda");
+        double A_0 = getOrDefault(input, "A_0");
         double kappa = getOrDefault(input, "kappa");
         int seed = static_cast<int>(getOrDefault(input, "seed"));
         std::string position_file = input.getFilename("position_file");
@@ -69,7 +69,7 @@ int main(int argc, char* argv[]) {
         std::cout << "outputFreq = " << outputFreq << ", cellUpdateFreq = " << cellUpdateFreq << std::endl;
         std::cout << "potential = " << potentialName << std::endl;
         std::cout << "mu = " << mu << ", f = " << f << ", alpha = " << alpha
-                  << ", lambda = " << lambda << ", kappa = " << kappa << std::endl;
+                  << ", A_0 = " << A_0 << ", kappa = " << kappa << std::endl;
         std::cout << "seed = " << seed << std::endl;
         std::cout << "position_file = " << (position_file.empty() ? "[none]" : position_file) << std::endl;
         std::cout << "ensemble = " << (ensemble_name.empty() ? "[default GCMC]" : ensemble_name) << std::endl;
@@ -108,7 +108,7 @@ int main(int argc, char* argv[]) {
             mu,
             f,
             alpha,
-            lambda,
+            A_0,
             kappa
         );
 
