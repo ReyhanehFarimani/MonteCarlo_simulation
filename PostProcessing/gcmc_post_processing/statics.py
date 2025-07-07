@@ -27,7 +27,7 @@ def extract_mu_and_temperature(filename):
     temperature = float(numbers[1])
     
     return mu, temperature
-def read_simulation_input(input_file):
+def read_simulation_input_Old(input_file):
     """
     Reads the simulation input file and extracts relevant parameters.
     
@@ -62,6 +62,42 @@ def read_simulation_input(input_file):
                 pass
     
     return params
+def read_simulation_input(input_file):
+    """
+    Reads the simulation input file and extracts relevant parameters.
+    
+    Parameters:
+    - input_file: Path to the input.txt file.
+    
+    Returns:
+    - params: Dictionary containing simulation parameters.
+    """
+    params = {}
+    
+    with open(input_file, 'r') as file:
+        for line in file:
+            parts = line.split()
+            if len(parts) < 2:
+                continue  # Skip lines that don't have key-value pairs
+            try:
+                if "mu" in line:
+                    params['mu'] = float(parts[-1])
+                elif "f" in line:
+                    params['f'] = float(parts[-1])
+                elif "Lx" in line:
+                    params['boxLengthX'] = float(parts[-1])
+                elif "Ly" in line:
+                    params['boxLengthY'] = float(parts[-1])
+                elif "T" in line:
+                    params['T'] = float(parts[-1])
+                elif "kappa" in line:
+                    params['kappa'] = float(parts[-1])
+            except ValueError:
+                # print(f"Skipping line due to conversion error: {line}")
+                pass
+    
+    return params
+
 
 def process_simulation_data(data_files, input_files, lag):
     """
@@ -80,7 +116,10 @@ def process_simulation_data(data_files, input_files, lag):
 
     for filename, input_file in zip(data_files, input_files):
         # Extract mu and temperature from the filename
-        params = read_simulation_input(input_file)
+        try:
+            params = read_simulation_input(input_file)
+        except:
+            params = read_simulation_input_Old(input_file)
         print(filename)
         f = params['f']
         mu = params['mu']

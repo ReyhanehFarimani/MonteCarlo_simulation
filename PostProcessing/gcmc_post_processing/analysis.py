@@ -364,3 +364,44 @@ def sub_system_translational(all_positions, box_size, Lb):
     
     return Psi_G
 
+
+def compute_psi_density(all_points, box_size, order_number=6):
+    """
+    Compute the average and standard deviation of the hexatic or other order parameter
+    (e.g., sigma_6 or sigma_4) over a number of samples.
+
+    Parameters:
+    ----------
+    points: list of np.ndarray
+        Array of points with shape (N, 2), where N is the number of points.
+    box_size : tuple of float
+        The size of the box in the x and y dimensions.
+
+    order_number : int
+        Order of the orientational order parameter (e.g., 6 for hexatic).
+
+    Returns:
+    -------
+    mean_sigma : float
+        Mean value of the order parameter.
+    std_sigma : float
+        Standard deviation of the order parameter.
+    """
+    sigma_abs = np.array([])
+
+    for positions in all_points:
+        # Compute Voronoi neighbors and hexatic order parameter
+        voro = freud.locality.Voronoi()
+        voro.compute(
+            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, positions)
+        )
+
+        op = freud.order.Hexatic(k=order_number)
+        op.compute(
+            system=({"Lx": box_size[0], "Ly": box_size[1], "dimensions": 2}, positions),
+            neighbors=voro.nlist,
+        )
+
+        sigma_abs = np.append(sigma_abs, np.abs(op.particle_order))
+
+    return sigma_abs
