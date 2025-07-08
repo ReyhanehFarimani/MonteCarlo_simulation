@@ -6,8 +6,8 @@
 #include <sstream>
 #include <string>
 // Particle class methods
-Particle::Particle(double x_init, double y_init)
-    : x(x_init), y(y_init) {}
+Particle::Particle(double x_init, double y_init, int id_init)
+    : x(x_init), y(y_init), id(id_init) {}
 
 void Particle::updatePosition(double dx, double dy) {
     x += dx;
@@ -23,7 +23,6 @@ void SimulationBox::applyPBC(Particle &p) const {
     p.x -= Lx * std::floor(p.x * invLx);
     p.y -= Ly * std::floor(p.y * invLy);
 }
-
 // Calculate the minimum image distance between two particles considering PBC
 double SimulationBox::minimumImageDistance(const Particle &p1, const Particle &p2) const {
     double dx = p1.x - p2.x;
@@ -63,93 +62,84 @@ double SimulationBox::getV() const {
 
 
 
-void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random, unsigned int seed, int rank, int world_size) {
-    particles.clear();  // Clear the vector before initializing new particles
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random, unsigned int seed) {
+    // particles.clear();  // Clear the vector before initializing new particles
+    // particles.reserve(N);  // Reserve memory for N particles
 
+    // if (random) {
+    //     if (seed == 0){
+    //     srand(static_cast<unsigned>(time(0)));  // Seed the random number generator
+    //     }
+    //     else{
+    //         srand(seed + 10);
+    //     }
+    //     for (int i = 0; i < N; ++i) {
+    //         double x = static_cast<double>(rand()) / RAND_MAX * box.getLx();
+    //         double y = static_cast<double>(rand()) / RAND_MAX * box.getLy();
+    //         particles.emplace_back(x, y, i);
+    //     }
+    // } else {
+    //     // Place particles in a simple grid pattern
+    //     int gridSize = static_cast<int>(std::sqrt(N));
+    //     double spacingX = box.getLx() / gridSize;
+    //     double spacingY = box.getLy() / gridSize;
 
-    // Each rank gets a portion of the total particles
-    
-    int local_N = N / world_size;
-    int remainder = N % world_size;
-    if (rank < remainder) local_N++;
-
-    particles.reserve(local_N);  // Reserve memory for N particles
-
-    // Compute the subdomain bounds for each rank
-    double subdomain_x_min = rank * box.getLx() / world_size;
-    double subdomain_x_max = (rank + 1) * box.getLx() / world_size;
-    double subdomain_y_min = 0;
-    double subdomain_y_max = box.getLy();
-
-    if (random) {
-        if (seed == 0){
-        srand(static_cast<unsigned>(time(0)) + rank * 13 );  // Seed the random number generator
-        }
-        else{
-            srand(seed + 10 + rank * 13 + 71);
-        }
-        for (int i = 0; i < local_N; ++i) {
-            double x = subdomain_x_min + static_cast<double>(rand()) / RAND_MAX * (subdomain_x_max - subdomain_x_min);
-            double y = subdomain_y_min + static_cast<double>(rand()) / RAND_MAX * (subdomain_y_max - subdomain_y_min);
-            particles.emplace_back(x, y);
-        }
-    } else {
-        // Grid-based particle initialization within the subdomain
-        int gridSizeX = static_cast<int>(std::sqrt(local_N));
-        int gridSizeY = static_cast<int>(std::sqrt(local_N));
-        double spacingX = (subdomain_x_max - subdomain_x_min) / gridSizeX;
-        double spacingY = (subdomain_y_max - subdomain_y_min) / gridSizeY;
-
-        for (int i = 0; i < gridSizeX; ++i) {
-            for (int j = 0; j < gridSizeY; ++j) {
-                if (particles.size() < local_N) {
-                    double x = subdomain_x_min + i * spacingX;
-                    double y = subdomain_y_min + j * spacingY;
-                    particles.emplace_back(x, y);
-                }
-            }
-        }
-    }
+    //     for (int i = 0; i < gridSize ; ++i) {
+    //         for (int j = 0; j < gridSize ; ++j) {
+    //             if (particles.size() < gridSize * gridSize) {
+                    
+    //                 double x = i * spacingX;
+    //                 double y = j * spacingY;
+    //                 // std::cout<<x<<","<<y<<std::endl;
+    //                 particles.emplace_back(x, y, i);
+    //             }
+    //         }
+    //     }
+    // }
 }
 
-void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data, int rank, int world_size) {
-    particles.clear();  // Clear the vector before initializing new particles
+void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data){
+    // particles.clear();  // Clear the vector before initializing new particles
+    // particles.reserve(N);  // Reserve memory for N particles
 
-    // Calculate the number of particles each rank will handle
-    int local_N = N / world_size;
-    int remainder = N % world_size;
-    if (rank < remainder) local_N++;  // Handle uneven distribution
+    // double Lx = box.getLx();
+    // double Ly = box.getLy();
 
-    particles.reserve(local_N);  // Reserve memory only for the local particles
+    // std::ifstream infile(filename_data);  // Open the file for reading
+    // if (!infile.is_open()) {
+    //     std::cerr << "Error: Could not open file " << filename_data << std::endl;
+    //     return;
+    // }
+        
+    // std::string line;
+    // int particle_count = 0;
 
-    double subdomain_x_min = rank * box.getLx() / world_size;
-    double subdomain_x_max = (rank + 1) * box.getLx() / world_size;
+    // // Skip header lines (if any) depending on file format
+    // // For an XYZ file, you may want to skip the first 2 lines
+    // std::getline(infile, line);  // Skip the first line
+    // std::getline(infile, line);  // Skip the second line (comment line)
 
-    std::ifstream infile(filename_data);  // Open the file for reading
-    if (!infile.is_open()) {
-        std::cerr << "Error: Could not open file " << filename_data << std::endl;
-        return;
-    }
+    // // Read particle data
+    // while (std::getline(infile, line) && particle_count < N) {
+    //     std::istringstream iss(line);
+    //     double x, y;
 
-    std::string line;
-    int particle_count = 0;
+    //     // For XYZ file format: expect x, y, z as columns 2, 3, 4 (ignoring the particle type in the first column)
+        
+    //     std::string atom_type;  // For XYZ files, first column might be atom type (string)
+    //     if (!(iss >> atom_type >> x >> y)) {
+    //         std::cerr << "Error reading line: " << line << std::endl;
+    //         continue;
+    //     }
 
-    std::getline(infile, line);  // Skip the first line (header)
-    std::getline(infile, line);  // Skip the second line (comment line)
+    //     // Check if the particle coordinates are inside the simulation box (optional)
+    //     if (x >= 0 && x <= Lx && y >= 0 && y <= Ly) {
+    //         particles.emplace_back(x, y);  // Add the particle to the list
+    //         particle_count++;
+    //     } 
+    //     else {
+    //         std::cerr << "Warning: Particle out of bounds (" << x << ", " << y << ")" << std::endl;
+    //     }
 
-    while (std::getline(infile, line) && particle_count < local_N) {
-        std::istringstream iss(line);
-        double x, y;
-        std::string atom_type;  // For XYZ files, the first column is usually atom type
-        if (!(iss >> atom_type >> x >> y)) {
-            std::cerr << "Error reading line: " << line << std::endl;
-            continue;
-        }
-
-        // Only add particles that belong to the rank's subdomain
-        if (x >= subdomain_x_min && x < subdomain_x_max) {
-            particles.emplace_back(x, y);
-            particle_count++;
-        }
-    }
+    // }
 }

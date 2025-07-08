@@ -24,7 +24,11 @@ public:
     int getCoordX() const;
     int getCoordY() const;
 
+    double getOriginX() const;
+    double getOriginY() const;
+
     MPI_Comm getCartComm() const;  // Getter for the Cartesian communicator
+    std::pair<double, double> getGlobalPosition(const Particle& p) const;
 
 private:
     SimulationBox globalBox_;
@@ -34,8 +38,10 @@ private:
     int rank_, size_;
     int Px_, Py_;
     int coordX_, coordY_;
+    double originX_, originY_;
     MPI_Comm comm_;        // Original communicator (MPI_COMM_WORLD)
     MPI_Comm cart_comm_;   // New Cartesian communicator (returned by MPI_Cart_create)
 };
 
 #endif
+

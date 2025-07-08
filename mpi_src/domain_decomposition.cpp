@@ -40,6 +40,10 @@ DomainDecomposition::DomainDecomposition(const SimulationBox& globalBox, double 
     double lx = globalBox_.getLx() / Px_;
     double ly = globalBox_.getLy() / Py_;
     localBox_ = SimulationBox(lx, ly);
+
+    // Compute global offset of this domain
+    originX_ = coordX_ * lx;
+    originY_ = coordY_ * ly;
 }
 
 const SimulationBox& DomainDecomposition::getLocalBox() const {
@@ -68,6 +72,20 @@ int DomainDecomposition::getCoordX() const {
 
 int DomainDecomposition::getCoordY() const {
     return coordY_;
+}
+
+double DomainDecomposition::getOriginX() const {
+    return originX_;
+}
+
+double DomainDecomposition::getOriginY() const {
+    return originY_;
+}
+
+std::pair<double, double> DomainDecomposition::getGlobalPosition(const Particle& p) const {
+    double gx = originX_ + p.x;
+    double gy = originY_ + p.y;
+    return {gx, gy};
 }
 
 MPI_Comm DomainDecomposition::getCartComm() const {

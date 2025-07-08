@@ -10,13 +10,15 @@
 class Particle {
 public:
     double x, y;  ///< Position of the particle
+    int id;       ///< Unique global ID
 
     /**
      * @brief Constructs a Particle with the given initial position.
      * @param x_init Initial x-coordinate of the particle.
      * @param y_init Initial y-coordinate of the particle.
+     * @param id_init Initial id nessery for the recognition of the particles when working in different ranks  
      */
-    Particle(double x_init = 0.0, double y_init = 0.0);
+    Particle(double x_init = 0.0, double y_init = 0.0, int id_init = -1);
 
     /**
      * @brief Updates the position of the particle.
@@ -92,7 +94,7 @@ public:
  * @param N The number of particles to initialize.
  * @param random If true, particles are placed randomly; if false, they are placed in a grid.
  */
-void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true, unsigned int seed = 0, int rank = 0, int world_size = 1);
+void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random = true, unsigned int seed = 0);
 
 /**
  * @brief Initializes N particles in the simulation box, from an xyz file
@@ -101,6 +103,6 @@ void initializeParticles(std::vector<Particle> &particles, const SimulationBox &
  * @param N The number of particles to initialize.
  * @param filename_data the file from which we are reading simulation data.
  */
-void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data, int rank, int world_size);
+void initializeParticles_from_file(std::vector<Particle> &particles, const SimulationBox &box, int N, const std::string &filename_data);
 
 #endif // INITIAL_H
