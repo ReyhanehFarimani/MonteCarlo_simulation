@@ -119,7 +119,7 @@ int main(int argc, char* argv[]) {
         std::cout << "Equilibration:" << std::endl;
         mc.run(static_cast<size_t>(eSteps),
                static_cast<size_t>(eSteps * 10),
-               static_cast<size_t>(cellUpdateFreq / 10));
+               static_cast<size_t>(cellUpdateFreq));
 
         // Run simulation
         std::cout << "Running:" << std::endl;
