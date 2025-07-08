@@ -58,7 +58,7 @@ def read_simulation_input_Old(input_file):
                 elif "kappa" in line:
                     params['kappa'] = float(parts[-1])
             except ValueError:
-                # print(f"Skipping line due to conversion error: {line}")
+                print(f"Skipping line due to conversion error: {line}")
                 pass
     
     return params
@@ -79,6 +79,8 @@ def read_simulation_input(input_file):
             parts = line.split()
             if len(parts) < 2:
                 continue  # Skip lines that don't have key-value pairs
+            # try:
+
             try:
                 if "mu" in line:
                     params['mu'] = float(parts[-1])
@@ -92,9 +94,20 @@ def read_simulation_input(input_file):
                     params['T'] = float(parts[-1])
                 elif "kappa" in line:
                     params['kappa'] = float(parts[-1])
+                elif "f" in line:
+                    params['f'] = float(parts[-1])
+                elif "boxLengthX" in line:
+                    params['boxLengthX'] = float(parts[-1])
+                elif "boxLengthY" in line:
+                    params['boxLengthY'] = float(parts[-1])
+                elif "temperature" in line:
+                    params['T'] = float(parts[-1])
+                elif "kappa" in line:
+                    params['kappa'] = float(parts[-1])
             except ValueError:
-                # print(f"Skipping line due to conversion error: {line}")
+                print(f"Skipping line due to conversion error: {line}")
                 pass
+    
     
     return params
 
@@ -116,11 +129,9 @@ def process_simulation_data(data_files, input_files, lag):
 
     for filename, input_file in zip(data_files, input_files):
         # Extract mu and temperature from the filename
-        try:
-            params = read_simulation_input(input_file)
-        except:
-            params = read_simulation_input_Old(input_file)
-        print(filename)
+        # try:
+        params = read_simulation_input(input_file)
+
         f = params['f']
         mu = params['mu']
         l = -(params['kappa'] - 6.56 )/7.71
