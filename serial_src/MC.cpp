@@ -27,7 +27,7 @@ MonteCarlo::MonteCarlo(const SimulationBox& box,
 {
     cellList_.build(particles_);
 }
-
+///more update cells!
 int MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
         int accept_rate = 0;
         int total = 0;
