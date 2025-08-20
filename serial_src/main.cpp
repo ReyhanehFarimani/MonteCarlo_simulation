@@ -50,6 +50,8 @@ int main(int argc, char* argv[]) {
         std::string potentialName = input.getFilename("potential");
         std::string out_xyz = input.getFilename("out_xyz");
         std::string out_data = input.getFilename("out_data");
+        double delta = input.getConstant("delta");
+        
 
         // Optional parameters
         double mu = getOrDefault(input, "mu");
@@ -60,6 +62,8 @@ int main(int argc, char* argv[]) {
         int seed = static_cast<int>(getOrDefault(input, "seed"));
         std::string position_file = input.getFilename("position_file");
         std::string ensemble_name = input.getFilename("ensemble");
+        double pressure = getOrDefault(input, "P");
+        double delta_V = getOrDefault(input, "delta_V");
 
         // Diagnostic: print parsed input values
         std::cout << "\n[Input Summary]" << std::endl;
@@ -103,6 +107,7 @@ int main(int argc, char* argv[]) {
         // Set up thermodynamic calculator
         ThermodynamicCalculator calc(
             temperature,
+            pressure,
             potentialType,
             rcut,
             mu,
@@ -113,7 +118,7 @@ int main(int argc, char* argv[]) {
         );
 
         // Create MC object
-        MonteCarlo mc(box, particles, calc, rcut, ensemble, logger, rng);
+        MonteCarlo mc(box, particles, calc, rcut,delta, delta_V, ensemble, logger, rng);
 
         // Equilibration simulation
         std::cout << "Equilibration:" << std::endl;
