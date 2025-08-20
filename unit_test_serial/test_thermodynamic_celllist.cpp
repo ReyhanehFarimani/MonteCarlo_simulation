@@ -15,7 +15,7 @@ TEST_CASE("Energy and virial consistency between direct and CellList-based", "[T
         P.emplace_back(distX(rng), distY(rng));
     }
     double rcut = 2.5;
-    ThermodynamicCalculator calc(1.0, PotentialType::LennardJones, rcut);
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::LennardJones, rcut);
 
     double E_direct = calc.computeTotalEnergy(P, box);
     double W_direct = calc.computeTotalVirial(P, box);

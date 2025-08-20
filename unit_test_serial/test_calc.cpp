@@ -16,7 +16,7 @@
 TEST_CASE("Ideal-gas energy, virial, pressure", "[Thermo][Ideal]") {
     SimulationBox box(10.0, 10.0);
     std::vector<Particle> P(5, Particle(1.0, 1.0));
-    ThermodynamicCalculator calc(1.0, PotentialType::Ideal, 1.0);
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::Ideal, 1.0);
     double rho = calc.computeDensity(P, box);
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(0.0));
     REQUIRE(calc.computeTotalVirial(P, box) == Approx(0.0));
@@ -28,7 +28,7 @@ TEST_CASE("Two-particle LJ at r = 2^(1/6)", "[Thermo][LJ]") {
     double r0 = std::pow(2.0, 1.0/6.0) - 1e-14;
     SimulationBox box(r0*6, r0*6);
     std::vector<Particle> P = { Particle(0.0, 0.0), Particle(r0, 0.0) };
-    ThermodynamicCalculator calc(1.0, PotentialType::LennardJones, 3*r0);
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::LennardJones, 3*r0);
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(-1.0));
     REQUIRE(calc.computeTotalVirial(P, box)+1 == Approx(1.0));
     double rho = calc.computeDensity(P, box);
@@ -44,7 +44,7 @@ TEST_CASE("Three-particle LJ equilateral triangle", "[Thermo][LJ]") {
         Particle(r0, 0.0),
         Particle(r0/2.0, r0*std::sqrt(3.0)/2.0)
     };
-    ThermodynamicCalculator calc(1.0, PotentialType::LennardJones, 5*r0);
+    ThermodynamicCalculator calc(1.0, 0.0,PotentialType::LennardJones, 5*r0);
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(-3.0));
     REQUIRE(calc.computeTotalVirial(P, box)+1 == Approx(1.0));
 }
@@ -53,7 +53,7 @@ TEST_CASE("Three-particle LJ equilateral triangle", "[Thermo][LJ]") {
 TEST_CASE("Two-particle Yukawa at r=1", "[Thermo][Yukawa]") {
     SimulationBox box(3.0, 3.0);
     std::vector<Particle> P = { Particle(0.0,0.0), Particle(1.0,0.0) };
-    ThermodynamicCalculator calc(1.0, PotentialType::Yukawa, 5.0, 1.0, 1.0);
+    ThermodynamicCalculator calc(1.0, 0.0,PotentialType::Yukawa, 5.0, 1.0, 1.0);
     double expectedU = std::exp(-1.0)/1.0;
     double expectedW = (1.0 + 1.0/1.0) * std::exp(-1.0);
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(expectedU));
@@ -67,7 +67,7 @@ TEST_CASE("Three-particle Yukawa equilateral", "[Thermo][Yukawa]") {
     std::vector<Particle> P = {
         Particle(0.0,0.0), Particle(r,0.0), Particle(r/2.0, r*std::sqrt(3.0)/2.0)
     };
-    ThermodynamicCalculator calc(1.0, PotentialType::Yukawa, 5.0, 1.0, 1.0);
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::Yukawa, 5.0, 1.0, 1.0);
     double pairU = std::exp(-r)/r;
     double pairW = (1.0 + r)/r * std::exp(-r);
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(3*pairU));
@@ -78,7 +78,7 @@ TEST_CASE("Three-particle Yukawa equilateral", "[Thermo][Yukawa]") {
 TEST_CASE("Two-particle WCA below and above cutoff", "[Thermo][WCA]") {
     double rc = std::pow(2.0, 1.0/6.0);
     SimulationBox box(rc*3, rc*3);
-    ThermodynamicCalculator calc(1.0, PotentialType::WCA, rc);
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::WCA, rc);
     std::vector<Particle> Pclose = { Particle(0.0,0.0), Particle(1.0,0.0) };
     REQUIRE(calc.computeTotalEnergy(Pclose, box) == Approx(1.0));
     std::vector<Particle> Pfar   = { Particle(0.0,0.0), Particle(1.5,0.0) };
@@ -92,8 +92,8 @@ TEST_CASE("AthermalStar on 2x2 lattice", "[Thermo][AthermalStar][Lattice]") {
     std::vector<Particle> P;
     for(size_t i=0;i<Nx;++i) for(size_t j=0;j<Ny;++j) P.emplace_back(i*d, j*d);
     double f_prime=10.0, alpha=0.5;
-    ThermodynamicCalculator calc(1.0, PotentialType::AthermalStar, 1.0001,0.0, f_prime, alpha);
-    double Upair = f_prime*alpha, Wpair = f_prime;
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::AthermalStar, 1.0001,0.0, f_prime, alpha);
+    double Upair = (f_prime * f_prime * 9 + 2) / 24 *alpha, Wpair = (f_prime * f_prime * 9 + 2) / 24;
     double pairCount = (P.size()*4.0)/2.0;
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(pairCount*Upair));
     REQUIRE(calc.computeTotalVirial(P, box) == Approx(pairCount*Wpair));
@@ -107,11 +107,11 @@ TEST_CASE("ThermalStar on 4x8 lattice", "[Thermo][ThermalStar][Lattice]") {
     SimulationBox box(Nx*d, Ny*d);
     std::vector<Particle> P;
     for(size_t i=0;i<Nx;++i) for(size_t j=0;j<Ny;++j) P.emplace_back(i*d, j*d);
-    double f_prime=8.0, f_d_prime=2.0, kappa=1.2, alpha=0.3;
-    ThermodynamicCalculator calc(1.0, PotentialType::ThermalStar, 1.4,0.0, f_prime, alpha, f_d_prime, kappa);
-    double e2 = f_d_prime * std::exp(-kappa);
-    double Upair = f_prime*alpha - e2;
-    double Wpair = f_prime - (f_d_prime * kappa * std::exp(-kappa));
+    double f=8.0, A_0=2.0, kappa=1.2, alpha=0.3;
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::ThermalStar, 1.4,0.0, f, alpha, A_0, kappa);
+    double e2 = A_0 * f * f * std::exp(-kappa)/kappa;
+    double Upair = (f * f * 9 + 2) / 24 *alpha - e2;
+    double Wpair = (f * f * 9 + 2) / 24 - ( A_0 * f * f  * std::exp(-kappa));
     double pairCount = (P.size()*4.0)/2.0;
     REQUIRE(calc.computeTotalEnergy(P, box) == Approx(pairCount*Upair));
     REQUIRE(calc.computeTotalVirial(P, box) == Approx(pairCount*Wpair));
@@ -122,8 +122,8 @@ TEST_CASE("ThermalStar on 4x8 lattice", "[Thermo][ThermalStar][Lattice]") {
 TEST_CASE("Two-particle long trajectory logging", "[Thermo][Logging][Trajectory]") {
     SimulationBox box(12.0, 12.0);
     std::vector<Particle> P = { Particle(1.0, 0.0), Particle(5.0, 0.5) };
-    Logging logger("tmp/traj.log", "tmp/data.log");  // position logs only :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
-    ThermodynamicCalculator calc(1.0, PotentialType::LennardJones, 2.5, 0, 0, 0, 0);
+    Logging logger("traj.log", "data.log");  // position logs only :contentReference[oaicite:2]{index=2}:contentReference[oaicite:3]{index=3}
+    ThermodynamicCalculator calc(1.0, 0.0,PotentialType::LennardJones, 2.5, 0, 0, 0, 0);
 
     const int steps = 180;
     const double move = 0.02;

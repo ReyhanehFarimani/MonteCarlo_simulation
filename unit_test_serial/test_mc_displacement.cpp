@@ -23,9 +23,9 @@ TEST_CASE("Single displacement consistency over many steps: cell list vs brute f
     // Initialize particle set and warm up via cell-list moves
     std::vector<Particle> pWarm;
     initializeParticles(pWarm, box, static_cast<int>(N), true, SEED);
-    ThermodynamicCalculator calc(TEMP, PotentialType::LennardJones, RCUT, 0.0);
+    ThermodynamicCalculator calc(TEMP, 0.0,  PotentialType::LennardJones, RCUT, 0.0);
     Logging dummyLogger("tmp1", "tmp2");
-    MonteCarlo mcWarm(box, pWarm, calc, RCUT, Ensemble::NVT, dummyLogger, rngWarm);
+    MonteCarlo mcWarm(box,  pWarm, calc, RCUT, 0.1, 0.1, Ensemble::NVT, dummyLogger, rngWarm);
     // Warm up: N*1000 displacement moves
     for (int t = 0; t < static_cast<int>(N) * 1000; ++t) {
         mcWarm.stepCellList();
@@ -37,8 +37,8 @@ TEST_CASE("Single displacement consistency over many steps: cell list vs brute f
     std::vector<Particle> p2 = pWarm;
 
     // Create two MC drivers on the warmed state
-    MonteCarlo mcCell(box, p1, calc, RCUT, Ensemble::NVT, dummyLogger, rngCell);
-    MonteCarlo mcBF(box, p2, calc, RCUT, Ensemble::NVT, dummyLogger, rngBF);
+    MonteCarlo mcCell(box, p1, calc, RCUT,0.1, 0.1, Ensemble::NVT, dummyLogger, rngCell);
+    MonteCarlo mcBF(box, p2, calc, RCUT, 0.1, 0.1, Ensemble::NVT, dummyLogger, rngBF);
 
     // Check initial energies
     double E0_cell = mcCell.getEnergy();

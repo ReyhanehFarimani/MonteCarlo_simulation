@@ -94,7 +94,7 @@ TEST_CASE("Energy consistency for large random system (manual LJ)", "[CellList][
         P.emplace_back(distX(rng), distY(rng));
     }
     double rcut = 2.5;
-    ThermodynamicCalculator calc(1.0, PotentialType::LennardJones, rcut);
+    ThermodynamicCalculator calc(1.0, 0.0, PotentialType::LennardJones, rcut);
     // reference energy via thermo
     double E_ref = calc.computeTotalEnergy(P, box);
 

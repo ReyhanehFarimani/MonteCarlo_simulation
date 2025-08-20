@@ -2,7 +2,7 @@
 #include "catch.hpp"
 #include "../serial_src/initial.h"
 #include <cmath>
-
+#include <iostream>
 TEST_CASE("SimulationBox getters", "[SimulationBox]") {
     SimulationBox box(3.0, 4.0);
     REQUIRE(box.getLx() == Approx(3.0));
@@ -34,4 +34,24 @@ TEST_CASE("minimumImageDistance with wrapping", "[SimulationBox]") {
     double d = box.minimumImageDistance(p1, p2);
     REQUIRE(d == Approx(std::sqrt(8.0)));
     REQUIRE(box.minimumImageDistanceSquared(p1, p2) == Approx(8.0));
+}
+
+
+TEST_CASE("NPT box area change via setV keeps aspect ratio and updates Lx,Ly") {
+    SimulationBox box(10.0, 5.0);
+    const double ratio0 = box.getLx() / box.getLy();
+    const double V0 = box.getV();
+
+    // scale factor s on lengths => area scales by s^2
+    const double s = 1.3;
+    const double V1 = V0 * s * s;
+
+    box.setV(V1);
+
+    REQUIRE(box.getV() == Approx(V1));
+    REQUIRE(box.getLx() / box.getLy() == Approx(ratio0));
+    // spot-check: Lx should scale by s
+    REQUIRE(box.getLx() == Approx(10.0 * s));
+    REQUIRE(box.getLy() == Approx(5.0  * s));
+    std::cout<<"1st test"<<std::endl;
 }
