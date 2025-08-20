@@ -1,7 +1,7 @@
 #include "thermodynamic_calculator.h"
 #include <cassert>
 #include <cmath>
-#include <iostream>
+
 ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
                                                 double press,
                                                  PotentialType potentialType,
@@ -30,7 +30,6 @@ size_t ThermodynamicCalculator::getNumParticles(const std::vector<Particle>& par
 }
 
 double ThermodynamicCalculator::getPressure() const {
-    std::cout<<press_<<std::endl;
     return press_;
 }
 
@@ -194,7 +193,7 @@ double ThermodynamicCalculator::computeTailCorrectionPressure2D(const std::vecto
 // --------------------------------------------------
 double ThermodynamicCalculator::computeTotalEnergyCellList(
     const std::vector<Particle>& particles,
-    const SimulationBox& box) const
+    SimulationBox& box) const
 {
     CellList cl(box, rcut_);
     cl.build(particles);
@@ -215,7 +214,7 @@ double ThermodynamicCalculator::computeTotalEnergyCellList(
 // --------------------------------------------------
 double ThermodynamicCalculator::computeTotalVirialCellList(
     const std::vector<Particle>& particles,
-    const SimulationBox& box) const
+    SimulationBox& box) const
 {
     CellList cl(box, rcut_);
     cl.build(particles);
@@ -234,7 +233,7 @@ double ThermodynamicCalculator::computeTotalVirialCellList(
 
 // Pressure in 2D: P = ρ T + W / (2 V)
 double ThermodynamicCalculator::computePressureCellList(const std::vector<Particle>& particles,
-                                                const SimulationBox& box) const {
+                                                SimulationBox& box) const {
     double V = getVolume(box);
     double rho = computeDensity(particles, box);
     double W = computeTotalVirialCellList(particles, box);

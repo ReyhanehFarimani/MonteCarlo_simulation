@@ -49,7 +49,7 @@ public:
      * @param energy The total energy of the system.
      * @param timestep The current timestep in the simulation.
      */
-    void logSimulationData(const std::vector<Particle> &particles, const SimulationBox &box, const ThermodynamicCalculator &cal, int timestep);
+    void logSimulationData(const std::vector<Particle> &particles, SimulationBox &box, const ThermodynamicCalculator &cal, int timestep);
 
     /**
      * @brief Closes the log file.

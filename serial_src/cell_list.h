@@ -15,7 +15,13 @@ public:
      * @param box Simulation box (defines size and PBC behavior).
      * @param rcut Interaction cutoff distance.
      */
-    CellList(const SimulationBox& box, double rcut);
+    CellList(SimulationBox& box, double rcut);
+
+    /**
+     * @brief change the box of the simulation
+     * @param box SimulationBox
+     */
+    void adjust_box(SimulationBox& box);
 
     /**
      * @brief Build the cell list for the current particle positions.
@@ -52,7 +58,7 @@ public:
     void removeParticle(int index);
 
     private:
-    const SimulationBox& box_;
+    SimulationBox& box_;
     double rcut_;
     double rcutsq_;
     int nx_, ny_;                    // number of cells in x and y

@@ -1,7 +1,7 @@
 #include "MC.h"
 #include <cmath>
 #include <iostream>
-MonteCarlo::MonteCarlo(const SimulationBox& box,
+MonteCarlo::MonteCarlo(SimulationBox& box,
                        std::vector<Particle>& particles,
                        ThermodynamicCalculator& calc,
                        double rcut,
@@ -40,45 +40,26 @@ int MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
                 simulation_step_time += 1;
                 if (accept) accept_rate++;
                 total += 1;
-                if (simulation_step_time%fUpdateCell == 0){
-                    updateCellList();
-                    double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
-                    if (abs(energy - e_tmp)>10){
-                        // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
-                        std::cout<<"cell list update frequency is too high!"<<std::endl;
-                    }
-                    energy = e_tmp;
-                    // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
-                }
+
             }
             if (ensemble_ == Ensemble::GCMC) {
                 bool accept = grandCanonicalMove();
                 simulation_step_time += 1;
                 if (accept) accept_rate++;
                 total += 1;
-                if (simulation_step_time%fUpdateCell == 0){
-                    updateCellList();
-                    double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
-                    if (abs(energy - e_tmp)>10){
-                        // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
-                        std::cout<<"cell list update frequency is too high!"<<std::endl;
-                    }
-                    energy = e_tmp;
-                    // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
-                }
+
                 // updateCellList();
             }
             if (ensemble_ == Ensemble::NPT) {
                 if (rng_.uniform01()>0.3){
                     bool accept = npt_move_no_cell_list();
-                    if (accept) updateCellList();
                     if (accept) accept_rate++;
                 }
                 simulation_step_time += 1;
                 
                 total += 1;
             }
-            if (simulation_step_time%fUpdateCell == 0){
+            if (step%fUpdateCell == 0){
                 updateCellList();
                 double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
                 if (abs(energy - e_tmp)>10){
@@ -182,7 +163,8 @@ bool MonteCarlo::npt_move_no_cell_list(){
     for (size_t i = 0; i < N; ++i) {
         box_.recenter(particles_[i], lx_o, ly_o);
     }
-    double U_new = calc_.computeTotalEnergy(particles_, box_);
+    
+    double U_new = calc_.computeTotalEnergyCellList(particles_, box_);
     energy = U_new;
     double arg = - beta * ((U_new - U_old) + press * (V_n - V_o) - (N + 1) * std::log(V_n/V_o)/beta);
     if (rng_.uniform01() >= std::exp(arg)) {
@@ -192,8 +174,14 @@ bool MonteCarlo::npt_move_no_cell_list(){
         for (size_t i = 0; i < N; ++i) {
             box_.recenter(particles_[i], lx_o, ly_o);
         }
+        cellList_.adjust_box(box_);
+        cellList_.build(particles_);
         energy = U_old;
         accept = false;
+    }
+    else {
+        cellList_.adjust_box(box_);
+        cellList_.build(particles_);
     }
     
     return accept;

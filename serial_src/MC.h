@@ -32,7 +32,7 @@ public:
      * @param logger Logging instance for trajectory & data
      * @param rng Seeded random number generator
      */
-    MonteCarlo(const SimulationBox& box,
+    MonteCarlo(SimulationBox& box,
                std::vector<Particle>& particles,
                ThermodynamicCalculator& calc,
                double rcut,

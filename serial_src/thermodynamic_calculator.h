@@ -182,7 +182,7 @@ public:
      * @return Total potential energy (unique pairs).
      */
     double computeTotalEnergyCellList(const std::vector<Particle>& particles,
-                                      const SimulationBox& box) const;
+                                      SimulationBox& box) const;
 
     /**
      * @brief Compute total virial using a CellList for neighbor queries.
@@ -191,7 +191,7 @@ public:
      * @return Total virial W = Σ_{i<j} r_ij·f_ij.
      */
     double computeTotalVirialCellList(const std::vector<Particle>& particles,
-                                      const SimulationBox& box) const;
+                                      SimulationBox& box) const;
 
                                           /**
      * @brief Compute pressure using a CellList for neighbor queries.
@@ -200,7 +200,7 @@ public:
      * @return System pressure.
      */
     double computePressureCellList(const std::vector<Particle>& particles,
-                                      const SimulationBox& box) const;
+                                      SimulationBox& box) const;
 private:
     //── Thermodynamic parameters ───────────────────────────────────────
     double temperature_;          ///< System temperature (T)

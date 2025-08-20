@@ -77,7 +77,7 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles, const Si
     // fsync(fileno(outFile_position));
 
 }
-void Logging::logSimulationData(const std::vector<Particle> &particles, const SimulationBox &box, const ThermodynamicCalculator &cal, int timestep){
+void Logging::logSimulationData(const std::vector<Particle> &particles, SimulationBox &box, const ThermodynamicCalculator &cal, int timestep){
     outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
             << ",\tEnergy:"<< cal.computeTotalEnergyCellList(particles, box) << ",\tTempreture:" << cal.getTemperature() << 
             ",\tPressure:" << cal.computePressureCellList(particles, box) <<

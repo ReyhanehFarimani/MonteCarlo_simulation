@@ -2,8 +2,19 @@
 #include <cmath>
 #include <algorithm>
 
-CellList::CellList(const SimulationBox& box, double rcut)
+CellList::CellList(SimulationBox& box, double rcut)
     : box_(box), rcut_(rcut), rcutsq_(rcut*rcut) {
+    // choose number of cells such that cell size >= rcut
+    nx_ = static_cast<int>(box_.getLx() / rcut_);
+    ny_ = static_cast<int>(box_.getLy() / rcut_);
+    if (nx_ < 1) nx_ = 1;
+    if (ny_ < 1) ny_ = 1;
+    cell_dx_ = box_.getLx() / nx_;
+    cell_dy_ = box_.getLy() / ny_;
+    cells_.resize(nx_ * ny_);
+}
+void CellList::adjust_box(SimulationBox& box){
+    box_ = box;
     // choose number of cells such that cell size >= rcut
     nx_ = static_cast<int>(box_.getLx() / rcut_);
     ny_ = static_cast<int>(box_.getLy() / rcut_);
