@@ -3,6 +3,7 @@
 #include <cmath>
 
 ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
+                                                double press,
                                                  PotentialType potentialType,
                                                  double rcut,
                                                  double mu,
@@ -11,6 +12,7 @@ ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
                                                  double A_0,
                                                  double kappa)
     : temperature_(temperature),
+    press_(press),
       rcut_(rcut),
       r2cut_(rcut * rcut),
       potentialType_(potentialType),
@@ -25,6 +27,10 @@ ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
 
 size_t ThermodynamicCalculator::getNumParticles(const std::vector<Particle>& particles) const {
     return particles.size();
+}
+
+double ThermodynamicCalculator::getPressure() const {
+    return press_;
 }
 
 double ThermodynamicCalculator::getTemperature() const {

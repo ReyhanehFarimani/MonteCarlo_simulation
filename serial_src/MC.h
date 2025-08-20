@@ -13,7 +13,8 @@
  */
 enum class Ensemble {
     NVT,    ///< Constant NVT ensemble: displacements only
-    GCMC    ///< Grand canonical (μVT): insertion/deletion + displacements
+    GCMC,    ///< Grand canonical (μVT): insertion/deletion + displacements
+    NPT     ///< isobaric, isothermal ensemble: random walk in lnV + displacement
 };
 
 /**
@@ -35,6 +36,8 @@ public:
                std::vector<Particle>& particles,
                ThermodynamicCalculator& calc,
                double rcut,
+               double delta,
+               double delta_V,
                Ensemble ensemble,
                Logging& logger,
                RNG& rng);
@@ -45,7 +48,8 @@ public:
      * @param fOutputStep Frequecy of writing outputs
      * @param fUpdateCell Frequency of updating cell list
      */
-    void run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
+    int run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
+    // void run_no_cell_list(size_t nStep, size_t fOutputStel);
 
     // --- Testing interfaces ---
     /**
@@ -75,9 +79,11 @@ private:
     RNG& rng_;
     double rcut_;    ///< interaction cutoff
     double delta_;   ///< max displacement magnitude
+    double delta_V;
     Ensemble ensemble_;
     Logging& logger_;
     double beta;
+    double press;
     double energy;
     double z;
     int simulation_step_time = 0;
@@ -85,6 +91,7 @@ private:
     // Internal move implementations
     bool displacementMove_cell_list_dE();
     bool displacementMove_no_cell_list();
+    bool npt_move_no_cell_list();
     bool grandCanonicalMove();
     void recordObservables(size_t step);
 };

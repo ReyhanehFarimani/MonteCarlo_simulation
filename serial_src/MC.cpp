@@ -5,6 +5,8 @@ MonteCarlo::MonteCarlo(const SimulationBox& box,
                        std::vector<Particle>& particles,
                        ThermodynamicCalculator& calc,
                        double rcut,
+                       double delta,
+                       double delta_V,
                        Ensemble ensemble,
                        Logging& logger,
                        RNG& rng)
@@ -14,28 +16,44 @@ MonteCarlo::MonteCarlo(const SimulationBox& box,
       cellList_(box, rcut),
       rng_(rng),
       rcut_(rcut),
-      delta_(0.1 * rcut),
+      delta_(delta),
+      delta_V(delta_V),
       ensemble_(ensemble),
       logger_(logger),
       beta(1.0 / calc_.getTemperature()),
+      press(calc_.getPressure()),
       z(calc_.getActivity()),
       energy(calc_.computeTotalEnergy(particles, box))
 {
     cellList_.build(particles_);
 }
 
-void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
+int MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
+        int accept_rate = 0;
+        int total = 0;
         for (size_t step = 0; step < nSteps; ++step) {
 
             size_t N = particles_.size();
 
             for (size_t i = 0; i < N; ++i) {
-                displacementMove_cell_list_dE();
+                bool accept = displacementMove_cell_list_dE();
                 simulation_step_time += 1;
+                if (accept) accept_rate++;
+                total += 1;
             }
             if (ensemble_ == Ensemble::GCMC) {
-                grandCanonicalMove();
+                bool accept = grandCanonicalMove();
+                simulation_step_time += 1;
+                if (accept) accept_rate++;
+                total += 1;
                 // updateCellList();
+            }
+            if (ensemble_ == Ensemble::NPT) {
+                bool accept = npt_move_no_cell_list();
+                simulation_step_time += 1;
+                if (accept) updateCellList();
+                if (accept) accept_rate++;
+                total += 1;
             }
             if (step%fUpdateCell == 0){
                 updateCellList();
@@ -51,6 +69,7 @@ void MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
                 recordObservables(simulation_step_time);    
             
     }
+    return accept_rate/total;
     // logger_.close();
 }
 
@@ -127,6 +146,34 @@ bool MonteCarlo::displacementMove_no_cell_list() {
     return accept;
 }
 
+bool MonteCarlo::npt_move_no_cell_list(){
+    bool accept = true;
+    double V_o = box_.getV();
+    double lx_o = box_.getLx();
+    double ly_o = box_.getLy();
+    double U_old = calc_.computeTotalEnergy(particles_, box_);
+    double lnvn = log(V_o) + rng_.uniform(-0.5, 0.5) * delta_V;
+    double V_n = exp(lnvn);
+    box_.setV(V_n);
+    size_t N = particles_.size();
+    for (size_t i = 0; i < N; ++i) {
+        box_.recenter(particles_[i], lx_o, ly_o);
+    }
+    double U_new = calc_.computeTotalEnergy(particles_, box_);
+
+    double arg = - beta * ((U_new - U_old) + press * (V_n - V_o) + (-N + 1) * log(V_n/V_o)/beta);
+    if (rng_.uniform01() >= exp(arg)) {
+        double lx_o = box_.getLx();
+        double ly_o = box_.getLy();
+        box_.setV(V_o);
+        for (size_t i = 0; i < N; ++i) {
+            box_.recenter(particles_[i], lx_o, ly_o);
+        }
+        accept = false;
+
+    }
+    return accept;
+}
 bool MonteCarlo::grandCanonicalMove() {
     double V = box_.getV();
     size_t N = particles_.size();

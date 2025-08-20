@@ -31,6 +31,7 @@ public:
      * @param kappa Parameter for thermal star potential (optional).
      */
     ThermodynamicCalculator(double temperature,
+                            double press,
                              PotentialType potentialType,
                              double rcut,
                              double mu = 0.0,
@@ -52,6 +53,12 @@ public:
      * @return Temperature provided at construction.
      */
     double getTemperature() const;
+    /**
+     * @brief Get the system pressure.
+     * @return Pressure provided at construction.
+     */
+    double getPressure() const;
+
     /**
      * @brief Get the system Activity.
      * @return  provided at construction.
@@ -197,6 +204,7 @@ public:
 private:
     //── Thermodynamic parameters ───────────────────────────────────────
     double temperature_;          ///< System temperature (T)
+    double press_;                 ///< system Pressure (P) for NPT ot gibbs ensmble
     double mu_;                    ///< System chemical Potential
     double rcut_;                 ///< Cutoff distance (r_cut)
     double r2cut_;                ///< Square of cutoff distance (r_cut^2)

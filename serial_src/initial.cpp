@@ -23,6 +23,11 @@ void SimulationBox::applyPBC(Particle &p) const {
     p.x -= Lx * std::floor(p.x * invLx);
     p.y -= Ly * std::floor(p.y * invLy);
 }
+
+void SimulationBox::recenter(Particle &p, double lx, double ly){
+    p.x *= Lx/lx;
+    p.y *= Ly/ly;
+}
 // Calculate the minimum image distance between two particles considering PBC
 double SimulationBox::minimumImageDistance(const Particle &p1, const Particle &p2) const {
     double dx = p1.x - p2.x;
@@ -60,7 +65,26 @@ double SimulationBox::getV() const {
     return volume;
 }
 
+void SimulationBox::setLx(double lx) {
+    Lx = lx;
+    invLx = 1/Lx;
+    volume = Lx * Ly;
+}
 
+void SimulationBox::setLy(double ly) {
+    Ly = ly;
+    invLy = 1/Ly;
+    volume = Lx * Ly;
+}
+
+void SimulationBox::setV(double v) {
+    double ratio = Lx/Ly;
+    Lx = sqrt(ratio * v);
+    Ly = sqrt(v /ratio);
+    invLx = 1/Lx;
+    invLy = 1/Ly;
+    volume = Lx * Ly;
+}
 
 void initializeParticles(std::vector<Particle> &particles, const SimulationBox &box, int N, bool random, unsigned int seed) {
     particles.clear();  // Clear the vector before initializing new particles

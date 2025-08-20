@@ -83,6 +83,29 @@ public:
      * @return The simulation box volume.
      */
     double getV() const;
+
+    /**
+     * @brief set the simulation box in x_diection.
+     * @param lx 
+     */
+    void setLx(double lx); 
+    /**
+     * @brief set the simulation box in y_diection.
+     * @param ly
+     */
+    void setLy(double ly); 
+    /**
+     * @brief set the simulation box volume, keeping the ratio of the box.
+     * @param v
+     */
+    void setV(double v); 
+    /**
+     * @brief recentering the center of mass based on the old box length:
+     * @param p the particle
+     * @param lx old lenth of the box
+     * @param ly new length og the box
+     */
+    void recenter(Particle &p, double lx, double ly);
 };
 
 /**
