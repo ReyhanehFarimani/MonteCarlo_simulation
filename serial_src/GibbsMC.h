@@ -53,6 +53,8 @@ class GibbsMonteCarlo {
     SimulationBox box_2;
     std::vector<Particle> particles_1;
     std::vector<Particle> particles_2;
+    ThermodynamicCalculator& calc_1;
+    ThermodynamicCalculator& calc_2;
     CellList cellList_1;
     CellList cellList_2;
     Logging& logger_1;
@@ -62,10 +64,13 @@ class GibbsMonteCarlo {
     double delta_;   ///< max displacement magnitude
     double delta_V;
     double beta;
-    double energy;
+    double energy_1;
+    double energy_2;
     int simulation_step_time = 0;
 
     // Internal moves
+    void updateCellList();
+    
     bool particle_displacement_1();
     bool particle_displacement_2();
     bool volume_change();
