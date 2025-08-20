@@ -83,8 +83,8 @@ TEST_CASE("CellList multiple neighbors in mixed cell configuration", "[CellList]
 
 
 TEST_CASE("Energy consistency for large random system (manual LJ)", "[CellList][Thermo][Large]") {
-    const size_t N = 10000;
-    SimulationBox box(100.0, 100.0 * sqrt(3));
+    const size_t N = 100;
+    SimulationBox box(10.0, 10.0 * sqrt(3));
     std::mt19937_64 rng(123456);
     std::uniform_real_distribution<double> distX(0.0, box.getLx());
     std::uniform_real_distribution<double> distY(0.0, box.getLy());

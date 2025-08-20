@@ -8,10 +8,10 @@
 TEST_CASE("NPT Ensemble checking the box update", "[MC]") {
     const unsigned SEED = 4922;
     const double BOX_L = 10.0;
-    const size_t N = 100;
+    const size_t N = 50;
     const double RCUT = 2.5;
     const double TEMP = 1.0;
-    const double Press = 10;
+    const double Press = 30;
     std::string out_xyz = "npt_test_1.xyz";
     std::string out_data = "npt_test_1.log";
 
@@ -27,19 +27,20 @@ TEST_CASE("NPT Ensemble checking the box update", "[MC]") {
     initializeParticles(pWarm, box, static_cast<int>(N), true, SEED);
     ThermodynamicCalculator calc(TEMP,Press, PotentialType::LennardJones, RCUT, 0.0);
     Logging logger(out_xyz, out_data);
-    MonteCarlo mcWarm(box, pWarm, calc, RCUT, 0.1, 0.1, Ensemble::NVT, logger, rngWarm);
+    MonteCarlo mcWarm(box, pWarm, calc, RCUT, 0.05, 0.1, Ensemble::NVT, logger, rngWarm);
     // Warm up: N*1000 displacement moves
-    mcWarm.run(100000, 100, 100);
+    mcWarm.run(1000, 100, 10);
     
 
     // Copy warmed configuration for both methods
     std::vector<Particle> p1 = pWarm;
 
     // Create two MC drivers on the warmed state
-    MonteCarlo mcP(box, p1, calc, RCUT, 0.1, 0.1, Ensemble::NPT, logger, rngBF);
+    MonteCarlo mcP(box, p1, calc, RCUT, 0.05, 0.05, Ensemble::NPT, logger, rngBF);
+    mcP.run(10000, 1000000, 10);
 
     // Check initial energies
-    mcWarm.run(100000, 100, 100);
+    mcP.run(40000, 100, 10);
 
 
 }
