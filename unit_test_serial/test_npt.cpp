@@ -7,11 +7,11 @@
 #include <string>
 TEST_CASE("NPT Ensemble checking the box update", "[MC]") {
     const unsigned SEED = 4922;
-    const double BOX_L = 10.0;
-    const size_t N = 50;
+    const double BOX_L = 8.0;
+    const size_t N = 20;
     const double RCUT = 2.5;
     const double TEMP = 1.0;
-    const double Press = 30;
+    const double Press = 1;
     std::string out_xyz = "npt_test_1.xyz";
     std::string out_data = "npt_test_1.log";
 
@@ -29,7 +29,7 @@ TEST_CASE("NPT Ensemble checking the box update", "[MC]") {
     Logging logger(out_xyz, out_data);
     MonteCarlo mcWarm(box, pWarm, calc, RCUT, 0.05, 0.1, Ensemble::NVT, logger, rngWarm);
     // Warm up: N*1000 displacement moves
-    mcWarm.run(1000, 100, 10);
+    mcWarm.run(1000, 100, 50);
     
 
     // Copy warmed configuration for both methods
@@ -37,10 +37,16 @@ TEST_CASE("NPT Ensemble checking the box update", "[MC]") {
 
     // Create two MC drivers on the warmed state
     MonteCarlo mcP(box, p1, calc, RCUT, 0.05, 0.05, Ensemble::NPT, logger, rngBF);
-    mcP.run(10000, 1000000, 10);
-
+    mcP.run(30000, 1000000, 20);
+    double p=0;
+    // box = mcP.box_;
     // Check initial energies
-    mcP.run(40000, 100, 10);
+    for (int i =0; i<4; i++){
+        mcP.run(1000, 100, 20);
+        p += calc.computePressure(p1, box)/4;
+    }
+
+    REQUIRE(abs(p - Press)<0.1);
 
 
 }
