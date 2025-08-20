@@ -56,7 +56,7 @@ void Logging::logPositions_dump(const std::vector<Particle> &particles, const Si
     double xlo = 0.0, xhi = box.getLx();
     double ylo = 0.0, yhi = box.getLy();
     double zlo = 0.0, zhi = 0.0;
-    outFile_position << "ITEM: BOX BOUNDS pp pp pp\n"
+    outFile_position << "ITEM: BOX BOUNDS pp pp ff\n"
     << xlo << " " << xhi << "\n"
     << ylo << " " << yhi << "\n"
     << zlo << " " << zhi << "\n";
@@ -81,6 +81,8 @@ void Logging::logSimulationData(const std::vector<Particle> &particles, const Si
     outFile_data << "Timestep:" << timestep << " " << std::fixed << std::setprecision(5)
             << ",\tEnergy:"<< cal.computeTotalEnergyCellList(particles, box) << ",\tTempreture:" << cal.getTemperature() << 
             ",\tPressure:" << cal.computePressureCellList(particles, box) <<
+            ",\tVolume:" << box.getV() <<
+            ",\tdensity of particles:"<<cal.getNumParticles(particles)/ box.getV()<<
             ",\tNumberofParticles:"<<cal.getNumParticles(particles)<< "\n";
 
     outFile_data.flush();

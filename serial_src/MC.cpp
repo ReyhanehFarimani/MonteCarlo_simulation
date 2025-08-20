@@ -40,22 +40,45 @@ int MonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell) {
                 simulation_step_time += 1;
                 if (accept) accept_rate++;
                 total += 1;
+                if (simulation_step_time%fUpdateCell == 0){
+                    updateCellList();
+                    double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
+                    if (abs(energy - e_tmp)>10){
+                        // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                        std::cout<<"cell list update frequency is too high!"<<std::endl;
+                    }
+                    energy = e_tmp;
+                    // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
+                }
             }
             if (ensemble_ == Ensemble::GCMC) {
                 bool accept = grandCanonicalMove();
                 simulation_step_time += 1;
                 if (accept) accept_rate++;
                 total += 1;
+                if (simulation_step_time%fUpdateCell == 0){
+                    updateCellList();
+                    double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
+                    if (abs(energy - e_tmp)>10){
+                        // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                        std::cout<<"cell list update frequency is too high!"<<std::endl;
+                    }
+                    energy = e_tmp;
+                    // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
+                }
                 // updateCellList();
             }
             if (ensemble_ == Ensemble::NPT) {
-                bool accept = npt_move_no_cell_list();
+                if (rng_.uniform01()>0.3){
+                    bool accept = npt_move_no_cell_list();
+                    if (accept) updateCellList();
+                    if (accept) accept_rate++;
+                }
                 simulation_step_time += 1;
-                if (accept) updateCellList();
-                if (accept) accept_rate++;
+                
                 total += 1;
             }
-            if (step%fUpdateCell == 0){
+            if (simulation_step_time%fUpdateCell == 0){
                 updateCellList();
                 double e_tmp = calc_.computeTotalEnergyCellList(particles_, box_);
                 if (abs(energy - e_tmp)>10){
@@ -151,27 +174,28 @@ bool MonteCarlo::npt_move_no_cell_list(){
     double V_o = box_.getV();
     double lx_o = box_.getLx();
     double ly_o = box_.getLy();
-    double U_old = calc_.computeTotalEnergy(particles_, box_);
-    double lnvn = log(V_o) + rng_.uniform(-0.5, 0.5) * delta_V;
-    double V_n = exp(lnvn);
+    double U_old = energy;
+    double lnvn = std::log(V_o) + rng_.uniform(-0.5, 0.5) * delta_V;
+    double V_n = std::exp(lnvn);
     box_.setV(V_n);
     size_t N = particles_.size();
     for (size_t i = 0; i < N; ++i) {
         box_.recenter(particles_[i], lx_o, ly_o);
     }
     double U_new = calc_.computeTotalEnergy(particles_, box_);
-
-    double arg = - beta * ((U_new - U_old) + press * (V_n - V_o) + (-N + 1) * log(V_n/V_o)/beta);
-    if (rng_.uniform01() >= exp(arg)) {
+    energy = U_new;
+    double arg = - beta * ((U_new - U_old) + press * (V_n - V_o) - (N + 1) * std::log(V_n/V_o)/beta);
+    if (rng_.uniform01() >= std::exp(arg)) {
         double lx_o = box_.getLx();
         double ly_o = box_.getLy();
         box_.setV(V_o);
         for (size_t i = 0; i < N; ++i) {
             box_.recenter(particles_[i], lx_o, ly_o);
         }
+        energy = U_old;
         accept = false;
-
     }
+    
     return accept;
 }
 bool MonteCarlo::grandCanonicalMove() {

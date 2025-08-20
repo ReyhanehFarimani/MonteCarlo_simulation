@@ -1,7 +1,7 @@
 #include "thermodynamic_calculator.h"
 #include <cassert>
 #include <cmath>
-
+#include <iostream>
 ThermodynamicCalculator::ThermodynamicCalculator(double temperature,
                                                 double press,
                                                  PotentialType potentialType,
@@ -30,6 +30,7 @@ size_t ThermodynamicCalculator::getNumParticles(const std::vector<Particle>& par
 }
 
 double ThermodynamicCalculator::getPressure() const {
+    std::cout<<press_<<std::endl;
     return press_;
 }
 
