@@ -143,7 +143,7 @@ bool GibbsMonteCarlo::particle_displacement_2(){
     double U_old = calc_2.computeLocalEnergy(idx, particles_2, box_2, neighbors);
     
     particles_2[idx].updatePosition(dx, dy);
-    box_2.applyPBC(particles_1[idx]);
+    box_2.applyPBC(particles_2[idx]);
     neighbors = cellList_2.getNeighbors(idx, particles_2);
 
     double U_new = calc_1.computeLocalEnergy(idx, particles_2, box_2, neighbors);
@@ -171,8 +171,68 @@ bool GibbsMonteCarlo::particle_exchange(){
 }
 
 bool GibbsMonteCarlo::volume_change(){
-    bool accept=false;
+    bool accept=true;
+    double V_o_1 = box_1.getV();
+    double lx_o_1 = box_1.getLx();
+    double ly_o_1 = box_1.getLy();
+    double V_o_2 = box_2.getV();
+    double lx_o_2 = box_2.getLx();
+    double ly_o_2 = box_2.getLy();
+    double u1 = energy_1;
+    double u2 = energy_2;
+    double U_old = energy_1 + energy_2;
+    double dlnV = rng_.uniform(-0.5, 0.5) * delta_V;
+    double vn_1_v_2 = std::exp(std::log(V_o_1/V_o_2) + dlnV);
+    double V_n_1 = (V_o_1 + V_o_2) * vn_1_v_2 / (1 + vn_1_v_2);
+    double V_n_2 = (V_o_1 + V_o_2) - V_n_1;
+    box_1.setV(V_n_1);
+    box_2.setV(V_n_2);
+    size_t N_1 = particles_1.size();
+    for (size_t i = 0; i < N_1; ++i) {
+        box_1.recenter(particles_1[i], lx_o_1, ly_o_1);
+    }
+    size_t N_2 = particles_2.size();
+    for (size_t i = 0; i < N_2; ++i) {
+        box_2.recenter(particles_2[i], lx_o_2, ly_o_2);
+    }
+    cellList_1.adjust_box(box_1);
+    cellList_1.build(particles_1);
+    cellList_2.adjust_box(box_2);
+    cellList_2.build(particles_2);
 
+    energy_1 = calc_1.computeTotalEnergyCellList(particles_1, box_1);
+    energy_2 = calc_2.computeTotalEnergyCellList(particles_2, box_2);
+    double U_new = energy_1 + energy_2;
+    double arg = -beta * (U_new - U_old);
+    arg = std::exp(arg) * std::pow(V_n_1/V_o_1, N_1+1) * std::pow(V_n_2/V_o_2, N_2+1);
+    if (rng_.uniform01() >= arg){
+        // std::cout<<1<<std::endl;
+        // double V_o_1 = box_1.getV();
+        double lx_n_1 = box_1.getLx();
+        double ly_n_1 = box_1.getLy();
+        // double V_o_2 = box_2.getV();
+        double lx_n_2 = box_2.getLx();
+        double ly_n_2 = box_2.getLy();
+        box_1.setV(V_o_1);
+        box_2.setV(V_o_2);
+        size_t N_1 = particles_1.size();
+        for (size_t i = 0; i < N_1; ++i) {
+            box_1.recenter(particles_1[i], lx_n_1, ly_n_1);
+        }
+        size_t N_2 = particles_2.size();
+        for (size_t i = 0; i < N_2; ++i) {
+            box_2.recenter(particles_2[i], lx_n_2, ly_n_2);
+        }
+        energy_1 = u1;
+        energy_2 = u2;
+        cellList_1.adjust_box(box_1);
+        cellList_1.build(particles_1);
+        cellList_2.adjust_box(box_2);
+        cellList_2.build(particles_2);
+        accept = false;
+    }
+
+    
     return accept;
 }
 
