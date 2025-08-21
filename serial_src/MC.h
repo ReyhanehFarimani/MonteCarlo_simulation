@@ -14,7 +14,8 @@
 enum class Ensemble {
     NVT,    ///< Constant NVT ensemble: displacements only
     GCMC,    ///< Grand canonical (μVT): insertion/deletion + displacements
-    NPT     ///< isobaric, isothermal ensemble: random walk in lnV + displacement
+    NPT,     ///< isobaric, isothermal ensemble: random walk in lnV + displacement
+    Gibbs
 };
 
 /**
