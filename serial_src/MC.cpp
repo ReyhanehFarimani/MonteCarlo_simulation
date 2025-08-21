@@ -174,8 +174,8 @@ bool MonteCarlo::npt_move_no_cell_list(){
         for (size_t i = 0; i < N; ++i) {
             box_.recenter(particles_[i], lx_o, ly_o);
         }
-        cellList_.adjust_box(box_);
-        cellList_.build(particles_);
+        // cellList_.adjust_box(box_);
+        // cellList_.build(particles_);
         energy = U_old;
         accept = false;
     }
@@ -193,7 +193,7 @@ bool MonteCarlo::grandCanonicalMove() {
 //  50/50 chance to insert or delete
     double check = rng_.uniform01();
     if (check < 0.3) {
-        simulation_step_time += 1;
+        // simulation_step_time += 1;
         // Insertion attempt
         Particle pnew(rng_.uniform(0, box_.getLx()), rng_.uniform(0, box_.getLy()));
         auto new_neighbors = cellList_.getNeighbors2(pnew, particles_);  // neighbors for the new particle
@@ -217,7 +217,7 @@ bool MonteCarlo::grandCanonicalMove() {
             return false;
         }
     } else if (check <0.6){
-        simulation_step_time += 1;
+        // simulation_step_time += 1;
         // Deletion attempt
         if (N == 0) return false;
         size_t idx = rng_.uniformInt(0, N - 1);

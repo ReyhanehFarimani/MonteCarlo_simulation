@@ -166,6 +166,56 @@ bool GibbsMonteCarlo::particle_displacement_2(){
 
 bool GibbsMonteCarlo::particle_exchange(){
     bool accept=false;
+    if (rng_.uniform01()>0.5)//removing one particle from box two
+    {
+        double N_2 = calc_2.getNumParticles(particles_2);
+        if (N_2<2)
+            return false;
+        double N_1 = calc_1.getNumParticles(particles_1);
+        Particle pnew(rng_.uniform(0, box_1.getLx()), rng_.uniform(0, box_1.getLy()));
+        auto new_neighbors = cellList_1.getNeighbors2(pnew, particles_1);  // neighbors for the new particle
+        double dU1 = calc_1.computeLocalEnergy(0, particles_1, box_1, new_neighbors);
+        
+        w_1 += box_1.getV() * std::exp(-beta * dU1)/(N_1 + 1);
+
+        size_t idx = rng_.uniformInt(0, N_2 - 1);
+        auto neighbors = cellList_2.getNeighbors(idx, particles_2);
+        double dU2 = -calc_2.computeLocalEnergy(idx, particles_2, box_2, neighbors);
+
+        double arg = std::exp(-beta * (dU1 + dU2)) * box_2.getV() * (N_1 + 1)/ box_1.getV() / (N_2 + 1);
+        if (rng_.uniform01()<arg){
+            energy_1 += dU1;
+            energy_2 += dU2;
+            particles_1.push_back(pnew);
+            particles_2.erase(particles_2.begin() + idx);
+            updateCellList();
+            accept = true;
+        }
+    }else{ // removing one particle from box one
+        double N_1 = calc_1.getNumParticles(particles_1);
+        if (N_1<2)
+            return false;
+        double N_2 = calc_2.getNumParticles(particles_2);
+        Particle pnew(rng_.uniform(0, box_2.getLx()), rng_.uniform(0, box_2.getLy()));
+        auto new_neighbors = cellList_2.getNeighbors2(pnew, particles_2);  // neighbors for the new particle
+        double dU2 = calc_2.computeLocalEnergy(0, particles_2, box_2, new_neighbors);
+        
+        w_2 += box_2.getV() * std::exp(-beta * dU2)/(N_2 + 1);
+
+        size_t idx = rng_.uniformInt(0, N_1 - 1);
+        auto neighbors = cellList_1.getNeighbors(idx, particles_1);
+        double dU1 = -calc_1.computeLocalEnergy(idx, particles_1, box_1, neighbors);
+
+        double arg = std::exp(-beta * (dU1 + dU2)) * box_1.getV() * (N_2 + 1)/ box_2.getV() / (N_1 + 1);
+        if (rng_.uniform01()<arg){
+            energy_1 += dU1;
+            energy_2 += dU2;
+            particles_2.push_back(pnew);
+            particles_1.erase(particles_1.begin() + idx);
+            updateCellList();
+            accept = true;
+        }
+    }
 
     return accept;
 }

@@ -66,6 +66,8 @@ class GibbsMonteCarlo {
     double beta;
     double energy_1;
     double energy_2;
+    double w_1 = 0;
+    double w_2 = 0;
     int simulation_step_time = 0;
 
     // Internal moves
