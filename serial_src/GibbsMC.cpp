@@ -75,18 +75,18 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
 
             if (step%fUpdateCell == 0){
                 updateCellList();
-                double e_tmp = calc_1.computeTotalEnergyCellList(particles_1, box_1);
-                if (abs(energy_1 - e_tmp)>10){
+                double e_tmp1 = calc_1.computeTotalEnergyCellList(particles_1, box_1);
+                if (abs(energy_1 - e_tmp1)>10){
                     // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
                     std::cout<<"cell list update frequency is too high!"<<std::endl;
                 }
-                energy_1 = e_tmp;
-                double e_tmp = calc_2.computeTotalEnergyCellList(particles_2, box_2);
-                if (abs(energy_2 - e_tmp)>10){
+                energy_1 = e_tmp1;
+                double e_tmp2 = calc_2.computeTotalEnergyCellList(particles_2, box_2);
+                if (abs(energy_2 - e_tmp2)>10){
                     // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
                     std::cout<<"cell list update frequency is too high!"<<std::endl;
                 }
-                energy_2 = e_tmp;
+                energy_2 = e_tmp2;
 
                 // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
             }

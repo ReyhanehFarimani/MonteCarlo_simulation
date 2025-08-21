@@ -76,7 +76,7 @@ int main(int argc, char* argv[]) {
         } else if (ensemble_name == "NPT") {
             ensemble = Ensemble::NPT;
         } else if (ensemble_name == "Gibbs") {
-            ensemble == Ensemble::Gibbs;
+            ensemble = Ensemble::Gibbs;
         } else {
             std::cerr<<"Error: Unrecognised ensemble"<<std::endl;
             return 1;
