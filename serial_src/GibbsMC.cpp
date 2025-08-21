@@ -67,7 +67,7 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
             total ++;
             simulation_step_time ++;
 
-            accept = particle_exchange();
+            accept = volume_change();
             if (accept)
                     accept_rate ++;
             total ++;
@@ -174,4 +174,17 @@ bool GibbsMonteCarlo::volume_change(){
     bool accept=false;
 
     return accept;
+}
+
+void GibbsMonteCarlo::updateCellList(){
+    cellList_1.build(particles_1);
+    cellList_2.build(particles_2);
+}
+
+void GibbsMonteCarlo::recordObservables(size_t step){
+    logger_1.logSimulationData(particles_1, box_1, calc_1, static_cast<int>(step));
+    logger_1.logPositions_dump(particles_1, box_1, step);
+
+    logger_2.logSimulationData(particles_2, box_2, calc_2, static_cast<int>(step));
+    logger_2.logPositions_dump(particles_2, box_2, step);
 }
