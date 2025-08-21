@@ -99,12 +99,67 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
 bool GibbsMonteCarlo::particle_displacement_1(){
     bool accept=false;
 
+    size_t idx = rng_.uniformInt(0, static_cast<int>(particles_1.size() - 1));
+    Particle oldPos = particles_1[idx];
+
+    double dx = rng_.uniform(-delta_, delta_);
+    double dy = rng_.uniform(-delta_, delta_);
+
+    auto neighbors = cellList_1.getNeighbors(idx, particles_1);
+    double U_old = calc_1.computeLocalEnergy(idx, particles_1, box_1, neighbors);
+    
+    particles_1[idx].updatePosition(dx, dy);
+    box_1.applyPBC(particles_1[idx]);
+    neighbors = cellList_1.getNeighbors(idx, particles_1);
+
+    double U_new = calc_1.computeLocalEnergy(idx, particles_1, box_1, neighbors);
+    double dU = U_new - U_old;
+    energy_1 += dU;
+
+    if (dU <= 0.0) {
+        accept = true;
+    } else {
+        double p = std::exp(-beta * dU);
+        accept = (rng_.uniform01() < p);
+    }
+    if (!accept) {
+        particles_1[idx] = oldPos;
+        energy_1 -= dU;
+    }
     return accept;
+
 }
 
 bool GibbsMonteCarlo::particle_displacement_2(){
     bool accept=false;
 
+    size_t idx = rng_.uniformInt(0, static_cast<int>(particles_2.size() - 1));
+    Particle oldPos = particles_2[idx];
+
+    double dx = rng_.uniform(-delta_, delta_);
+    double dy = rng_.uniform(-delta_, delta_);
+
+    auto neighbors = cellList_2.getNeighbors(idx, particles_2);
+    double U_old = calc_2.computeLocalEnergy(idx, particles_2, box_2, neighbors);
+    
+    particles_2[idx].updatePosition(dx, dy);
+    box_2.applyPBC(particles_1[idx]);
+    neighbors = cellList_2.getNeighbors(idx, particles_2);
+
+    double U_new = calc_1.computeLocalEnergy(idx, particles_2, box_2, neighbors);
+    double dU = U_new - U_old;
+    energy_2 += dU;
+    
+    if (dU <= 0.0) {
+        accept = true;
+    } else {
+        double p = std::exp(-beta * dU);
+        accept = (rng_.uniform01() < p);
+    }
+    if (!accept) {
+        particles_2[idx] = oldPos;
+        energy_2 -= dU;
+    }
     return accept;
 }
 

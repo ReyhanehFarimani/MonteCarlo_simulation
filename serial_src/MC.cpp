@@ -23,7 +23,7 @@ MonteCarlo::MonteCarlo(SimulationBox& box,
       beta(1.0 / calc_.getTemperature()),
       press(calc_.getPressure()),
       z(calc_.getActivity()),
-      energy(calc_.computeTotalEnergy(particles, box))
+      energy(calc_.computeTotalEnergyCellList(particles, box))
 {
     cellList_.build(particles_);
 }
