@@ -44,34 +44,40 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
     for (size_t step = 0; step < nSteps; ++step) {
 
             size_t N1 = particles_1.size();
-            for (size_t i = 0; i < N1; ++i) {
-                accept = particle_displacement_1();
+            double r = rng_.uniform01();
+            if (r<0.25){
+                    for (size_t i = 0; i < N1; ++i) {
+                    accept = particle_displacement_1();
+                    if (accept)
+                        accept_rate ++;
+                    total ++;
+                    simulation_step_time ++;
+                }
+            
+                size_t N2 = particles_2.size();
+                for (size_t i = 0; i < N2; ++i) {
+                    accept = particle_displacement_2();
+                    if (accept)
+                        accept_rate ++;
+                    total ++;
+                    simulation_step_time ++;
+                }
+            }
+            else if(r<0.7){
+
+                accept = particle_exchange();
                 if (accept)
-                    accept_rate ++;
+                        accept_rate ++;
                 total ++;
                 simulation_step_time ++;
             }
-
-            size_t N2 = particles_2.size();
-            for (size_t i = 0; i < N2; ++i) {
-                accept = particle_displacement_2();
-                if (accept)
-                    accept_rate ++;
-                total ++;
-                simulation_step_time ++;
-            }
-
-            accept = particle_exchange();
-            if (accept)
-                    accept_rate ++;
-            total ++;
-            simulation_step_time ++;
-
+            else{
             accept = volume_change();
             if (accept)
                     accept_rate ++;
             total ++;
             simulation_step_time ++;
+            }
 
             if (step%fUpdateCell == 0){
                 updateCellList();
