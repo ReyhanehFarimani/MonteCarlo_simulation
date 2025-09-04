@@ -48,6 +48,8 @@ class GibbsMonteCarlo {
      */
     int run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
 
+    double w_1 = 0;
+    double w_2 = 0;
     private:
     SimulationBox box_1;
     SimulationBox box_2;
@@ -66,8 +68,7 @@ class GibbsMonteCarlo {
     double beta;
     double energy_1;
     double energy_2;
-    double w_1 = 0;
-    double w_2 = 0;
+    
     int simulation_step_time = 0;
 
     // Internal moves
