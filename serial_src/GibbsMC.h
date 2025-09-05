@@ -47,7 +47,9 @@ class GibbsMonteCarlo {
      * @param fUpdateCell Frequency of updating cell list
      */
     int run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
-
+    int equlibrateNVT(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
+    int equlibrateNPT(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
+    int equlibratemuVT(size_t nSteps, size_t fOutputStep, size_t fUpdateCell);
     double w_1 = 0;
     double w_2 = 0;
     private:
