@@ -223,10 +223,13 @@ int main(int argc, char* argv[]) {
         
         // Equilibration simulation
         std::cout << "Equilibration:" << std::endl;
-        gmc.run(static_cast<size_t>(eSteps),
-            static_cast<size_t>(eSteps * 10),
+        gmc.equlibrateNVT(static_cast<size_t>(eSteps+1),
+            static_cast<size_t>(eSteps),
             static_cast<size_t>(cellUpdateFreq));
-
+        gmc.equlibratemuVT(static_cast<size_t>(eSteps+1),
+            static_cast<size_t>(eSteps),
+            static_cast<size_t>(cellUpdateFreq));
+        
         // Run simulation
         std::cout << "Running:" << std::endl;
         gmc.run(static_cast<size_t>(nSteps),
