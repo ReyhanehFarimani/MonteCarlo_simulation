@@ -7,13 +7,13 @@
 #include <string>
 #include <iostream>
 TEST_CASE("Gibbs Ensmble testing the simple two box scenario", "[MC]") {
-    const unsigned SEED = 4922;
-    const double BOX_L_1 = 30.0;
-    const size_t N_1 = 100;
-    const double BOX_L_2 = 10.0;
-    const size_t N_2 = 200;
-    const double RCUT = 2.0;
-    const double TEMP = 1.0;
+    const unsigned SEED = 49212;
+    const double BOX_L_1 = 33.0;
+    const size_t N_1 = 350;
+    const double BOX_L_2 = 33.0;
+    const size_t N_2 = 350;
+    const double RCUT = 3.0;
+    const double TEMP = 0.48;
     
     std::string out_xyz_1 = "gibbs_test_1.xyz";
     std::string out_data_1 = "gibbs_test_1.log";
@@ -32,19 +32,23 @@ TEST_CASE("Gibbs Ensmble testing the simple two box scenario", "[MC]") {
     std::vector<Particle> p2;
     initializeParticles(p2, box_2, static_cast<int>(N_2), true, SEED);
 
-    ThermodynamicCalculator calc_1(TEMP,0, PotentialType::WCA, RCUT, 0.0);
+    ThermodynamicCalculator calc_1(TEMP,0, PotentialType::LennardJones, RCUT, 0.0);
     Logging logger_1(out_xyz_1, out_data_1);
 
-    ThermodynamicCalculator calc_2(TEMP,0, PotentialType::WCA, RCUT, 0.0);
+    ThermodynamicCalculator calc_2(TEMP,0, PotentialType::LennardJones, RCUT, 0.0);
     Logging logger_2(out_xyz_2, out_data_2);
 
 
     
 
-    GibbsMonteCarlo gmc2(box_1, box_2, p1, p2, calc_1, calc_2, RCUT, 0.05, 0.01, logger_1, logger_2, rngWarm);
+    GibbsMonteCarlo gmc2(box_1, box_2, p1, p2, calc_1, calc_2, RCUT, 0.1, 0.1, logger_1, logger_2, rngWarm);
    
-    gmc2.run(10000, 100, 100);
+    gmc2.equlibrateNVT(1000, 100, 100);
 
+    gmc2.equlibratemuVT(1000, 100, 100);
+    // gmc2.equlibrateNPT(10000, 100, 100);
+
+    gmc2.run(1000, 100, 100);
     double current_v = box_1.getV() + box_2.getV();
     std::cout<<(box_1.getV())<<std::endl; 
     double current_n = calc_1.getNumParticles(p1) + calc_2.getNumParticles(p2);

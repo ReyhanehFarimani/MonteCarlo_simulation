@@ -36,8 +36,7 @@ GibbsMonteCarlo::GibbsMonteCarlo(SimulationBox& box1,
                         energy_1 = calc1.computeTotalEnergyCellList(particles_1, box_1);
                         energy_2 = calc1.computeTotalEnergyCellList(particles_2, box_2);
                     }
-
-int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
+int GibbsMonteCarlo::equlibrateNVT(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
     int accept_rate = 0;
     int total = 0;
     bool accept;
@@ -45,7 +44,116 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
 
             size_t N1 = particles_1.size();
             double r = rng_.uniform01();
-            if (r<0.25){
+
+            for (size_t i = 0; i < N1; ++i) {
+                accept = particle_displacement_1();
+                if (accept)
+                    accept_rate ++;
+                total ++;
+                simulation_step_time ++;
+            }
+        
+            size_t N2 = particles_2.size();
+            for (size_t i = 0; i < N2; ++i) {
+                accept = particle_displacement_2();
+                if (accept)
+                    accept_rate ++;
+                total ++;
+                simulation_step_time ++;
+            }
+
+
+            if (step%fUpdateCell == 0){
+                updateCellList();
+                double e_tmp1 = calc_1.computeTotalEnergyCellList(particles_1, box_1);
+                if (abs(energy_1 - e_tmp1)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy_1 = e_tmp1;
+                double e_tmp2 = calc_2.computeTotalEnergyCellList(particles_2, box_2);
+                if (abs(energy_2 - e_tmp2)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy_2 = e_tmp2;
+
+                // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
+            }
+            if ((step + 1) % fOutputStep == 0 || step == nSteps - 1)
+                recordObservables(simulation_step_time);    
+
+        }
+    return accept_rate/total;
+}
+
+int GibbsMonteCarlo::equlibrateNPT(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
+    int accept_rate = 0;
+    int total = 0;
+    bool accept;
+    for (size_t step = 0; step < nSteps; ++step) {
+
+            size_t N1 = particles_1.size();
+            double r = rng_.uniform01();
+
+            for (size_t i = 0; i < N1; ++i) {
+                accept = particle_displacement_1();
+                if (accept)
+                    accept_rate ++;
+                total ++;
+                simulation_step_time ++;
+            }
+        
+            size_t N2 = particles_2.size();
+            for (size_t i = 0; i < N2; ++i) {
+                accept = particle_displacement_2();
+                if (accept)
+                    accept_rate ++;
+                total ++;
+                simulation_step_time ++;
+            }
+
+            accept = volume_change();
+            if (accept)
+                    accept_rate ++;
+            total ++;
+            simulation_step_time ++;
+
+
+            if (step%fUpdateCell == 0){
+                updateCellList();
+                double e_tmp1 = calc_1.computeTotalEnergyCellList(particles_1, box_1);
+                if (abs(energy_1 - e_tmp1)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy_1 = e_tmp1;
+                double e_tmp2 = calc_2.computeTotalEnergyCellList(particles_2, box_2);
+                if (abs(energy_2 - e_tmp2)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy_2 = e_tmp2;
+
+                // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
+            }
+            if ((step + 1) % fOutputStep == 0 || step == nSteps - 1)
+                recordObservables(simulation_step_time);    
+
+        }
+    return accept_rate/total;
+}
+
+
+int GibbsMonteCarlo::equlibratemuVT(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
+    int accept_rate = 0;
+    int total = 0;
+    bool accept;
+    for (size_t step = 0; step < nSteps; ++step) {
+
+            size_t N1 = particles_1.size();
+            double r = rng_.uniform01();
+            if (r<0.5){
                     for (size_t i = 0; i < N1; ++i) {
                     accept = particle_displacement_1();
                     if (accept)
@@ -63,7 +171,66 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
                     simulation_step_time ++;
                 }
             }
-            else if(r<0.7){
+            else{
+
+                accept = particle_exchange();
+                if (accept)
+                        accept_rate ++;
+                total ++;
+                simulation_step_time ++;
+            }
+
+            if (step%fUpdateCell == 0){
+                updateCellList();
+                double e_tmp1 = calc_1.computeTotalEnergyCellList(particles_1, box_1);
+                if (abs(energy_1 - e_tmp1)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy_1 = e_tmp1;
+                double e_tmp2 = calc_2.computeTotalEnergyCellList(particles_2, box_2);
+                if (abs(energy_2 - e_tmp2)>10){
+                    // std::cout<<"energy_diff = "<<energy - e_tmp<<std::endl;
+                    std::cout<<"cell list update frequency is too high!"<<std::endl;
+                }
+                energy_2 = e_tmp2;
+
+                // std::cout<<"step:\t"<<step<<"\t, energy:"<<energy<<std::endl;
+            }
+            if ((step + 1) % fOutputStep == 0 || step == nSteps - 1)
+                recordObservables(simulation_step_time);    
+
+        }
+    return accept_rate/total;
+}
+
+int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
+    int accept_rate = 0;
+    int total = 0;
+    bool accept;
+    for (size_t step = 0; step < nSteps; ++step) {
+
+            size_t N1 = particles_1.size();
+            double r = rng_.uniform01();
+            if (r<0.5){
+                    for (size_t i = 0; i < N1; ++i) {
+                    accept = particle_displacement_1();
+                    if (accept)
+                        accept_rate ++;
+                    total ++;
+                    simulation_step_time ++;
+                }
+            
+                size_t N2 = particles_2.size();
+                for (size_t i = 0; i < N2; ++i) {
+                    accept = particle_displacement_2();
+                    if (accept)
+                        accept_rate ++;
+                    total ++;
+                    simulation_step_time ++;
+                }
+            }
+            else if(r<0.75){
 
                 accept = particle_exchange();
                 if (accept)
@@ -98,7 +265,7 @@ int GibbsMonteCarlo::run(size_t nSteps, size_t fOutputStep, size_t fUpdateCell){
             }
             if ((step + 1) % fOutputStep == 0 || step == nSteps - 1)
                 recordObservables(simulation_step_time);    
-        
+
         }
     return accept_rate/total;
 }
@@ -175,7 +342,7 @@ bool GibbsMonteCarlo::particle_exchange(){
     if (rng_.uniform01()>0.5)//removing one particle from box two
     {
         double N_2 = calc_2.getNumParticles(particles_2);
-        if (N_2<2)
+        if (N_2<50)
             return false;
         double N_1 = calc_1.getNumParticles(particles_1);
         Particle pnew(rng_.uniform(0, box_1.getLx()), rng_.uniform(0, box_1.getLy()));
@@ -199,7 +366,7 @@ bool GibbsMonteCarlo::particle_exchange(){
         }
     }else{ // removing one particle from box one
         double N_1 = calc_1.getNumParticles(particles_1);
-        if (N_1<2)
+        if (N_1<50)
             return false;
         double N_2 = calc_2.getNumParticles(particles_2);
         Particle pnew(rng_.uniform(0, box_2.getLx()), rng_.uniform(0, box_2.getLy()));
