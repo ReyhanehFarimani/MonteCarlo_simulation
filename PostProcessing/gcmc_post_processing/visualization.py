@@ -231,3 +231,164 @@ def plot_voro(ts, box, filename, label):
     plt.savefig(filename + ".pdf", dpi = 800)
     plt.savefig(filename + ".eps", dpi = 800)
     plt.show()
+    
+    
+
+
+# =============================================================================
+# Reyhaneh — ORIENTATIONAL ORDER PLOTS
+# =============================================================================
+
+def plot_psi6_vs_density(table, xkey="density", xlabel=r"$\rho$", ylabel=r"$\langle |{\Psi}_6| \rangle$",
+                         title="Orientational order vs density"):
+    """
+    Errorbar plot of <|Ψ₆|> as a function of density (or μ).
+
+    Parameters
+    ----------
+    table : np.ndarray (structured)
+        Output of scan_by_density_or_mu.
+    xkey : str
+        Name of the x column ('density' or 'mu').
+    """
+    x = table[xkey]
+    y = table["psi6_mean_abs"]
+    e = table["psi6_stderr_abs"]
+
+    fig, ax = plt.subplots()
+    ax.errorbar(x, y, yerr=e, fmt='o-', capsize=3, lw=1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    return fig, ax
+
+
+def plot_binder_vs_density(table, xkey="density", xlabel=r"$\rho$", ylabel=r"$U_4^{(6)}$",
+                           title="Binder cumulant (hexatic) vs density"):
+    """
+    Plot Binder cumulant U₄ for Ψ₆ against density (or μ).
+    """
+    x = table[xkey]
+    y = table["U4"]
+
+    fig, ax = plt.subplots()
+    ax.plot(x, y, 'o-', lw=1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    return fig, ax
+
+
+def plot_chi6_vs_density(table, xkey="density", xlabel=r"$\rho$", ylabel=r"$\chi_6$",
+                         title="Susceptibility (hexatic) vs density"):
+    """
+    Plot susceptibility χ₆ for Ψ₆ against density (or μ).
+    """
+    x = table[xkey]
+    y = table["chi6"]
+
+    fig, ax = plt.subplots()
+    ax.plot(x, y, 'o-', lw=1)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    return fig, ax
+
+
+import numpy as np
+import matplotlib.pyplot as plt
+
+# =============================================================================
+# Reyhaneh — ORIENTATIONAL ORDER PLOTS (single dataset)
+# =============================================================================
+
+def plot_psi6_time_series(psi6_series,
+                          xlabel="frame",
+                          ylabel=r"$|{\Psi}_6|$",
+                          title=r"$|{\Psi}_6|$ time series"):
+    """
+    Plot |Ψ6| vs frame index.
+    """
+    y = np.abs(np.asarray(psi6_series))
+    fig, ax = plt.subplots()
+    ax.plot(y, "-o", lw=1, ms=3)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    return fig, ax
+
+
+def plot_psi6_abs_histogram(psi6_series, bins=30,
+                            xlabel=r"$|{\Psi}_6|$",
+                            ylabel="count",
+                            title=r"Histogram of $|{\Psi}_6|$"):
+    """
+    Histogram of |Ψ6| across frames (useful for spotting bimodality).
+    """
+    y = np.abs(np.asarray(psi6_series))
+    fig, ax = plt.subplots()
+    ax.hist(y, bins=bins, edgecolor="black", alpha=0.7)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    return fig, ax
+
+
+def plot_binder_scalar(U4,
+                       xlabel="",
+                       ylabel=r"$U_4^{(6)}$",
+                       title=r"Binder cumulant $U_4^{(6)}$ (single dataset)"):
+    """
+    Display the Binder cumulant as a simple bar (single number).
+    """
+    fig, ax = plt.subplots()
+    ax.bar([0], [U4], width=0.4)
+    ax.set_xticks([0])
+    ax.set_xticklabels([xlabel] if xlabel else [""])
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, axis="y", alpha=0.3)
+    # annotate value
+    ax.text(0, U4, f"{U4:.4f}", ha="center", va="bottom")
+    return fig, ax
+
+
+def plot_chi6_scalar(chi6,
+                     xlabel="",
+                     ylabel=r"$\chi_6$",
+                     title=r"Susceptibility $\chi_6$ (single dataset)"):
+    """
+    Display the susceptibility as a simple bar (single number).
+    """
+    fig, ax = plt.subplots()
+    ax.bar([0], [chi6], width=0.4)
+    ax.set_xticks([0])
+    ax.set_xticklabels([xlabel] if xlabel else [""])
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, axis="y", alpha=0.3)
+    ax.text(0, chi6, f"{chi6:.4f}", ha="center", va="bottom")
+    return fig, ax
+
+
+def plot_g6_curve(r, g6,
+                  xlabel="r",
+                  ylabel=r"$g_6(r)$",
+                  title=r"Bond-orientational correlation $g_6(r)$"):
+    """
+    Quick-look g6(r) curve.
+    """
+    r = np.asarray(r)
+    g6 = np.asarray(g6)
+    fig, ax = plt.subplots()
+    ax.plot(r, g6, "-o", lw=1, ms=3)
+    ax.set_xlabel(xlabel)
+    ax.set_ylabel(ylabel)
+    ax.set_title(title)
+    ax.grid(True, alpha=0.3)
+    return fig, ax

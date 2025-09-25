@@ -1,6 +1,6 @@
 import pandas as pd
 import re
-from gcmc_post_processing.data_loader import load_txt_data  # Assuming this function exists
+from gcmc_post_processing.data_loader import load_txt_data, load_txt_data_old  # Assuming this function exists
 import numpy as np
 
 
@@ -140,7 +140,10 @@ def process_simulation_data(data_files, input_files, lag):
         box_area = params['boxLengthX'] * params['boxLengthY']
         temperature = params['T']
         # Load simulation data
-        _, num_particles, pressures, energies = load_txt_data(filename, 1000)
+        try:
+            _, num_particles, pressures, energies = load_txt_data(filename, 1000)
+        except:
+            _, num_particles, pressures, energies = load_txt_data_old(filename, 1000)
         print(pressures)
         num_particles = num_particles[lag:]
         pressures = pressures[lag:]

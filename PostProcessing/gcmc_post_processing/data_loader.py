@@ -133,6 +133,49 @@ def load_txt_data(filename, maximum_energy_per_particle = 10):
         for line in file:
             parts = line.split(',')
             timestep = int(parts[0].split(':')[1].strip())
+            number_of_particles = int(parts[6].split(':')[1].strip())
+            pressure = float(parts[3].split(':')[1].strip())
+            energy = float(parts[1].split(':')[1].strip())
+            if np.abs(energy) < maximum_energy_per_particle * number_of_particles:  # Data cleaning as per your original script
+                timesteps.append(timestep)
+                num_particles.append(number_of_particles)
+                pressures.append(pressure)
+                energies.append(energy)
+    
+    return timesteps, num_particles, pressures, energies
+
+
+def load_txt_data_old(filename, maximum_energy_per_particle = 10):
+    """
+    Loads and processes simulation data from a .txt file.
+
+    The data includes timesteps, number of particles, pressures, and energies.
+
+    Parameters
+    ----------
+    filename : str
+        The path to the .txt file.
+
+    Returns
+    -------
+    timesteps : list of int
+        List of timesteps from the simulation.
+    num_particles : list of int
+        List of particle counts at each timestep.
+    pressures : list of float
+        List of pressure values at each timestep.
+    energies : list of float
+        List of energy values at each timestep.
+    """
+    timesteps = []
+    num_particles = []
+    pressures = []
+    energies = []
+
+    with open(filename, 'r') as file:
+        for line in file:
+            parts = line.split(',')
+            timestep = int(parts[0].split(':')[1].strip())
             number_of_particles = int(parts[4].split(':')[1].strip())
             pressure = float(parts[3].split(':')[1].strip())
             energy = float(parts[1].split(':')[1].strip())
@@ -144,8 +187,10 @@ def load_txt_data(filename, maximum_energy_per_particle = 10):
     
     return timesteps, num_particles, pressures, energies
 
+
 def load_dump_file(file_name):
     return_value = []
+    box = []
     from ovito.io import import_file
     # Load the LAMMPS dump file
     pipeline = import_file(file_name)
@@ -153,11 +198,12 @@ def load_dump_file(file_name):
         data = pipeline.compute(t)
         # Extract positions
         positions = data.particles.positions
-
+        bx = np.array([data.cell[0][0], data.cell[1][1]])
         # Convert to NumPy array
         positions_np = np.array(positions)
+        box.append(bx)
         
         return_value.append(positions_np)
-    box = np.array([data.cell[0][0], data.cell[1][1]])
+    # box = np.array([data.cell[0][0], data.cell[1][1]])
     
     return return_value, box
