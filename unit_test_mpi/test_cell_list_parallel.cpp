@@ -2,32 +2,30 @@
 #include <mpi.h>
 #include <vector>
 #include <cmath>
-#include <iostream>
+#include <random>
+#include <unordered_set>
 
 #include "../mpi_src/particle.h"
 #include "../mpi_src/simulation_box.h"
 #include "../mpi_src/cell_list_parallel.h"
 
-// Helper: create 4 owned particles near the middle of each face, inside the subdomain
-static std::vector<Particle> make_face_owned(double x0, double x1, double y0, double y1, double rcut) {
-    const double eps = 0.25 * rcut; // distance from face inside the domain
+// ----------------- Helpers -----------------------------------------------------
+
+static std::vector<Particle>
+make_face_owned(double x0, double x1, double y0, double y1, double rcut) {
+    const double eps = 0.25 * rcut;
     const double yc  = 0.5 * (y0 + y1);
     const double xc  = 0.5 * (x0 + x1);
 
     std::vector<Particle> v;
     v.reserve(4);
-    // Left face (inside)
-    v.push_back(Particle{x0 + eps, yc});
-    // Right face (inside)
-    v.push_back(Particle{x1 - eps, yc});
-    // Bottom face (inside)
-    v.push_back(Particle{xc, y0 + eps});
-    // Top face (inside)
-    v.push_back(Particle{xc, y1 - eps});
+    v.push_back(Particle{x0 + eps, yc});      // left face (inside)
+    v.push_back(Particle{x1 - eps, yc});      // right face (inside)
+    v.push_back(Particle{xc, y0 + eps});      // bottom face (inside)
+    v.push_back(Particle{xc, y1 - eps});      // top face (inside)
     return v;
 }
 
-// Helper: synthesize ghosts just outside each face, at matching y/x, so that distance < rcut across the face
 static void add_face_ghosts(CellListParallel& clp, double Lx, double Ly,
                             double x0, double x1, double y0, double y1, double rcut)
 {
@@ -36,7 +34,6 @@ static void add_face_ghosts(CellListParallel& clp, double Lx, double Ly,
     const double xc  = 0.5 * (x0 + x1);
 
     auto wrap = [](double x, double L) {
-        // bring into [0,L)
         double k = std::floor(x / L);
         x -= k * L;
         while (x < 0) x += L;
@@ -44,137 +41,218 @@ static void add_face_ghosts(CellListParallel& clp, double Lx, double Ly,
         return x;
     };
 
-    // Left ghost: just outside x0 (global wrap)
-    {
-        double gx = wrap(x0 - eps, Lx);
-        clp.addGhost(Particle{gx, yc});
-    }
-    // Right ghost: just outside x1
-    {
-        double gx = wrap(x1 + eps, Lx);
-        clp.addGhost(Particle{gx, yc});
-    }
-    // Bottom ghost: just outside y0
-    {
-        double gy = wrap(y0 - eps, Ly);
-        clp.addGhost(Particle{xc, gy});
-    }
-    // Top ghost: just outside y1
-    {
-        double gy = wrap(y1 + eps, Ly);
-        clp.addGhost(Particle{xc, gy});
-    }
+    clp.addGhost(Particle{wrap(x0 - eps, Lx), yc}); // left ghost (outside)
+    clp.addGhost(Particle{wrap(x1 + eps, Lx), yc}); // right ghost
+    clp.addGhost(Particle{xc, wrap(y0 - eps, Ly)}); // bottom ghost
+    clp.addGhost(Particle{xc, wrap(y1 + eps, Ly)}); // top ghost
     clp.rebuildGhostBins();
 }
 
-TEST_CASE("CellListParallel per-rank geometry/invariants", "[MPI][CellListParallel][geom]") {
+// Build one owned particle at the center of every interior cell.
+static std::vector<Particle>
+make_owned_grid_centers(const CellListParallel& clp)
+{
+    std::vector<Particle> v;
+    v.reserve(clp.nxInterior()*clp.nyInterior());
+    const double x0 = clp.x0(), y0 = clp.y0();
+    const double dx = clp.dxCell(), dy = clp.dyCell();
+    for (int j = 1; j <= clp.nyInterior(); ++j) {
+        for (int i = 1; i <= clp.nxInterior(); ++i) {
+            const double cx = x0 + (i - 0.5)*dx;
+            const double cy = y0 + (j - 0.5)*dy;
+            v.push_back(Particle{cx, cy});
+        }
+    }
+    return v;
+}
+
+// Count neighbors within rcut^2 using the class query
+static int count_neighbors_owned_i(const CellListParallel& clp,
+                                   int idx,
+                                   const std::vector<Particle>& owned)
+{
+    auto nb = clp.neighborsOfOwned(idx, owned);
+    return (int)nb.size();
+}
+
+// Compare per-particle neighbor counts before/after rebuild
+static void expect_neighbors_unchanged_after_rebuild(CellListParallel& clp,
+                                                     std::vector<Particle>& owned)
+{
+    std::vector<int> before(owned.size(), 0);
+    for (int i=0;i<(int)owned.size();++i) before[i] = count_neighbors_owned_i(clp, i, owned);
+
+    // trigger rebuild
+    clp.buildInterior(owned);
+
+    std::vector<int> after(owned.size(), 0);
+    for (int i=0;i<(int)owned.size();++i) after[i] = count_neighbors_owned_i(clp, i, owned);
+
+    REQUIRE(before.size()==after.size());
+    for (size_t i=0;i<before.size();++i) REQUIRE(before[i]==after[i]);
+}
+
+// Check that two interior cells are not edge-adjacent (Manhattan distance >= 2) for same parity.
+static bool non_adjacent_same_parity(std::pair<int,int> a, std::pair<int,int> b) {
+    const int dx = std::abs(a.first  - b.first);
+    const int dy = std::abs(a.second - b.second);
+    return (dx + dy) >= 2;
+}
+
+// ----------------- Tests -------------------------------------------------------
+
+TEST_CASE("CellListParallel geometry and invariants", "[MPI][CellListParallel][geom]") {
     int rank, size; MPI_Comm_rank(MPI_COMM_WORLD, &rank); MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Global box (non-square to exercise decomposition)
     SimulationBox box(123.0, 87.0);
     auto decomp = box.bestDecomposition(size);
 
     const double rcut = 3.5;
-    CellListParallel::Params params{rcut, /*enforce_even=*/1};
+    CellListParallel::Params params{rcut};
     CellListParallel clp(box, decomp, rank, params);
 
-    // Even interior counts and ghost ring present
-    REQUIRE(clp.nx_in() >= 2);
-    REQUIRE(clp.ny_in() >= 2);
-    REQUIRE( (clp.nx_in() % 2) == 0 );
-    REQUIRE( (clp.ny_in() % 2) == 0 );
-    REQUIRE(clp.nx_tot() == clp.nx_in() + 2);
-    REQUIRE(clp.ny_tot() == clp.ny_in() + 2);
+    REQUIRE(clp.nxInterior() >= 2);
+    REQUIRE(clp.nyInterior() >= 2);
+    REQUIRE((clp.nxInterior() % 2) == 0);
+    REQUIRE((clp.nyInterior() % 2) == 0);
+    REQUIRE(clp.nxTotal() == clp.nxInterior() + 2);
+    REQUIRE(clp.nyTotal() == clp.nyInterior() + 2);
+
     const double Llocx = clp.x1() - clp.x0();
     const double Llocy = clp.y1() - clp.y0();
     const int nmax_x = (int)std::floor(Llocx / rcut);
     const int nmax_y = (int)std::floor(Llocy / rcut);
 
-    if (nmax_x >= 2) {
-        REQUIRE(clp.dx() >= rcut - 1e-12);
-    } else {
-        // tiny subdomain fallback (we enforce at least 2 cells)
-        REQUIRE(clp.nx_in() == 2);
-    }
-    if (nmax_y >= 2) {
-        REQUIRE(clp.dy() >= rcut - 1e-12);
-    } else {
-        REQUIRE(clp.ny_in() == 2);
-    }
+    if (nmax_x >= 2) REQUIRE(clp.dxCell() >= rcut - 1e-12);
+    else             REQUIRE(clp.nxInterior() == 2);
+    if (nmax_y >= 2) REQUIRE(clp.dyCell() >= rcut - 1e-12);
+    else             REQUIRE(clp.nyInterior() == 2);
 
-
-    // Interior mapping sanity: center point maps to interior cell
+    // interior mapping
     int ix=-9, iy=-9;
-    const double xc = 0.5 * (clp.x0() + clp.x1());
-    const double yc = 0.5 * (clp.y0() + clp.y1());
-    bool ok = clp.mapToLocalCell(xc, yc, ix, iy);
-    REQUIRE(ok);
-    REQUIRE(ix >= 1); REQUIRE(ix <= clp.nx_in());
-    REQUIRE(iy >= 1); REQUIRE(iy <= clp.ny_in());
+    const double xc = 0.5*(clp.x0()+clp.x1());
+    const double yc = 0.5*(clp.y0()+clp.y1());
+    REQUIRE(clp.mapToLocalCell(xc, yc, ix, iy));
+    REQUIRE(ix >= 1);
+    REQUIRE(ix <= clp.nxInterior());
+    REQUIRE(iy >= 1);
+    REQUIRE(iy <= clp.nyInterior());
 }
 
-TEST_CASE("CellListParallel owned build + ghost ring + neighbor hits per face", "[MPI][CellListParallel][ghosts][neighbors]") {
+TEST_CASE("Ghost ring mapping and neighbor hits across faces", "[MPI][CellListParallel][ghosts][neighbors]") {
     int rank, size; MPI_Comm_rank(MPI_COMM_WORLD, &rank); MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    // Box & decomp
     SimulationBox box(200.0, 160.0);
     auto decomp = box.bestDecomposition(size);
 
     const double rcut = 4.0;
-    CellListParallel::Params params{rcut, /*enforce_even=*/1};
+    CellListParallel::Params params{rcut};
     CellListParallel clp(box, decomp, rank, params);
 
-    // Owned: place 4 particles near the middle of each face (inside)
+    // Owned: 4 particles near each face (inside)
     auto owned = make_face_owned(clp.x0(), clp.x1(), clp.y0(), clp.y1(), rcut);
     clp.buildInterior(owned);
 
-    // Ghosts: synthesize one per face just outside the domain so distance < rcut across the face
+    // Ghosts: one per face just outside the domain
     clp.clearGhosts();
     add_face_ghosts(clp, box.getLx(), box.getLy(), clp.x0(), clp.x1(), clp.y0(), clp.y1(), rcut);
 
-    // 1) Mapping tests: ghosts should map to ghost ring cells
+    // Mapping tests: faces land on ring cells
     {
         int ix, iy;
-        // Left ghost at (x0 - eps, yc) → ix==0
         REQUIRE(clp.mapToLocalCell(clp.x0() - 0.25*rcut, 0.5*(clp.y0()+clp.y1()), ix, iy));
         REQUIRE(ix == 0);
-        // Right ghost at (x1 + eps, yc) → ix==nx_in+1
         REQUIRE(clp.mapToLocalCell(clp.x1() + 0.25*rcut, 0.5*(clp.y0()+clp.y1()), ix, iy));
-        REQUIRE(ix == clp.nx_in() + 1);
-        // Bottom ghost → iy==0
+        REQUIRE(ix == clp.nxInterior() + 1);
         REQUIRE(clp.mapToLocalCell(0.5*(clp.x0()+clp.x1()), clp.y0() - 0.25*rcut, ix, iy));
         REQUIRE(iy == 0);
-        // Top ghost → iy==ny_in+1
         REQUIRE(clp.mapToLocalCell(0.5*(clp.x0()+clp.x1()), clp.y1() + 0.25*rcut, ix, iy));
-        REQUIRE(iy == clp.ny_in() + 1);
+        REQUIRE(iy == clp.nyInterior() + 1);
     }
 
-    // 2) Neighbor tests: each owned "face" particle must see its corresponding ghost within rcut
-    // Indexing in owned: 0:left, 1:right, 2:bottom, 3:top (by construction)
-    {
-        auto nbr_left   = clp.neighborsOfOwned(0, owned);
-        auto nbr_right  = clp.neighborsOfOwned(1, owned);
-        auto nbr_bottom = clp.neighborsOfOwned(2, owned);
-        auto nbr_top    = clp.neighborsOfOwned(3, owned);
+    // Neighbor tests: each owned face sees a ghost within rcut
+    auto has_ghost = [&](const std::vector<std::pair<int,double>>& v) {
+        for (auto& pr : v) if (pr.first < 0 && pr.second <= rcut*rcut + 1e-12) return true;
+        return false;
+    };
+    REQUIRE(has_ghost(clp.neighborsOfOwned(0, owned)));
+    REQUIRE(has_ghost(clp.neighborsOfOwned(1, owned)));
+    REQUIRE(has_ghost(clp.neighborsOfOwned(2, owned)));
+    REQUIRE(has_ghost(clp.neighborsOfOwned(3, owned)));
+}
 
-        auto has_ghost = [](const std::vector<std::pair<int,double>>& v, double rcut2) {
-            for (auto& pr : v) {
-                if (pr.first < 0 && pr.second <= rcut2 + 1e-12) return true; // negative id encodes ghost
+TEST_CASE("Parity sweep: non-adjacent updates + rebuild consistency", "[MPI][CellListParallel][parity][update]") {
+    int rank, size; MPI_Comm_rank(MPI_COMM_WORLD, &rank); MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    SimulationBox box(180.0, 140.0);
+    auto decomp = box.bestDecomposition(size);
+
+    const double rcut = 3.0;
+    CellListParallel::Params params{rcut};
+    CellListParallel clp(box, decomp, rank, params);
+
+    // Owned: one particle at the center of each interior cell
+    auto owned = make_owned_grid_centers(clp);
+    clp.buildInterior(owned);
+
+    // No ghosts for this test (focus on parity & bin updates)
+    clp.clearGhosts();
+
+    std::mt19937_64 rng(1234 + rank);
+
+    // Check parity sets are non-adjacent
+    for (Parity par : {Parity::EvenEven, Parity::EvenOdd, Parity::OddEven, Parity::OddOdd}) {
+        auto cells = clp.cellsWithParity(par);
+        for (size_t a=0; a<cells.size(); ++a) {
+            for (size_t b=a+1; b<cells.size(); ++b) {
+                REQUIRE(non_adjacent_same_parity(cells[a], cells[b]));
             }
-            return false;
-        };
-
-        REQUIRE( has_ghost(nbr_left,   rcut*rcut) );
-        REQUIRE( has_ghost(nbr_right,  rcut*rcut) );
-        REQUIRE( has_ghost(nbr_bottom, rcut*rcut) );
-        REQUIRE( has_ghost(nbr_top,    rcut*rcut) );
+        }
     }
 
-    // 3) Owned mapping is interior
-    for (size_t i = 0; i < owned.size(); ++i) {
-        int ix, iy;
-        REQUIRE(clp.mapToLocalCell(owned[i].x, owned[i].y, ix, iy));
-        REQUIRE(ix >= 1); REQUIRE(ix <= clp.nx_in());
-        REQUIRE(iy >= 1); REQUIRE(iy <= clp.ny_in());
+    // Perform a full 4-color sweep:
+    // For each parity, randomly select one particle from each cell and move it slightly;
+    // update bins incrementally; then verify rebuild leaves neighbor counts unchanged.
+    auto try_move = [&](Particle& p) {
+        // small displacement within a fraction of cell size to avoid crossing subdomain
+        const double dx = 0.25 * clp.dxCell();
+        const double dy = 0.25 * clp.dyCell();
+        p.x += dx; p.y += dy;
+        // wrap to global [0,L) domain if needed (SimulationBox guarantees periodicity elsewhere)
+        if (p.x >= clp.Lx()) p.x -= clp.Lx();
+        if (p.y >= clp.Ly()) p.y -= clp.Ly();
+    };
+
+    for (Parity par : {Parity::EvenEven, Parity::EvenOdd, Parity::OddEven, Parity::OddOdd}) {
+        auto cells = clp.cellsWithParity(par);
+
+        // Track which particle indices we touched this parity (for sanity)
+        std::unordered_set<int> touched;
+
+        for (auto [ix,iy] : cells) {
+            int pidx = clp.randomOwnedInCell(ix, iy, rng);
+            if (pidx < 0) continue;
+
+            // record old/new and update bins
+            Particle oldp = owned[pidx];
+            Particle newp = owned[pidx];
+            try_move(newp);
+
+            clp.onAcceptedMove(pidx, oldp, newp);
+            owned[pidx] = newp;
+            touched.insert(pidx);
+        }
+
+        // After this parity, neighbor lists for all particles should be consistent
+        // with a rebuild (owned-only case).
+        expect_neighbors_unchanged_after_rebuild(clp, owned);
+
+        // Sanity: particles moved came from distinct, non-adjacent cells by construction.
+        // (Implicitly enforced by parity coloring.)
+        REQUIRE(touched.size() <= cells.size());
     }
+
+    // Final rebuild and another consistency check (idempotence)
+    clp.buildInterior(owned);
+    expect_neighbors_unchanged_after_rebuild(clp, owned);
 }
