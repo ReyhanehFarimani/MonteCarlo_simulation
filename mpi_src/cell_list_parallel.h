@@ -6,6 +6,9 @@
 #include <vector>
 #include <cstdint>
 #include <random>
+#include <cassert>
+#include <cmath>
+#include <stdexcept>
 
 // 4-color checkerboard on the *interior* cell grid.
 // Interior cells are indexed [1..nx_in_] x [1..ny_in_].
@@ -44,7 +47,7 @@ public:
     // Return interior cells matching a parity, as (ix,iy) with 1<=ix<=nx_in_, 1<=iy<=ny_in_.
     std::vector<std::pair<int,int>> cellsWithParity(Parity par) const;
 
-    // Pick a random owned particle index from cell (ix,iy). Returns -1 if empty.
+    // Pick a random owned particle index from cell (ix,iy). Returns -1 if empty or out of range.
     int randomOwnedInCell(int ix, int iy, std::mt19937_64& rng) const;
 
     // ---- Ghost layer (one-cell ring) --------------------------------------------

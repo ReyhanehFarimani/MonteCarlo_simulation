@@ -1,13 +1,6 @@
+
 #include "cell_list_parallel.h"
-
-#include <algorithm>
-#include <cassert>
-#include <cmath>
-#include <stdexcept>
-
-// If your project uses a different header name/path for SimulationBox,
-// include it here instead of relying on the forward declarations:
-#include "simulation_box.h" // adjust if your header name differs
+#include "simulation_box.h"
 
 // ---------------------- ctor / geometry ---------------------------------------
 
@@ -17,6 +10,9 @@ CellListParallel::CellListParallel(const SimulationBox& box,
                                    const Params& p)
 : rcut_(p.rcut), rcutsq_(p.rcut * p.rcut)
 {
+    if (!(rcut_ > 0.0)) {
+        throw std::runtime_error("CellListParallel: rcut must be positive.");
+    }
     resetGeometry(box, decomp, rank);
 }
 
@@ -30,6 +26,8 @@ void CellListParallel::resetGeometry(const SimulationBox& box,
     Px_ = d.Px;
     Py_ = d.Py;
 
+    assert(Lx_ > 0.0 && Ly_ > 0.0);
+
     // My rank coordinates in the Px x Py grid.
     {
         auto cc = d.coordsOf(rank);
@@ -42,6 +40,10 @@ void CellListParallel::resetGeometry(const SimulationBox& box,
 
     // Decide interior cell counts (even) and derived sizes (dx,dy) and totals.
     chooseEvenCells_();
+
+    // Post: enforce dx,dy ≥ rcut.
+    assert(dx_cell_ + 1e-12 >= rcut_);
+    assert(dy_cell_ + 1e-12 >= rcut_);
 
     // Allocate/clear bin storage for current geometry.
     clearBins_();
@@ -65,18 +67,24 @@ void CellListParallel::chooseEvenCells_()
     const double Lx_loc = x1_ - x0_;
     const double Ly_loc = y1_ - y0_;
 
-    // Choose counts so that dx,dy >= rcut. Then force to nearest even >= 2.
-    auto even_down = [](double Lloc, double r) -> int {
-        // n <= floor(Lloc / r), then round DOWN to even, but minimum 2.
-        int n = (int)std::floor(Lloc / std::max(r, 1e-16)); // guard divide-by-0
-        if (n < 2) n = 2;
-        if (n % 2) --n;
-        if (n < 2) n = 2;
+    if (!(Lx_loc > 0.0 && Ly_loc > 0.0)) {
+        throw std::runtime_error("CellListParallel: local domain has non-positive extent.");
+    }
+
+    // Choose counts so that dx,dy >= rcut. We require at least 2 cells in each dir.
+    auto choose_even_count = [&](double Lloc, double r) -> int {
+        const double rguard = std::max(r, 1e-16);
+        int nmax = (int)std::floor(Lloc / rguard);   // max cells with dx >= r
+        if (nmax < 2) {
+            throw std::runtime_error("CellListParallel: local extent must satisfy Lloc >= 2*rcut.");
+        }
+        int n = nmax - (nmax % 2);                   // largest even ≤ nmax
+        if (n < 2) n = 2;                             // paranoia
         return n;
     };
 
-    nx_in_ = even_down(Lx_loc, rcut_);
-    ny_in_ = even_down(Ly_loc, rcut_);
+    nx_in_ = choose_even_count(Lx_loc, rcut_);
+    ny_in_ = choose_even_count(Ly_loc, rcut_);
 
     // Total grid adds a one-cell ghost ring on each side in both directions.
     nx_tot_ = nx_in_ + 2;
@@ -89,6 +97,11 @@ void CellListParallel::chooseEvenCells_()
     // Final safety check: enforce evenness (fail fast if violated).
     if ((nx_in_ % 2) != 0 || (ny_in_ % 2) != 0) {
         throw std::runtime_error("CellListParallel: nx_in_ and ny_in_ must be even.");
+    }
+
+    // And the key invariant:
+    if (dx_cell_ + 1e-12 < rcut_ || dy_cell_ + 1e-12 < rcut_) {
+        throw std::runtime_error("CellListParallel: dx,dy must be >= rcut (adjust decomposition or rcut).");
     }
 }
 
@@ -169,6 +182,8 @@ CellListParallel::cellsWithParity(Parity par) const
 
 int CellListParallel::randomOwnedInCell(int ix, int iy, std::mt19937_64& rng) const
 {
+    // Accept only interior indices.
+    if (ix < 1 || ix > nx_in_ || iy < 1 || iy > ny_in_) return -1;
     const auto& v = bins_owned_[cid(ix, iy)];
     if (v.empty()) return -1;
     std::uniform_int_distribution<size_t> dist(0, v.size() - 1);
@@ -199,8 +214,14 @@ void CellListParallel::rebuildGhostBins()
         localCellOfGlobal_(ghosts_[gi].x, ghosts_[gi].y, ix, iy);
         const bool on_ring = (ix == 0 || ix == nx_in_ + 1 ||
                               iy == 0 || iy == ny_in_ + 1);
-        if (on_ring) bins_ghost_[cid(ix, iy)].push_back(gi);
+#ifdef DEBUG
         // If a ghost lands interior, it likely reflects a too-wide halo send.
+        // Surface this in debug builds.
+        if (!on_ring) {
+            assert(false && "Ghost mapped to interior; halo width too large or ownership bug.");
+        }
+#endif
+        if (on_ring) bins_ghost_[cid(ix, iy)].push_back(gi);
     }
 }
 

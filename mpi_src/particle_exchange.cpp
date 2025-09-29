@@ -44,6 +44,7 @@ MIGRATION (owners)
   - Remove out-migrants locally
   - Append in-migrants (wrapped to [0,L))
   - Rebuild interior bins in CellListParallel
+- IMPORTANT: Call refreshGhosts(owned, cl) after migrate() to update halos.
 
 CORRECTNESS PITFALLS ADDRESSED
 ------------------------------
@@ -78,7 +79,8 @@ namespace {
         // Describe the struct layout to MPI using relative displacements.
         int blocklen[3] = {1, 1, 1};
         MPI_Aint disp[3];
-        MPI_Datatype types[3] = { MPI_DOUBLE, MPI_DOUBLE, MPI_LONG_LONG };
+        // (1) Use the exact-width portable type for std::int64_t
+        MPI_Datatype types[3] = { MPI_DOUBLE, MPI_DOUBLE, MPI_INT64_T };
 
         PackedParticle probe{};
         MPI_Aint base;
@@ -120,8 +122,13 @@ ParticleExchange::ParticleExchange(MPI_Comm comm,
     buildNeighbors_();
 
     // Lock halo width to ONE interior cell.
-    halo_wx_ = cl.dxCell() * 2.0;
-    halo_wy_ = cl.dyCell() * 2.0;
+    halo_wx_ = cl.dxCell();
+    halo_wy_ = cl.dyCell();
+
+    // (2) Guard: one-cell halo must be >= rcut enforced by the CellList
+    if (halo_wx_ < cl.rcut() || halo_wy_ < cl.rcut()) {
+        throw std::runtime_error("ParticleExchange: halo width must be >= rcut (one-cell halo).");
+    }
     if (halo_wx_ <= 0.0 || halo_wy_ <= 0.0) {
         throw std::runtime_error("ParticleExchange: invalid halo widths (dx/dy).");
     }
@@ -167,12 +174,6 @@ void ParticleExchange::buildNeighbors_()
 }
 
 // =================== border tests (one-cell ring around owners) =================
-//
-// Tests classify an *owned* particle as belonging to the one-cell-thick border
-// along each face. We include periodic wrap checks to be robust near global
-// boundaries; wrap_ normalizes when we finally store ghosts.
-//
-
 
 bool ParticleExchange::in_left_border_(double x) const  { return d_to_left_(x)  <= halo_wx_; }
 bool ParticleExchange::in_right_border_(double x) const { return d_to_right_(x) <= halo_wx_; }
@@ -180,12 +181,7 @@ bool ParticleExchange::in_bottom_border_(double y) const{ return d_to_bottom_(y)
 bool ParticleExchange::in_top_border_(double y) const   { return d_to_top_(y)   <= halo_wy_; }
 
 // ============================ batch HALO refresh ===============================
-//
-// 1) pack_border_owned_   — classify border owners into 8 directional buffers
-// 2) exchange_counts_payloads_ — 8-neighbor exchange (counts, then payloads)
-// 3) replace_ghost_store_from_recv_ — rebuild ghost store with dedup by id
-// 4) push_store_into_celllist_      — feed to CellListParallel and rebuild ghost bins
-//
+
 void ParticleExchange::pack_border_owned_(const std::vector<Particle>& owned)
 {
     for (int i=0;i<8;++i){ send_buf_[i].clear(); sc_[i]=0; }
@@ -261,6 +257,10 @@ void ParticleExchange::push_store_into_celllist_(CellListParallel& cl)
     // Normalize positions into [0,L) and push as ghosts into one-cell ring bins
     cl.clearGhosts();
     for (const auto& g : ghosts_) {
+        // (3) Guard: avoid narrowing from int64 -> int
+        if (g.id < std::numeric_limits<int>::min() || g.id > std::numeric_limits<int>::max()) {
+            throw std::runtime_error("ParticleExchange: ghost id out of 32-bit range for CellListParallel::Particle.id");
+        }
         cl.addGhost(Particle{ wrap_(g.x, Lx_), wrap_(g.y, Ly_), static_cast<int>(g.id) });
     }
     cl.rebuildGhostBins();
@@ -275,13 +275,7 @@ void ParticleExchange::refreshGhosts(const std::vector<Particle>& owned, CellLis
 }
 
 // ======================== incremental (per-move) updates =======================
-//
-// queueGhostUpdateCandidate(): classify a moved owner into 8 directional buffers.
-// flushGhostUpdates():
-//   - exchange with neighbors based on queued candidates
-//   - in-place merge into ghost store (no duplication)
-//   - re-bin ghosts in CellListParallel
-//
+
 void ParticleExchange::queueGhostUpdateCandidate(const Particle& p)
 {
     if (!incremental_) return;
@@ -340,6 +334,7 @@ void ParticleExchange::flushGhostUpdates(CellListParallel& cl)
 // 3) Alltoallv over the PackedParticle MPI datatype.
 // 4) Erase out-migrants locally; append in-migrants (wrapped to [0,L)).
 // 5) Rebuild interior bins for owners.
+// NOTE: Caller must invoke refreshGhosts(owned, cl) afterwards to update halos.
 //
 int ParticleExchange::dest_rank_for_(double x, double y) const
 {
@@ -416,5 +411,6 @@ int ParticleExchange::migrate(std::vector<Particle>& owned, CellListParallel& cl
     // Rebuild owner bins
     cl.buildInterior(owned);
 
+    // NOTE: Caller should now run refreshGhosts(owned, cl) to update halo.
     return out;
 }

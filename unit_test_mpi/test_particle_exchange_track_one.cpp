@@ -261,3 +261,131 @@ TEST_CASE("Track ONE REAL particle by ID: neighbors invariant; XYZ logs with REA
     MPI_Allreduce(&nloc, &nglob, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
     REQUIRE(nglob == 9 * glob_cells);
 }
+
+TEST_CASE("Track ONE REAL particle (incremental ghosts): neighbors invariant; XYZ logs with REAL owner",
+          "[MPI][ParticleExchange][track][neighbors][logging][real][incremental]")
+{
+    int rank, size; MPI_Comm_rank(MPI_COMM_WORLD, &rank); MPI_Comm_size(MPI_COMM_WORLD, &size);
+
+    // Geometry & motion
+    const double Lx = 100.0, Ly = 100.0;
+    const double rcut   = 4.0;
+    const double step_x = 0.10 * rcut;  // change these to adjust motion
+    const double step_y = 0.05 * rcut;
+
+    SimulationBox box(Lx, Ly);
+    auto decomp = box.bestDecomposition(size);
+    CellListParallel::Params cl_params{rcut};
+    CellListParallel clp(box, decomp, rank, cl_params);
+
+    // Initial owned set: 9 per interior cell
+    auto owned = build_nine_per_cell(clp, rank);
+    clp.buildInterior(owned);
+
+    // ParticleExchange with INCREMENTAL updates enabled
+    ParticleExchange::Params pex_params{/*enable_incremental=*/true};
+    ParticleExchange pex(MPI_COMM_WORLD, box, decomp, rank, clp, pex_params);
+
+    // Owner-colored logger
+    LoggingTrajMPI logger(
+        /*basename=*/"track_one_inc",
+        /*mode=*/LoggingTrajMPI::Mode::MPIIO,
+        /*comm=*/MPI_COMM_WORLD,
+        /*append=*/false,
+        /*rank_as_type=*/true
+    );
+
+    // Initial full halo build (seed the ghost store) + log
+    pex.refreshGhosts(owned, clp);
+    logger.log_dump(owned, box, /*timestep=*/0);
+
+    // Choose a REAL particle id that exists from the builder
+    const int tracked_id = 10;
+
+    // Locate the REAL tracked particle at t=0 via global gather
+    auto global0 = allgather_owned_real(owned);
+    double x0=0.0, y0=0.0; int owner0=-1; bool found0=false;
+    for (const auto& w : global0) if (w.id == tracked_id) { x0=w.x; y0=w.y; owner0=w.owner; found0=true; break; }
+    REQUIRE(found0);
+
+    const double rcutsq = rcut * rcut;
+    auto base_neighbors = neighbor_ids_of(x0, y0, global0, Lx, Ly, rcutsq, tracked_id);
+
+    // Write a single-particle multi-frame XYZ (rank 0)
+    std::ofstream xyz;
+    if (rank == 0) {
+        xyz.open("track_one_inc_traj.xyz", std::ios::out | std::ios::trunc);
+        REQUIRE(!!xyz);
+        xyz << std::setprecision(17);
+        xyz << "1\n";
+        xyz << "step=0 Lx=" << Lx << " Ly=" << Ly << " owner_rank=" << (owner0+1) << " (incremental)\n";
+        xyz << (owner0+1) << " " << x0 << " " << y0 << " " << 0.0 << "\n";
+    }
+
+    // Time loop using INCREMENTAL ghost updates
+    const int nsteps = 2000;
+    for (int s=1; s<=nsteps; ++s) {
+        // Move ALL owned particles (REAL positions)
+        // We need to queue ghost-update candidates for *every moved* particle.
+        // 1) Move
+        move_all(owned, step_x, step_y, box);
+
+        // 2) Re-bin interior owners
+        clp.buildInterior(owned);
+
+        // 3) Queue each moved particle for halo update (incremental)
+        for (const auto& p : owned) {
+            pex.queueGhostUpdateCandidate(p); // uses new positions
+        }
+
+        // 4) Flush incremental halo updates into the ghost store + re-bin ghosts
+        pex.flushGhostUpdates(clp);
+
+        // Migrate occasionally; after migration, do a full halo refresh once to resync
+        if (s % 20 == 0) {
+            int sent = pex.migrate(owned, clp);
+            REQUIRE(sent >= 0);
+            pex.refreshGhosts(owned, clp); // full refresh after topology change
+        }
+
+        // Log owners for visualization
+        logger.log_dump(owned, box, /*timestep=*/s);
+
+        // Find REAL tracked particle after this step (positions + REAL owner)
+        auto global_now = allgather_owned_real(owned);
+        double xt=0.0, yt=0.0; int owner_now=-1; bool found_now=false;
+        for (const auto& w : global_now) if (w.id == tracked_id) { xt=w.x; yt=w.y; owner_now=w.owner; found_now=true; break; }
+        REQUIRE(found_now);
+
+        // Neighbor invariance under uniform translation
+        auto now_neighbors = neighbor_ids_of(xt, yt, global_now, Lx, Ly, rcutsq, tracked_id);
+        REQUIRE(now_neighbors.size() == base_neighbors.size());
+        for (int id : base_neighbors) {
+            REQUIRE(now_neighbors.find(id) != now_neighbors.end());
+        }
+
+        // Append XYZ frame (rank 0)
+        if (rank == 0) {
+            xyz << "1\n";
+            xyz << "step=" << s << " Lx=" << Lx << " Ly=" << Ly
+                << " owner_rank=" << (owner_now+1) << " (incremental)\n";
+            xyz << (owner_now+1) << " " << xt << " " << yt << " " << 0.0 << "\n";
+        }
+    }
+
+    if (rank == 0) {
+        xyz.flush();
+        xyz.close();
+    }
+
+    // Global count conservation
+    int loc_cells = clp.nxInterior() * clp.nyInterior();
+    int glob_cells = 0;
+    MPI_Allreduce(&loc_cells, &glob_cells, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+
+    int nloc = (int)owned.size(), nglob = 0;
+    MPI_Allreduce(&nloc, &nglob, 1, MPI_INT, MPI_SUM, MPI_COMM_WORLD);
+    REQUIRE(nglob == 9 * glob_cells);
+}
+
+

@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <cstdint>
+#include <limits>
 
 #include "particle.h"
 #include "simulation_box.h"
@@ -47,6 +48,7 @@ public:
     void flushGhostUpdates(CellListParallel& cl);
 
     // Migrate owners that left [x0,x1)×[y0,y1); returns # sent out.
+    // NOTE: This does NOT update ghosts. Call refreshGhosts(owned, cl) afterwards.
     // After completion, 'owned' is updated and CellListParallel is rebuilt for owners.
     int migrate(std::vector<Particle>& owned, CellListParallel& cl);
 
