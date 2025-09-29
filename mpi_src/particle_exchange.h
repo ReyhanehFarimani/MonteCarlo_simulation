@@ -50,6 +50,8 @@ public:
     // After completion, 'owned' is updated and CellListParallel is rebuilt for owners.
     int migrate(std::vector<Particle>& owned, CellListParallel& cl);
 
+    const std::vector<PackedParticle>& getGhosts() const { return ghosts_; }
+
 private:
     // ---- MPI / geometry (immutable after ctor) ----
     MPI_Comm comm_;
@@ -77,6 +79,34 @@ private:
     std::vector<int> a2_sc_, a2_rc_, a2_sd_, a2_rd_;
 
 private:
+
+    // Wrap-safe distance from x to the left interior face (x0_) measured inside the owner tile
+    inline double d_to_left_(double x) const {
+        // how far we are from x0_ going forward inside [x0_, x1_)
+        double d = std::fmod(x - x0_ + Lx_, Lx_);
+        if (d < 0) d += Lx_;
+        // if x is inside [x0_, x1_), d ∈ [0, x1_-x0_) ; outside values still map consistently
+        return d;
+    }
+
+    inline double d_to_right_(double x) const {
+        // how far we are from x1_ going backward inside [x0_, x1_)
+        double d = std::fmod(x1_ - x + Lx_, Lx_);
+        if (d < 0) d += Lx_;
+        return d;
+    }
+
+    inline double d_to_bottom_(double y) const {
+        double d = std::fmod(y - y0_ + Ly_, Ly_);
+        if (d < 0) d += Ly_;
+        return d;
+    }
+
+    inline double d_to_top_(double y) const {
+        double d = std::fmod(y1_ - y + Ly_, Ly_);
+        if (d < 0) d += Ly_;
+        return d;
+    }
     // setup
     void readGeom_(const SimulationBox& box,
                    const SimulationBox::Decomposition& decomp,

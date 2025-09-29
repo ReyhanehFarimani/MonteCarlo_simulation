@@ -99,6 +99,10 @@ namespace {
     }
 }
 
+
+
+
+
 // ============================ ctor / geometry =================================
 
 ParticleExchange::ParticleExchange(MPI_Comm comm,
@@ -116,8 +120,8 @@ ParticleExchange::ParticleExchange(MPI_Comm comm,
     buildNeighbors_();
 
     // Lock halo width to ONE interior cell.
-    halo_wx_ = cl.dxCell();
-    halo_wy_ = cl.dyCell();
+    halo_wx_ = cl.dxCell() * 2.0;
+    halo_wy_ = cl.dyCell() * 2.0;
     if (halo_wx_ <= 0.0 || halo_wy_ <= 0.0) {
         throw std::runtime_error("ParticleExchange: invalid halo widths (dx/dy).");
     }
@@ -168,18 +172,12 @@ void ParticleExchange::buildNeighbors_()
 // along each face. We include periodic wrap checks to be robust near global
 // boundaries; wrap_ normalizes when we finally store ghosts.
 //
-bool ParticleExchange::in_left_border_(double x) const {
-    return (x - x0_) <= halo_wx_ || (x > x1_ && (x0_ + Lx_ - x) <= halo_wx_);
-}
-bool ParticleExchange::in_right_border_(double x) const {
-    return (x1_ - x) <= halo_wx_ || (x < x0_ && (x + Lx_ - x1_) <= halo_wx_);
-}
-bool ParticleExchange::in_bottom_border_(double y) const {
-    return (y - y0_) <= halo_wy_ || (y > y1_ && (y0_ + Ly_ - y) <= halo_wy_);
-}
-bool ParticleExchange::in_top_border_(double y) const {
-    return (y1_ - y) <= halo_wy_ || (y < y0_ && (y + Ly_ - y1_) <= halo_wy_);
-}
+
+
+bool ParticleExchange::in_left_border_(double x) const  { return d_to_left_(x)  <= halo_wx_; }
+bool ParticleExchange::in_right_border_(double x) const { return d_to_right_(x) <= halo_wx_; }
+bool ParticleExchange::in_bottom_border_(double y) const{ return d_to_bottom_(y)<= halo_wy_; }
+bool ParticleExchange::in_top_border_(double y) const   { return d_to_top_(y)   <= halo_wy_; }
 
 // ============================ batch HALO refresh ===============================
 //
