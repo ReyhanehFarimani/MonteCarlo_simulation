@@ -225,3 +225,30 @@ sanity_run: sanity_build
 .PHONY: clean_sanity
 clean_sanity:
 	$(RM) $(SAN_PAR_MAIN_OBJ) $(SAN_SER_MAIN_OBJ) $(SAN_PAR_BIN) $(SAN_SER_BIN)
+
+# -------- MPI application (mpi_src) --------
+# Build the full MPI executable including the application's main
+MPI_APP_CXX      := mpicxx
+MPI_APP_CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Impi_src
+
+# Path to the MPI main translation unit (override if needed)
+# e.g.: make mpi_app MPI_APP_MAIN=mpi_src/main_mpi.cpp
+MPI_APP_MAIN ?= mpi_src/main.cpp
+
+# Reuse library objects from the MPI unit-test section (all mpi_src/*.cpp except main*)
+#   - $(MPI_LIB_OBJS) is already defined there
+MPI_APP_BIN := Monte_carlo_mpi
+
+.PHONY: mpi_app
+mpi_app: $(MPI_APP_BIN)
+
+$(MPI_APP_BIN): $(MPI_LIB_OBJS) $(MPI_APP_MAIN:.cpp=.o)
+	$(MPI_APP_CXX) $(MPI_APP_CXXFLAGS) $^ -o $@
+
+# Ensure we can compile the main TU
+$(MPI_APP_MAIN:.cpp=.o): $(MPI_APP_MAIN)
+	$(MPI_APP_CXX) $(MPI_APP_CXXFLAGS) -c $< -o $@
+
+	
+clean_mpi:
+	$(RM) $(MPI_LIB_OBJS) $(MPI_TEST_OBJS) $(MPI_RUNNER_OBJ) $(MPI_BIN) $(MPI_APP_BIN) $(MPI_APP_MAIN:.cpp=.o)
