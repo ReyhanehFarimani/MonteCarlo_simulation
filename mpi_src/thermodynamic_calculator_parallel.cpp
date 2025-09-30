@@ -19,7 +19,8 @@ ThermodynamicCalculatorParallel::ThermodynamicCalculatorParallel(
   potentialType_(potentialType),
   f_prime_((2.0 + 9.0*f*f)/24.0),
   alpha_(alpha),
-  f_d_prime_(A0 * f * f / (kappa==0.0 ? 1.0 : kappa)),
+  // FIX: if kappa<=0, disable attraction term (no division by zero / spurious force)
+  f_d_prime_((kappa > 0.0) ? (A0 * f * f / kappa) : 0.0),
   kappa_(kappa),
   mu_(mu)
 {
@@ -76,8 +77,8 @@ double ThermodynamicCalculatorParallel::totalEnergy(
             } else {
                 const int gi = -1 - jcode;
                 if (gi < 0 || gi >= static_cast<int>(ghosts.size())) continue;
-                const auto id_i  = owned[i].id;
-                const auto id_g  = ghosts[gi].id;
+                const auto id_i = owned[i].id;
+                const auto id_g = ghosts[gi].id;
                 if (id_i < id_g) {
                     Uloc += computePairPotential(r2, potentialType_,
                                                  f_prime_, f_d_prime_, kappa_, alpha_);
@@ -116,8 +117,8 @@ double ThermodynamicCalculatorParallel::totalVirial(
             } else {
                 const int gi = -1 - jcode;
                 if (gi < 0 || gi >= static_cast<int>(ghosts.size())) continue;
-                const auto id_i  = owned[i].id;
-                const auto id_g  = ghosts[gi].id;
+                const auto id_i = owned[i].id;
+                const auto id_g = ghosts[gi].id;
                 if (id_i < id_g) {
                     Wloc += computePairForce(r2, potentialType_,
                                              f_prime_, f_d_prime_, kappa_, alpha_);
@@ -131,7 +132,7 @@ double ThermodynamicCalculatorParallel::totalVirial(
     return Wglob;
 }
 
-// ---- pressure ----
+// ---- pressure (2D): P = ρ T + W / (2 V) ----
 double ThermodynamicCalculatorParallel::pressure(
     const std::vector<Particle>& owned,
     const SimulationBox& box,
@@ -143,7 +144,7 @@ double ThermodynamicCalculatorParallel::pressure(
     return rho * temperature_ + W / (2.0 * box.getV());
 }
 
-// ---- tail corrections ----
+// ---- tail corrections (2D) ----
 double ThermodynamicCalculatorParallel::tailCorrectionEnergy2D(
     const std::vector<Particle>& owned,
     const SimulationBox& box) const
@@ -154,9 +155,9 @@ double ThermodynamicCalculatorParallel::tailCorrectionEnergy2D(
 
     switch (potentialType_) {
         case PotentialType::LennardJones: {
-            double sr2 = 1.0 / r2cut_;
-            double sr4 = sr2 * sr2;
-            double sr10 = sr4 * sr4 * sr2;
+            const double sr2  = 1.0 / r2cut_;
+            const double sr4  = sr2 * sr2;
+            const double sr10 = sr4 * sr4 * sr2;
             correction = factor * 4.0 * (sr4 / 4.0 - sr10 / 10.0);
             break;
         }
@@ -165,14 +166,16 @@ double ThermodynamicCalculatorParallel::tailCorrectionEnergy2D(
         case PotentialType::Ideal:
             break;
         case PotentialType::AthermalStar: {
-            double I = -std::exp((1.0 - r2cut_) / (2.0 * alpha_)) * alpha_ * alpha_ * f_prime_;
+            const double I = -std::exp((1.0 - r2cut_) / (2.0 * alpha_)) * alpha_ * alpha_ * f_prime_;
             correction = factor * I;
             break;
         }
         case PotentialType::ThermalStar: {
-            double r = std::sqrt(r2cut_);
-            double I1 = -std::exp((1.0 - r2cut_) / (2.0 * alpha_)) * alpha_ * alpha_ * f_prime_;
-            double I2 = f_d_prime_ / (kappa_ * kappa_) * std::exp(-kappa_ * r) * (kappa_ * r + 1.0);
+            const double r  = std::sqrt(r2cut_);
+            const double I1 = -std::exp((1.0 - r2cut_) / (2.0 * alpha_)) * alpha_ * alpha_ * f_prime_;
+            const double I2 = (kappa_ > 0.0)
+                ? (f_d_prime_ / (kappa_ * kappa_)) * std::exp(-kappa_ * r) * (kappa_ * r + 1.0)
+                : 0.0; // guard kappa<=0
             correction = factor * (I1 + I2);
             break;
         }
@@ -190,9 +193,9 @@ double ThermodynamicCalculatorParallel::tailCorrectionPressure2D(
 
     switch (potentialType_) {
         case PotentialType::LennardJones: {
-            double sr2 = 1.0 / r2cut_;
-            double sr4 = sr2 * sr2;
-            double sr10 = sr4 * sr4 * sr2;
+            const double sr2  = 1.0 / r2cut_;
+            const double sr4  = sr2 * sr2;
+            const double sr10 = sr4 * sr4 * sr2;
             correction = factor * 48.0 * (sr4 / 8.0 - sr10 / 10.0);
             break;
         }
@@ -201,17 +204,19 @@ double ThermodynamicCalculatorParallel::tailCorrectionPressure2D(
         case PotentialType::Yukawa:
             break;
         case PotentialType::AthermalStar: {
-            double I = f_prime_ * alpha_ * (r2cut_ + 2.0 * alpha_) *
-                       std::exp(1.0 / (2.0 * alpha_) - r2cut_ / (2.0 * alpha_));
+            const double I = f_prime_ * alpha_ * (r2cut_ + 2.0 * alpha_) *
+                             std::exp(1.0 / (2.0 * alpha_) - r2cut_ / (2.0 * alpha_));
             correction = factor * I;
             break;
         }
         case PotentialType::ThermalStar: {
-            double r = std::sqrt(r2cut_);
-            double I1 = f_prime_ * alpha_ * (r2cut_ + 2.0 * alpha_) *
-                        std::exp(1.0 / (2.0 * alpha_) - r2cut_ / (2.0 * alpha_));
-            double I2 = -f_d_prime_ / (kappa_ * kappa_) * std::exp(-kappa_ * r) *
-                        (kappa_ * kappa_ * r2cut_ + 2.0 * kappa_ * r + 2.0);
+            const double r  = std::sqrt(r2cut_);
+            const double I1 = f_prime_ * alpha_ * (r2cut_ + 2.0 * alpha_) *
+                              std::exp(1.0 / (2.0 * alpha_) - r2cut_ / (2.0 * alpha_));
+            const double I2 = (kappa_ > 0.0)
+                ? -f_d_prime_ / (kappa_ * kappa_) * std::exp(-kappa_ * r) *
+                  (kappa_ * kappa_ * r2cut_ + 2.0 * kappa_ * r + 2.0)
+                : 0.0; // guard kappa<=0
             correction = factor * (I1 + I2);
             break;
         }

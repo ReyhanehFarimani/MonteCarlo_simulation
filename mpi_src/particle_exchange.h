@@ -7,6 +7,8 @@
 #include <unordered_map>
 #include <cstdint>
 #include <limits>
+#include <cmath>
+#include <type_traits>
 
 #include "particle.h"
 #include "simulation_box.h"
@@ -29,30 +31,24 @@ public:
     //     halo_wx = cl.dxCell(), halo_wy = cl.dyCell()
     // - Ghosts occupy the ring cells only (i==0 or nx_in+1, j==0 or ny_in+1).
     ParticleExchange(MPI_Comm comm,
-                    const SimulationBox& box,
-                    const SimulationBox::Decomposition& decomp,
-                    int rank,
-                    const CellListParallel& cl,
-                    const Params& params = {false});
+                     const SimulationBox& box,
+                     const SimulationBox::Decomposition& decomp,
+                     int rank,
+                     const CellListParallel& cl,
+                     const Params& params = {false});
 
     // Rebuild ghost ring from current owned border particles.
-    // 1) Pack border particles (<= one cell from each owner face)
-    // 2) Exchange with 8 neighbors
-    // 3) Replace local ghost store (dedup by id)
-    // 4) Push ghosts into CellListParallel (clear+add+rebuildGhostBins)
     void refreshGhosts(const std::vector<Particle>& owned, CellListParallel& cl);
 
-    // Incremental (optional): queue a moved owned particle; later flush to
-    // modify mirrored ghosts in place (no duplication).
+    // Incremental (optional): queue a moved owned particle; later flush.
     void queueGhostUpdateCandidate(const Particle& moved);
     void flushGhostUpdates(CellListParallel& cl);
 
     // Migrate owners that left [x0,x1)×[y0,y1); returns # sent out.
-    // NOTE: This does NOT update ghosts. Call refreshGhosts(owned, cl) afterwards.
-    // After completion, 'owned' is updated and CellListParallel is rebuilt for owners.
+    // NOTE: Does NOT update ghosts. Call refreshGhosts() afterwards.
     int migrate(std::vector<Particle>& owned, CellListParallel& cl);
 
-    const std::vector<PackedParticle>& getGhosts() const { return ghosts_; }
+    [[nodiscard]] const std::vector<PackedParticle>& getGhosts() const noexcept { return ghosts_; }
 
 private:
     // ---- MPI / geometry (immutable after ctor) ----
@@ -64,7 +60,7 @@ private:
     double halo_wx_{0.0}, halo_wy_{0.0};          // = cl.dxCell(), cl.dyCell()
     bool incremental_{false};
 
-    // neighbor ranks: E,W,N,S, NE,NW,SE,SW
+    // neighbor ranks: E,W,N,S, NE,NW,SE,SW (fixed order)
     std::array<int,8> nbr_{};
 
     // ---- Ghost store (authoritative mirror on this rank) ----
@@ -81,45 +77,31 @@ private:
     std::vector<int> a2_sc_, a2_rc_, a2_sd_, a2_rd_;
 
 private:
-
-    // Wrap-safe distance from x to the left interior face (x0_) measured inside the owner tile
-    inline double d_to_left_(double x) const {
-        // how far we are from x0_ going forward inside [x0_, x1_)
-        double d = std::fmod(x - x0_ + Lx_, Lx_);
-        if (d < 0) d += Lx_;
-        // if x is inside [x0_, x1_), d ∈ [0, x1_-x0_) ; outside values still map consistently
-        return d;
+    // Wrap-safe distance helpers (noexcept)
+    inline double d_to_left_(double x)  const noexcept {
+        double d = std::fmod(x - x0_ + Lx_, Lx_); if (d < 0) d += Lx_; return d;
+    }
+    inline double d_to_right_(double x) const noexcept {
+        double d = std::fmod(x1_ - x + Lx_, Lx_); if (d < 0) d += Lx_; return d;
+    }
+    inline double d_to_bottom_(double y) const noexcept {
+        double d = std::fmod(y - y0_ + Ly_, Ly_); if (d < 0) d += Ly_; return d;
+    }
+    inline double d_to_top_(double y) const noexcept {
+        double d = std::fmod(y1_ - y + Ly_, Ly_); if (d < 0) d += Ly_; return d;
     }
 
-    inline double d_to_right_(double x) const {
-        // how far we are from x1_ going backward inside [x0_, x1_)
-        double d = std::fmod(x1_ - x + Lx_, Lx_);
-        if (d < 0) d += Lx_;
-        return d;
-    }
-
-    inline double d_to_bottom_(double y) const {
-        double d = std::fmod(y - y0_ + Ly_, Ly_);
-        if (d < 0) d += Ly_;
-        return d;
-    }
-
-    inline double d_to_top_(double y) const {
-        double d = std::fmod(y1_ - y + Ly_, Ly_);
-        if (d < 0) d += Ly_;
-        return d;
-    }
     // setup
     void readGeom_(const SimulationBox& box,
                    const SimulationBox::Decomposition& decomp,
                    int rank);
-    void buildNeighbors_();
+    void buildNeighbors_() noexcept;
 
-    // halo tests: “border cell” = within one interior cell of each face, with PBC wrap
-    bool in_left_border_ (double x) const;
-    bool in_right_border_(double x) const;
-    bool in_bottom_border_(double y) const;
-    bool in_top_border_   (double y) const;
+    // halo tests (strict/loose pairing to avoid double-sends when strips meet)
+    bool in_left_border_ (double x) const noexcept;  // <
+    bool in_right_border_(double x) const noexcept;  // <=
+    bool in_bottom_border_(double y) const noexcept; // <
+    bool in_top_border_   (double y) const noexcept; // <=
 
     // batch refresh helpers
     void pack_border_owned_(const std::vector<Particle>& owned);
@@ -131,13 +113,19 @@ private:
     void merge_incremental_into_store_();
 
     // migration helpers
-    int  dest_rank_for_(double x, double y) const;
+    inline bool inside_owner_(double x, double y) const noexcept {
+        return (x >= x0_ && x < x1_ && y >= y0_ && y < y1_);
+    }
+    int  dest_rank_for_(double x, double y) const noexcept;
     void alltoallv_migration_();
 
     // utils
-    static inline double wrap_(double a, double L) {
+    static inline double wrap_(double a, double L) noexcept {
         a = std::fmod(a, L); if (a < 0) a += L; return a;
     }
+
+    // MPI datatype
+    static MPI_Datatype mpi_packed_particle_type(); // cached
 };
 
 #endif // PARTICLE_EXCHANGE_H

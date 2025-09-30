@@ -3,75 +3,64 @@
 
 #include <random>
 #include <cstdint>
-#include <array>
+#include <stdexcept>
 
 /**
- * @brief Parallel-safe RNG with one independent, reproducible stream per rank.
- *
- * Design:
- *  - Fixed engine: std::mt19937_64 (deterministic across platforms).
- *  - Seeding via std::seed_seq with (global_seed, rank, fixed_mixers...) to
- *    decorrelate streams and ensure reproducibility.
- *  - uniform01(): returns double in [0,1) with full 53-bit mantissa precision.
- *
- * Usage:
- *    RNG_parallel rng(seed, rank);
- *    double x = rng.uniform01();
+ * Parallel-safe RNG with one independent, reproducible stream per rank.
+ * Engine: std::mt19937_64
+ * Seeding: std::seed_seq(global_seed, rank, fixed mixers)
+ * uniform01(): [0,1) with 53-bit precision.
  */
 class RNG_parallel {
 public:
-    RNG_parallel(unsigned global_seed, int rank)
-    : dist01_(0.0, 1.0)
-    {
-        // Mix global seed and rank into a seed sequence to decorrelate streams.
-        // Add a few fixed odd constants to improve diffusion.
+    RNG_parallel(unsigned global_seed, int rank) {
+        if (rank < 0) throw std::invalid_argument("RNG_parallel: rank must be >= 0");
+        // Mix global seed and rank; add fixed odd constants to diffuse bits.
         std::seed_seq seq{
             static_cast<unsigned>(global_seed),
             static_cast<unsigned>(rank),
-            0x9E3779B9u, // golden ratio mix
-            0x85EBCA6Bu, // from MurmurHash3
-            0xC2B2AE35u  // from MurmurHash3
+            0x9E3779B9u, // golden ratio
+            0x85EBCA6Bu, // MurmurHash3
+            0xC2B2AE35u  // MurmurHash3
         };
         engine_.seed(seq);
     }
 
     /// Uniform in [0,1) with 53 bits of precision.
-    inline double uniform01() {
-        // Faster and well-defined precision vs std::uniform_real_distribution<double>
+    inline double uniform01() noexcept {
         return std::generate_canonical<double, 53>(engine_);
     }
 
     /// Uniform in [a,b)
     inline double uniform(double a, double b) {
+        if (!(a < b)) throw std::invalid_argument("RNG_parallel::uniform: require a < b");
         std::uniform_real_distribution<double> dist(a, b);
         return dist(engine_);
     }
 
     /// Normal with mean mu and stddev sigma
     inline double normal(double mu = 0.0, double sigma = 1.0) {
+        if (!(sigma > 0.0)) throw std::invalid_argument("RNG_parallel::normal: sigma must be > 0");
         std::normal_distribution<double> dist(mu, sigma);
         return dist(engine_);
     }
 
     /// Integer in [lo, hi] inclusive
     inline std::int64_t randint(std::int64_t lo, std::int64_t hi) {
+        if (lo > hi) throw std::invalid_argument("RNG_parallel::randint: lo > hi");
         std::uniform_int_distribution<std::int64_t> dist(lo, hi);
         return dist(engine_);
     }
 
     /// Skip ahead by n draws (useful to partition work deterministically)
-    inline void skip(std::uint64_t n) {
-        engine_.discard(n);
-    }
+    inline void skip(std::uint64_t n) noexcept { engine_.discard(n); }
 
-    /// Expose engine if needed for advanced use (e.g., STL algorithms)
-    inline std::mt19937_64& engine() { return engine_; }
-    inline const std::mt19937_64& engine() const { return engine_; }
+    /// Expose engine if needed (e.g., STL algorithms)
+    inline std::mt19937_64&       engine()       noexcept { return engine_; }
+    inline const std::mt19937_64& engine() const noexcept { return engine_; }
 
 private:
     std::mt19937_64 engine_;
-    // Kept only to avoid re-allocation if you later want the distribution object form.
-    std::uniform_real_distribution<double> dist01_;
 };
 
 #endif // RNG_PARALLEL_H

@@ -76,8 +76,7 @@ void LoggingTrajMPI::ensure_gather_dump_open_() {
 void LoggingTrajMPI::ensure_mpiio_xyz_open_() {
     if (mpiio_xyz_open_) return;
     const std::string name = with_ext(basename_, ".xyz");
-    int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
-    if (append_) amode |= MPI_MODE_APPEND;
+    int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE; // manual ofs, no APPEND
     if (MPI_File_open(comm_, name.c_str(), amode, MPI_INFO_NULL, &mpiio_xyz_) != MPI_SUCCESS)
         throw std::runtime_error("Cannot open MPI-IO XYZ: " + name);
     if (append_) { MPI_Offset sz = 0; MPI_File_get_size(mpiio_xyz_, &sz); mpiio_xyz_off_ = sz; }
@@ -86,8 +85,7 @@ void LoggingTrajMPI::ensure_mpiio_xyz_open_() {
 void LoggingTrajMPI::ensure_mpiio_dump_open_() {
     if (mpiio_dump_open_) return;
     const std::string name = with_ext(basename_, ".dump");
-    int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE;
-    if (append_) amode |= MPI_MODE_APPEND;
+    int amode = MPI_MODE_WRONLY | MPI_MODE_CREATE; // manual ofs, no APPEND
     if (MPI_File_open(comm_, name.c_str(), amode, MPI_INFO_NULL, &mpiio_dump_) != MPI_SUCCESS)
         throw std::runtime_error("Cannot open MPI-IO DUMP: " + name);
     if (append_) { MPI_Offset sz = 0; MPI_File_get_size(mpiio_dump_, &sz); mpiio_dump_off_ = sz; }
@@ -286,12 +284,18 @@ void LoggingTrajMPI::write_dump_mpiio_(const std::vector<Particle>& local, const
         header = h.str();
     }
 
+    // global 1-based IDs to avoid duplicates across ranks
+    int id_base = 0;
+    MPI_Exscan(&nloc, &id_base, 1, MPI_INT, MPI_SUM, comm_);
+    if (rank_ == 0) id_base = 0;
+
     std::ostringstream oss;
-    int id = 1;
+    oss << std::setprecision(17);
     const int type = rank_as_type_ ? (rank_ + 1) : 0;
-    for (const auto& p : local) {
-        if (rank_as_type_) oss << id++ << " " << type << " " << p.x << " " << p.y << " " << 0.0 << "\n";
-        else               oss << id++ << " " << p.x << " " << p.y << " " << 0.0 << "\n";
+    for (int i=0;i<nloc;++i) {
+        const int gid = id_base + 1 + i;
+        if (rank_as_type_) oss << gid << " " << type << " " << local[i].x << " " << local[i].y << " 0\n";
+        else               oss << gid << " "          << local[i].x << " " << local[i].y << " 0\n";
     }
 
     mpiio_write_frame_(mpiio_dump_, mpiio_dump_off_, header, oss.str());
@@ -315,10 +319,12 @@ void LoggingTrajMPI::mpiio_write_frame_(MPI_File fh, MPI_Offset& ofs,
     int sum_sz = 0;
     MPI_Allreduce(&my_sz, &sum_sz, 1, MPI_INT, MPI_SUM, comm_);
 
-    // header at ofs (rank 0)
-    if (rank_ == 0 && hdr_sz > 0) {
+    // header at ofs (collective; only rank 0 provides a buffer)
+    if (hdr_sz > 0) {
         MPI_Status st;
-        MPI_File_write_at(fh, ofs, header.data(), hdr_sz, MPI_CHAR, &st);
+        const char* hbuf = (rank_ == 0) ? header.data() : nullptr;
+        const int    hsz = (rank_ == 0) ? hdr_sz       : 0;
+        MPI_File_write_at_all(fh, ofs, hbuf, hsz, MPI_CHAR, &st);
     }
 
     // bodies at ofs + hdr_sz + prefix

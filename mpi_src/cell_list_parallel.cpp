@@ -160,25 +160,30 @@ void CellListParallel::onAcceptedMove(int pidx, const Particle& oldp, const Part
 }
 
 // ---------------------- parity & random selection ------------------------------
-
 std::vector<std::pair<int,int>>
 CellListParallel::cellsWithParity(Parity par) const
 {
     std::vector<std::pair<int,int>> out;
     out.reserve((nx_in_ * ny_in_) / 4);
-    // Interior indices are 1..nx_in_, 1..ny_in_. We map them to 0-based for parity:
-    // (ix-1, iy-1) → parity in {EvenEven, EvenOdd, OddEven, OddOdd}.
+
+    // Global offset measured in *interior cells*
+    const int offx = cx_ * nx_in_;
+    const int offy = cy_ * ny_in_;
+
     for (int iy = 1; iy <= ny_in_; ++iy) {
         for (int ix = 1; ix <= nx_in_; ++ix) {
-            const bool ex = ((ix - 1) % 2) == 0;
-            const bool ey = ((iy - 1) % 2) == 0;
-            Parity cur = ex ? (ey ? Parity::EvenEven : Parity::EvenOdd)
-                            : (ey ? Parity::OddEven  : Parity::OddOdd);
+            const int gx = offx + (ix - 1);
+            const int gy = offy + (iy - 1);
+            const bool ex = (gx % 2) == 0;
+            const bool ey = (gy % 2) == 0;
+            const Parity cur = ex ? (ey ? Parity::EvenEven : Parity::EvenOdd)
+                                  : (ey ? Parity::OddEven  : Parity::OddOdd);
             if (cur == par) out.emplace_back(ix, iy);
         }
     }
     return out;
 }
+
 
 int CellListParallel::randomOwnedInCell(int ix, int iy, std::mt19937_64& rng) const
 {

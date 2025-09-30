@@ -10,9 +10,6 @@
 #include "cell_list_parallel.h"
 #include "particle_exchange.h"
 
-/**
- * @brief MPI/halo-aware thermodynamics using CellListParallel + ParticleExchange.
- */
 class ThermodynamicCalculatorParallel {
 public:
     ThermodynamicCalculatorParallel(MPI_Comm comm,
@@ -25,8 +22,6 @@ public:
                                     double A0   = 0.0,
                                     double kappa= 0.0);
 
-
-    // ---- simple parameter getters (match serial style) ----
     double getTemperature() const { return temperature_; }
     double getActivity()   const { return mu_; }
     double getCutoff()     const { return rcut_; }
@@ -37,14 +32,11 @@ public:
     double getAlpha()      const { return alpha_; }
     double getKappa()      const { return kappa_; }
 
-    // ---- global state accessors ----
     std::size_t numParticlesLocal(const std::vector<Particle>& owned) const;
     std::size_t numParticlesGlobal(const std::vector<Particle>& owned) const;
     double densityGlobal(const std::vector<Particle>& owned,
                          const SimulationBox& box) const;
 
-
-    // ---- Energetics ----
     double totalEnergy(const std::vector<Particle>& owned,
                        const SimulationBox& box,
                        const CellListParallel& cl,
@@ -60,7 +52,6 @@ public:
                     const CellListParallel& cl,
                     const ParticleExchange& px) const;
 
-    // ---- Tail corrections ----
     double tailCorrectionEnergy2D(const std::vector<Particle>& owned,
                                   const SimulationBox& box) const;
 
@@ -71,7 +62,6 @@ private:
     MPI_Comm comm_;
     int rank_{0}, size_{1};
 
-    // params
     double temperature_{0.0};
     double rcut_{0.0}, r2cut_{0.0};
     PotentialType potentialType_;
