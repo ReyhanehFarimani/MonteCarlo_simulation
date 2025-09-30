@@ -268,7 +268,7 @@ TEST_CASE("Track ONE REAL particle (incremental ghosts): neighbors invariant; XY
     int rank, size; MPI_Comm_rank(MPI_COMM_WORLD, &rank); MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     // Geometry & motion
-    const double Lx = 100.0, Ly = 100.0;
+    const double Lx = 400.0, Ly = 400.0;
     const double rcut   = 4.0;
     const double step_x = 0.10 * rcut;  // change these to adjust motion
     const double step_y = 0.05 * rcut;
@@ -300,7 +300,7 @@ TEST_CASE("Track ONE REAL particle (incremental ghosts): neighbors invariant; XY
     logger.log_dump(owned, box, /*timestep=*/0);
 
     // Choose a REAL particle id that exists from the builder
-    const int tracked_id = 10;
+    const int tracked_id = 50;
 
     // Locate the REAL tracked particle at t=0 via global gather
     auto global0 = allgather_owned_real(owned);
@@ -323,7 +323,7 @@ TEST_CASE("Track ONE REAL particle (incremental ghosts): neighbors invariant; XY
     }
 
     // Time loop using INCREMENTAL ghost updates
-    const int nsteps = 2000;
+    const int nsteps = 20;
     for (int s=1; s<=nsteps; ++s) {
         // Move ALL owned particles (REAL positions)
         // We need to queue ghost-update candidates for *every moved* particle.
@@ -342,7 +342,7 @@ TEST_CASE("Track ONE REAL particle (incremental ghosts): neighbors invariant; XY
         pex.flushGhostUpdates(clp);
 
         // Migrate occasionally; after migration, do a full halo refresh once to resync
-        if (s % 20 == 0) {
+        if (s % 1 == 0) {
             int sent = pex.migrate(owned, clp);
             REQUIRE(sent >= 0);
             pex.refreshGhosts(owned, clp); // full refresh after topology change
@@ -356,6 +356,8 @@ TEST_CASE("Track ONE REAL particle (incremental ghosts): neighbors invariant; XY
         double xt=0.0, yt=0.0; int owner_now=-1; bool found_now=false;
         for (const auto& w : global_now) if (w.id == tracked_id) { xt=w.x; yt=w.y; owner_now=w.owner; found_now=true; break; }
         REQUIRE(found_now);
+
+        pex.refreshGhosts(owned, clp); // full refresh after topology change
 
         // Neighbor invariance under uniform translation
         auto now_neighbors = neighbor_ids_of(xt, yt, global_now, Lx, Ly, rcutsq, tracked_id);

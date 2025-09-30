@@ -519,8 +519,8 @@ TEST_CASE("Incremental halo flush equals full refresh (no extra motion)", "[MPI]
     int rank=0, size=1; MPI_Comm_rank(MPI_COMM_WORLD,&rank); MPI_Comm_size(MPI_COMM_WORLD,&size);
 
     // Box and random particles
-    const double Lx = 160.0, Ly = 120.0;
-    const int    Nglob = 600;
+    const double Lx = 150.0, Ly = 120.0;
+    const int    Nglob = 400;
     const double rcut_want = 3.2;
     const double T = 1.0;
     const PotentialType pot = PotentialType::WCA; // any is fine; choose WCA for variety

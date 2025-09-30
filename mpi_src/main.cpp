@@ -1,203 +1,193 @@
+// file: mpi_src/main_mc_parallel.cpp
+#include <mpi.h>
 #include <iostream>
 #include <string>
-#include <mpi.h>
-#include "input.h"
+#include <vector>
+#include <stdexcept>
+#include <algorithm>
+#include <cmath>
 
-/**
- * @brief Utility to get a constant from input file with default fallback to 0.
- *
- * @param input The Input object.
- * @param key   The name of the constant.
- * @return Value of the constant or 0.0 if not found.
- */
-double getOrDefault(const Input& input, const std::string& key) {
-    return input.getConstant(key);  // Already returns 0.0 if not found
+#include "input.h"
+#include "initial.h"  // initializeParticles / initializeParticles_from_file
+#include "particle.h"
+#include "simulation_box.h"
+#include "cell_list_parallel.h"
+#include "particle_exchange.h"
+#include "potential.h"
+#include "thermodynamic_calculator_parallel.h"
+#include "logging_traj_mpi.h"
+#include "logging_data_mpi.h"
+#include "rng_parallel.h"
+#include "MC_parallel.h"
+
+// Helper: same behavior as serial getOrDefault (Input already returns 0.0 if missing)
+static inline double getOrDefault(const Input& input, const std::string& key) {
+    return input.getConstant(key);
 }
 
 int main(int argc, char* argv[]) {
-    
-
-    int rank, size;
     MPI_Init(&argc, &argv);
+    int rank=0, size=1;
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
     if (argc < 2) {
-        if (rank ==0)
-            std::cerr << "Usage: " << argv[0] << " <input_file>" << std::endl; 
+        if (rank == 0) {
+            std::cerr << "Usage: " << argv[0] << " <input_file>\n";
+        }
+        MPI_Finalize();
         return 1;
     }
-std::string inputFile = argv[1];
+
+    std::string inputFile = argv[1];
 
     try {
-        // Parse input parameters
+        // ---------------- Parse input ----------------
         Input input(inputFile);
 
-        // Required parameters
+        // Required
         double Lx = input.getConstant("Lx");
         double Ly = input.getConstant("Ly");
-        int N = static_cast<int>(input.getConstant("N"));
-        double rcut = input.getConstant("rcut");
-        double temperature = input.getConstant("T");
-        double nSteps = input.getConstant("nSteps");
-        double eSteps = input.getConstant("eSteps");
-        double outputFreq = input.getConstant("outputFreq");
-        double cellUpdateFreq = input.getConstant("cellUpdateFreq");
+        int    Nglob = static_cast<int>(input.getConstant("N"));
+        double rcut  = input.getConstant("rcut");
+        double T     = input.getConstant("T");
+        double nSteps        = input.getConstant("nSteps");
+        double eSteps        = input.getConstant("eSteps");
+        double outputFreq    = input.getConstant("outputFreq");
+        double cellUpdateFreq= input.getConstant("cellUpdateFreq"); // not used directly here; MC handles halo
         std::string potentialName = input.getFilename("potential");
-        std::string out_xyz = input.getFilename("out_xyz");
-        std::string out_data = input.getFilename("out_data");
+        std::string out_xyz  = input.getFilename("out_xyz");   // used to derive basename
+        std::string out_data = input.getFilename("out_data");  // ditto
         double delta = input.getConstant("delta");
-        
 
-        // Optional parameters
-        double mu = getOrDefault(input, "mu");
-        double f = getOrDefault(input, "f");
+        // Optional
+        double mu    = getOrDefault(input, "mu");     // unused in NVT, accepted for completeness
+        double f     = getOrDefault(input, "f");
         double alpha = getOrDefault(input, "alpha");
-        double A_0 = getOrDefault(input, "A_0");
+        double A0    = getOrDefault(input, "A_0");
         double kappa = getOrDefault(input, "kappa");
-        int seed = static_cast<int>(getOrDefault(input, "seed"));
+        int    seed  = static_cast<int>(getOrDefault(input, "seed"));
         std::string position_file = input.getFilename("position_file");
         std::string ensemble_name = input.getFilename("ensemble");
-        double pressure = getOrDefault(input, "P");
-        double delta_V = getOrDefault(input, "delta_V");
+        double pressure = getOrDefault(input, "P");   // unused in NVT
+        double delta_V  = getOrDefault(input, "delta_V"); // unused in NVT
 
+        // Ensemble gate: MPI impl supports only NVT here
+        if (ensemble_name != "NVT" && !ensemble_name.empty()) {
+            if (rank == 0) {
+                std::cerr << "Error: MPI driver currently supports only NVT. Got '" << ensemble_name << "'.\n";
+            }
+            MPI_Finalize();
+            return 1;
+        }
 
-    //     // Choose ensemble
-    //     Ensemble ensemble = Ensemble::GCMC; // Default
-    //     if (ensemble_name == "NVT") {
-    //         ensemble = Ensemble::NVT;
-    //     } else if (ensemble_name == "GCMC") {
-    //         ensemble = Ensemble::GCMC;
-    //     } else if (ensemble_name == "NPT") {
-    //         ensemble = Ensemble::NPT;
-    //     } else if (ensemble_name == "Gibbs") {
-    //         ensemble = Ensemble::Gibbs;
-    //     } else {
-    //         if (rank ==0) 
-    //             std::cerr<<"Error: Unrecognised ensemble"<<std::endl;
-    //         return 1;
-    //     }    
+        // -------------- Summarize (rank 0) --------------
+        if (rank == 0) {
+            std::cout << "\n[Input Summary / MPI]\n";
+            std::cout << "Ranks = " << size << "\n";
+            std::cout << "Lx = " << Lx << ", Ly = " << Ly << ", N_global = " << Nglob << "\n";
+            std::cout << "rcut = " << rcut << ", T = " << T << "\n";
+            std::cout << "eSteps = " << eSteps << ", nSteps = " << nSteps << "\n";
+            std::cout << "outputFreq = " << outputFreq << ", cellUpdateFreq = " << cellUpdateFreq << "\n";
+            std::cout << "potential = " << potentialName << "\n";
+            std::cout << "mu = " << mu << ", f = " << f << ", alpha = " << alpha
+                      << ", A_0 = " << A0 << ", kappa = " << kappa << "\n";
+            std::cout << "seed = " << seed << "\n";
+            std::cout << "position_file = " << (position_file.empty() ? "[none]" : position_file) << "\n";
+            std::cout << "ensemble = " << (ensemble_name.empty() ? "NVT (default)" : ensemble_name) << "\n";
+            std::cout << "Output XYZ = " << out_xyz << ", Output Data = " << out_data << "\n\n";
+        }
 
-    //     if (ensemble != Ensemble::Gibbs)
-    //     {
-    //         if (rank == 0)
-    //         {
-    //             // Diagnostic: print parsed input values
-    //             std::cout << "\n[Input Summary]" << std::endl;
-    //             std::cout << "Lx = " << Lx << ", Ly = " << Ly << ", N = " << N << std::endl;
-    //             std::cout << "rcut = " << rcut << ", T = " << temperature << std::endl;
-    //             std::cout << "nSteps = " << nSteps << ", eSteps = " << eSteps << std::endl;
-    //             std::cout << "outputFreq = " << outputFreq << ", cellUpdateFreq = " << cellUpdateFreq << std::endl;
-    //             std::cout << "potential = " << potentialName << std::endl;
-    //             std::cout << "mu = " << mu << ", f = " << f << ", alpha = " << alpha
-    //                     << ", A_0 = " << A_0 << ", kappa = " << kappa << std::endl;
-    //             std::cout << "seed = " << seed << std::endl;
-    //             std::cout << "position_file = " << (position_file.empty() ? "[none]" : position_file) << std::endl;
-    //             std::cout << "ensemble = " << (ensemble_name.empty() ? "[default GCMC]" : ensemble_name) << std::endl;
-    //             std::cout << "Output XYZ = " << out_xyz << ", Output Data = " << out_data << std::endl << std::endl;
-    //         }
-    //         // Set up simulation box and particle container
-            
-    // }else{
-        // Required parameters
-        // double Lx2 = input.getConstant("Lx2");
-        // double Ly2 = input.getConstant("Ly2");
-        // int N2 = static_cast<int>(input.getConstant("N2"));
-        // std::string out_xyz2 = input.getFilename("out_xyz2");
-        // std::string out_data2 = input.getFilename("out_data2");
-        // std::string position_file2 = input.getFilename("position_file2");
-        // // Diagnostic: print parsed input values
-        // std::cout << "\n[Input Summary]" << std::endl;
-        // std::cout << "Lx_1 = " << Lx << ", Ly_1 = " << Ly << ", N_1 = " << N << std::endl;
-        // std::cout << "Lx_2 = " << Lx2 << ", Ly_2 = " << Ly2 << ", N_2 = " << N2 << std::endl;
-        // std::cout << "rcut = " << rcut << ", T = " << temperature << std::endl;
-        // std::cout << "nSteps = " << nSteps << ", eSteps = " << eSteps << std::endl;
-        // std::cout << "outputFreq = " << outputFreq << ", cellUpdateFreq = " << cellUpdateFreq << std::endl;
-        // std::cout << "potential = " << potentialName << std::endl;
-        // std::cout << "mu = " << mu << ", f = " << f << ", alpha = " << alpha
-        //         << ", A_0 = " << A_0 << ", kappa = " << kappa << std::endl;
-        // std::cout << "seed = " << seed << std::endl;
-        // std::cout << "position_file_1 = " << (position_file.empty() ? "[none]" : position_file) << std::endl;
-        // std::cout << "position_file_2 = " << (position_file2.empty() ? "[none]" : position_file) << std::endl;
-        // std::cout << "ensemble = " << (ensemble_name.empty() ? "[default GCMC]" : ensemble_name) << std::endl;
-        // std::cout << "Output XYZ 1 = " << out_xyz << ", Output Data 1 = " << out_data << std::endl << std::endl;
-        // std::cout << "Output XYZ 2 = " << out_xyz2 << ", Output Data 2 = " << out_data2 << std::endl << std::endl;
+        // -------------- Geometry & decomposition --------------
+        SimulationBox box(Lx, Ly);
+        auto decomp = box.bestDecomposition(size);
 
-        // // Set up simulation box and particle container
-        // SimulationBox box_1(Lx, Ly);
-        // std::vector<Particle> particles_1;
-        // SimulationBox box_2(Lx2, Ly2);
-        // std::vector<Particle> particles_2;
+        // derive this rank's bounds
+        double x0,x1,y0,y1;
+        decomp.localBounds(rank, Lx, Ly, x0, x1, y0, y1);
+        const double Llocx = x1 - x0, Llocy = y1 - y0;
 
-        // if (!position_file.empty()) {
-        //     initializeParticles_from_file(particles_1, box_1, N, position_file);
-        // } else {
-        //     initializeParticles(particles_1, box_1, N, true, seed * 10);
-        // }
+        // Cap rcut so each tile can build >= 2 cells per direction (matches your tests)
+        const double cap = 0.49 * std::min(Llocx, Llocy);
+        rcut = std::max(1e-8, std::min(rcut, cap));
 
-        // if (!position_file2.empty()) {
-        //     initializeParticles_from_file(particles_2, box_2, N2, position_file2);
-        // } else {
-        //     initializeParticles(particles_2, box_2, N2, true, seed * 5);
-        // }
-        // // Set up logging and RNG
-        // Logging logger_1(out_xyz, out_data);
-        // Logging logger_2(out_xyz2, out_data2);
-        // RNG rng(seed);
+        // -------------- Build global config (deterministic) and filter owned --------------
+        std::vector<Particle> global;
+        if (!position_file.empty()) {
+            // Use the same helper as serial (reads global coords)
+            initializeParticles_from_file(global, box, Nglob, position_file);
+        } else {
+            initializeParticles(global, box, Nglob, /*random=*/true, seed * 10);
+        }
 
-        // // Set up potential
-        // PotentialType potentialType = selectPotentialType(potentialName);
+        std::vector<Particle> owned;
+        owned.reserve(global.size());
+        for (const auto& p : global) {
+            if (p.x >= x0 && p.x < x1 && p.y >= y0 && p.y < y1) owned.push_back(p);
+        }
 
-        // // Set up thermodynamic calculator
-        // ThermodynamicCalculator calc_1(
-        //     temperature,
-        //     pressure,
-        //     potentialType,
-        //     rcut,
-        //     mu,
-        //     f,
-        //     alpha,
-        //     A_0,
-        //     kappa
-        // );
+        // -------------- Parallel infra: cell list + ghosts --------------
+        CellListParallel::Params clp_params{rcut};
+        CellListParallel cl(box, decomp, rank, clp_params);
+        cl.buildInterior(owned);
 
-        // ThermodynamicCalculator calc_2(
-        //     temperature,
-        //     pressure,
-        //     potentialType,
-        //     rcut,
-        //     mu,
-        //     f,
-        //     alpha,
-        //     A_0,
-        //     kappa
-        // );
+        ParticleExchange::Params pex_params{/*enable_incremental=*/true};
+        ParticleExchange pex(MPI_COMM_WORLD, box, decomp, rank, cl, pex_params);
+        pex.refreshGhosts(owned, cl);
 
-        // GibbsMonteCarlo gmc(box_1, box_2, particles_1, particles_2, calc_1, calc_2, rcut, delta, delta_V, logger_1, logger_2, rng);
-        
-        // // Equilibration simulation
-        // std::cout << "Equilibration:" << std::endl;
-        // gmc.equlibrateNVT(static_cast<size_t>(eSteps+1),
-        //     static_cast<size_t>(eSteps),
-        //     static_cast<size_t>(cellUpdateFreq));
-        // gmc.equlibratemuVT(static_cast<size_t>(eSteps+1),
-        //     static_cast<size_t>(eSteps),
-        //     static_cast<size_t>(cellUpdateFreq));
-        
-        // // Run simulation
-        // std::cout << "Running:" << std::endl;
-        // gmc.run(static_cast<size_t>(nSteps),
-        //     static_cast<size_t>(outputFreq),
-        //     static_cast<size_t>(cellUpdateFreq));
+        // -------------- Potential & Thermodynamics --------------
+        PotentialType pot = selectPotentialType(potentialName);
+        ThermodynamicCalculatorParallel thermo(MPI_COMM_WORLD, T, pot, rcut,
+                                               /*mu*/mu, /*f*/f, /*alpha*/alpha, /*A0*/A0, /*kappa*/kappa);
 
-        // std::cout << "Simulation completed." << std::endl;
+        // -------------- Logging --------------
+        // Use out_xyz/data to form a single basename (strip extension if any)
+        auto strip_ext = [](const std::string& s)->std::string {
+            auto pos = s.rfind('.');
+            return (pos == std::string::npos) ? s : s.substr(0, pos);
+        };
+        std::string basename = !out_xyz.empty() ? strip_ext(out_xyz)
+                              : (!out_data.empty() ? strip_ext(out_data)
+                                                   : std::string("run"));
+        // Per-rank trajectory files by default (robust and simple)
+        LoggingTrajMPI traj(basename, LoggingTrajMPI::Mode::PerRank,
+                            MPI_COMM_WORLD, /*append=*/false, /*rank_as_type=*/false);
+        LoggingDataMPI data(basename, MPI_COMM_WORLD, /*append=*/false);
 
-// 
-    // }
+        // -------------- RNG (per-rank independent stream) --------------
+        RNG_parallel rng(static_cast<unsigned>(seed), rank);
+
+        // -------------- MC driver params & construction --------------
+        MonteCarloNVT_MPI::Params mp;
+        mp.delta      = delta;
+        mp.halo_every = 1;                               // keep halos fresh (uses incremental queue + periodic flush)
+        mp.out_every  = static_cast<int>(outputFreq);    // write thermo/xyz every 'outputFreq' sweeps (0 disables)
+
+        MonteCarloNVT_MPI mc(MPI_COMM_WORLD, box, cl, pex, thermo, owned, rng,
+                             &traj, &data, mp);
+
+        // -------------- Run: equilibration then production --------------
+        if (eSteps > 0) {
+            if (rank == 0) std::cout << "Equilibration (NVT, MPI)…\n";
+            (void)mc.run(static_cast<std::size_t>(eSteps));
+        }
+
+        if (nSteps > 0) {
+            if (rank == 0) std::cout << "Production (NVT, MPI)…\n";
+            (void)mc.run(static_cast<std::size_t>(nSteps));
+        }
+
+        // -------------- Close logs --------------
+        traj.close();
+        data.close();
+
+        if (rank == 0) std::cout << "Simulation completed.\n";
     } catch (const std::exception& e) {
-        std::cerr << "Error: " << e.what() << std::endl;
-        return 1;
+        if (rank == 0) std::cerr << "Error: " << e.what() << "\n";
+        MPI_Abort(MPI_COMM_WORLD, 2);
+        return 2;
+    }
 
-}
+    MPI_Finalize();
     return 0;
 }
