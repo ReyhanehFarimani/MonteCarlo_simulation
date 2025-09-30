@@ -4,6 +4,23 @@
 #include <random>
 #include <cmath>
 #include <cassert>
+#include <iostream>
+// --- full rebuild + migrate + refresh ---
+static inline void rebuild_migrate_refresh_(CellListParallel& cl,
+                                            ParticleExchange&  pex,
+                                            std::vector<Particle>& owned,
+                                            SimulationBox& box)
+{
+    // Rebuild bins for current owned state
+    cl.buildInterior(owned);
+    // Migrate ownership across ranks (based on current positions)
+    pex.migrate(owned, cl);
+    // Rebuild bins again to reflect the post-migration owned set
+    cl.buildInterior(owned);
+    // Refresh ghost layer (and its bins)
+    pex.refreshGhosts(owned, cl);
+}
+
 
 MonteCarloNVT_MPI::MonteCarloNVT_MPI(MPI_Comm comm,
                                      SimulationBox& box,
@@ -28,111 +45,133 @@ MonteCarloNVT_MPI::MonteCarloNVT_MPI(MPI_Comm comm,
 {
     MPI_Comm_rank(comm_, &rank_);
     MPI_Comm_size(comm_, &size_);
+
     beta_ = 1.0 / thermo_.getTemperature();
 
-    // Initial binning + ghosts
-    cl_.buildInterior(owned_);
-    pex_.refreshGhosts(owned_, cl_);
+    // --- Init order: migrate first, then build, then refresh ghosts ---
+    // (cl_ already knows geometry; bins can be empty for migration)
+    pex_.migrate(owned_, cl_);       // drop particles leaving this rank, receive arrivals
+    cl_.buildInterior(owned_);       // build bins for current owned
+    pex_.refreshGhosts(owned_, cl_); // construct halo layer (ghost bins built inside)
 }
-
 double MonteCarloNVT_MPI::run(std::size_t nsweeps, int start_timestep)
 {
     long long acc_loc = 0, att_loc = 0;
     int timestep = start_timestep;
 
-    // Fixed parity labels; order will be shuffled each sweep (collectively)
-    std::array<Parity,4> base_order = {
+    const std::array<Parity,4> base = {
         Parity::EvenEven, Parity::EvenOdd, Parity::OddEven, Parity::OddOdd
     };
 
+    const int nloc_target = static_cast<int>(owned_.size());
+    const int micro_per_attempt = 4;
+
     for (std::size_t sweep = 0; sweep < nsweeps; ++sweep) {
-        // --- Shuffle parity order, same on all ranks ---
-        std::array<Parity,4> order = base_order;
-        {
-            const std::uint64_t seed = bcast_seed_();
-            std::mt19937_64 shuf(seed);
-            std::shuffle(order.begin(), order.end(), shuf);
-        }
+        int attempts_done = 0;
 
-        // --- Iterate over shuffled parities ---
-        std::size_t block_index = 0;
-        for (Parity par : order) {
-            // Gather cells of this parity and shuffle their visit order (collectively)
-            auto cells = cl_.cellsWithParity(par);
+        while (attempts_done < nloc_target) {
+
+            std::array<Parity,4> order = base;
             {
-                const std::uint64_t seed_cells = bcast_seed_();
-                std::mt19937_64 shuf_cells(seed_cells);
-                std::shuffle(cells.begin(), cells.end(), shuf_cells);
+                const std::uint64_t seed = bcast_seed_();
+                std::mt19937_64 shuf(seed);
+                std::shuffle(order.begin(), order.end(), shuf);
             }
 
-            // One attempt per cell (pick random owned from that cell)
-            for (const auto& ij : cells) {
-                const int ix = ij.first, iy = ij.second;
-                int pidx = cl_.randomOwnedInCell(ix, iy, rng_.engine());
-                if (pidx < 0) continue;
-
-                const bool ok = try_displacement_(pidx);
-                ++att_loc;
-                if (ok) ++acc_loc;
+            for (Parity par : order) {
+                (void)do_one_parity_step_(par, acc_loc, att_loc);
+                pex_.flushGhostUpdates(cl_);        // keep halos fresh incrementally
             }
 
-            // Incremental halo update: apply queued updates
-            pex_.flushGhostUpdates(cl_);
-
-            // Optional full refresh every k blocks to prevent drift (k>=1)
-            ++block_index;
-            if (p_.halo_every && (block_index % p_.halo_every == 0)) {
+            // Optional: occasional lightweight ghost refresh (without migration)
+            if (p_.halo_every > 0 && (((attempts_done / micro_per_attempt) + 1) % p_.halo_every) == 0) {
                 pex_.refreshGhosts(owned_, cl_);
             }
+
+            // NEW: periodic full rebuild + migrate + refresh
+            if (p_.rebuild_every_attempts > 0 &&
+                ((attempts_done + 1) % p_.rebuild_every_attempts) == 0)
+            {
+                rebuild_migrate_refresh_(cl_, pex_, owned_, box_);
+            }
+
+            attempts_done += 1; // one "attempt" = 4 parity micro-steps
         }
 
-        // Optional logging (global)
         if (p_.out_every && ((sweep + 1) % p_.out_every == 0)) {
             if (traj_) traj_->log_dump(owned_, box_, timestep);
             if (data_) data_->log_step(owned_, box_, cl_, pex_, thermo_, timestep);
         }
 
         ++timestep;
+        if (rank_ == 0) std::cout<<"timestep:\t"<<timestep<<std::endl;
     }
 
-    // Global acceptance ratio
     long long acc_glob = 0, att_glob = 0;
-    MPI_Allreduce(&acc_loc, &acc_glob, 1, MPI_LONG_LONG, MPI_SUM, comm_);
-    MPI_Allreduce(&att_loc, &att_glob, 1, MPI_LONG_LONG, MPI_SUM, comm_);
+    MPI_Allreduce(&acc_loc, &acc_glob, 1, MPI_LONG_LONG_INT, MPI_SUM, comm_);
+    MPI_Allreduce(&att_loc, &att_glob, 1, MPI_LONG_LONG_INT, MPI_SUM, comm_);
     return (att_glob > 0) ? static_cast<double>(acc_glob) / static_cast<double>(att_glob) : 0.0;
 }
 
+
+bool MonteCarloNVT_MPI::do_one_parity_step_(Parity par, long long& acc, long long& att)
+{
+    if (owned_.empty()) { ++att; return false; }
+
+    // Try up to K times to find a particle whose cell has the requested parity
+    constexpr int K = 8;
+    int pidx = -1, ix = 0, iy = 0;
+    for (int t = 0; t < K; ++t) {
+        const int cand = (int)rng_.randint(0, (int)owned_.size()-1);
+        if (!cl_.mapToLocalCell(owned_[cand].x, owned_[cand].y, ix, iy)) continue;
+        if (ix < 1 || ix > cl_.nxInterior() || iy < 1 || iy > cl_.nyInterior()) continue;
+
+        const bool ex = ((ix-1) % 2) == 0;
+        const bool ey = ((iy-1) % 2) == 0;
+        Parity cur = ex ? (ey ? Parity::EvenEven : Parity::EvenOdd)
+                        : (ey ? Parity::OddEven  : Parity::OddOdd);
+
+        if (cur == par) { pidx = cand; break; }
+    }
+
+    const bool ok = (pidx >= 0) ? try_displacement_(pidx) : false;
+    ++att; if (ok) ++acc;
+    return ok;
+}
+
+
 bool MonteCarloNVT_MPI::try_displacement_(int i)
 {
-    // Current local contribution
+    // current local contribution for particle i
     const double U_old = local_energy_of_(i);
 
-    // Propose trial (handle delta == 0 without calling uniform(a,b) with a==b)
+    // propose trial
     double dx = 0.0, dy = 0.0;
     if (p_.delta > 0.0) {
         dx = rng_.uniform(-p_.delta, p_.delta);
         dy = rng_.uniform(-p_.delta, p_.delta);
     }
-    Particle old = owned_[i];
-    Particle trial = old; trial.x += dx; trial.y += dy;
-    box_.applyPBC(trial.x, trial.y);
 
-    // New local contribution (using point query)
-    const double U_new = local_energy_of_point_(trial.x, trial.y);
-    const double dU = U_new - U_old;
+    Particle old = owned_[i];
+    Particle trial = old;
+    trial.x += dx; trial.y += dy;
+    box_.applyPBC(trial);
+
+    // new local contribution at trial position
+    const double U_new = local_energy_of_point_(i, trial.x, trial.y);
+    const double dU    = U_new - U_old;
 
     // Metropolis
     const bool accept = (dU <= 0.0) || (rng_.uniform01() < std::exp(-beta_ * dU));
     if (accept) {
         owned_[i] = trial;
         cl_.onAcceptedMove(i, old, trial);
-        // queue ghost candidate for incremental halo sync
+        // queue this point for halo consideration; we flush right after parity step
         pex_.queueGhostUpdateCandidate(trial);
-
-        // pex_.flushGhostUpdates(cl_);
     }
     return accept;
 }
+
 double MonteCarloNVT_MPI::local_energy_of_(int i) const
 {
     double U = 0.0;
@@ -146,14 +185,13 @@ double MonteCarloNVT_MPI::local_energy_of_(int i) const
     const auto nbs = cl_.neighborsOfOwned(i, owned_);
     for (const auto& pr : nbs) {
         const double r2 = pr.second;
-        // r2 is within cutoff by construction; just guard pathological tiny values
-        if (r2 <= 1e-24) continue;
+        if (r2 <= 1e-24) continue; // paranoid guard
         U += computePairPotential(r2, type, fp, fpd, kappa, alpha);
     }
     return U;
 }
 
-double MonteCarloNVT_MPI::local_energy_of_point_(double x, double y) const
+double MonteCarloNVT_MPI::local_energy_of_point_(int i_moved, double x, double y) const
 {
     double U = 0.0;
 
@@ -165,29 +203,27 @@ double MonteCarloNVT_MPI::local_energy_of_point_(double x, double y) const
 
     const auto nbs = cl_.neighborsOfPoint(x, y, owned_);
     for (const auto& pr : nbs) {
-        const int    j  = pr.first;   // >=0: owned neighbor, <0: ghost neighbor
+        const int    j  = pr.first;   // >=0 owned, <0 ghost
         const double r2 = pr.second;
 
-        // When evaluating at the trial position of an owned particle,
-        // neighborsOfPoint may include that same particle with r2 == 0.
-        if (j >= 0 && r2 <= 1e-24) continue;
+        // exclude self if it appears at zero distance
+        if (j >= 0 && j == i_moved) continue;
+        if (r2 <= 1e-24) continue;
 
         U += computePairPotential(r2, type, fp, fpd, kappa, alpha);
     }
     return U;
 }
 
-
 std::uint64_t MonteCarloNVT_MPI::bcast_seed_()
 {
-    // Rank 0 draws a 64-bit seed from its RNG; broadcast to keep all ranks in sync.
     std::uint64_t seed = 0;
     if (rank_ == 0) {
-        // Compose 64 bits from two 32-bit draws to avoid bias
+        // compose 64 bits from two 31-bit draws (simple, reproducible)
         const std::uint64_t a = static_cast<std::uint64_t>(rng_.randint(0, 0x7fffffff));
         const std::uint64_t b = static_cast<std::uint64_t>(rng_.randint(0, 0x7fffffff));
-        seed = (a << 32) ^ b;
-        if (seed == 0) seed = 0x9E3779B97F4A7C15ull; // non-zero fallback
+        seed = (a << 33) ^ (b << 1) ^ 0x9E3779B97F4A7C15ull;
+        if (seed == 0) seed = 0xD1B54A32D192ED03ull;
     }
     MPI_Bcast(&seed, 1, MPI_UINT64_T, 0, comm_);
     return seed;

@@ -8,7 +8,7 @@
 #include <cmath>
 
 #include "input.h"
-#include "initial.h"  // initializeParticles / initializeParticles_from_file
+#include "initial_mpi.h"  // initializeParticles / initializeParticles_from_file
 #include "particle.h"
 #include "simulation_box.h"
 #include "cell_list_parallel.h"
@@ -115,9 +115,20 @@ int main(int argc, char* argv[]) {
         std::vector<Particle> global;
         if (!position_file.empty()) {
             // Use the same helper as serial (reads global coords)
-            initializeParticles_from_file(global, box, Nglob, position_file);
+            std::cerr<<"system yet have not this option!"<<std::endl;
+            return 1;
         } else {
-            initializeParticles(global, box, Nglob, /*random=*/true, seed * 10);
+            initializeParticles_globalN(
+                global,           // std::vector<Particle>&
+                box,                 // const SimulationBox&
+                decomp,              // const SimulationBox::Decomposition&
+                rank,                // this rank
+                /*N_global=*/Nglob,      // global particle count
+                /*random=*/true,     // or false if you have a deterministic layout
+                static_cast<unsigned>(seed), // RNG seed
+                /*id_stride=*/size   // ensures unique IDs across ranks (id = base + k*size)
+            );
+
         }
 
         std::vector<Particle> owned;
@@ -150,8 +161,8 @@ int main(int argc, char* argv[]) {
                               : (!out_data.empty() ? strip_ext(out_data)
                                                    : std::string("run"));
         // Per-rank trajectory files by default (robust and simple)
-        LoggingTrajMPI traj(basename, LoggingTrajMPI::Mode::PerRank,
-                            MPI_COMM_WORLD, /*append=*/false, /*rank_as_type=*/false);
+        LoggingTrajMPI traj(basename, LoggingTrajMPI::Mode::MPIIO,
+                            MPI_COMM_WORLD, /*append=*/false, /*rank_as_type=*/true);
         LoggingDataMPI data(basename, MPI_COMM_WORLD, /*append=*/false);
 
         // -------------- RNG (per-rank independent stream) --------------
@@ -160,9 +171,9 @@ int main(int argc, char* argv[]) {
         // -------------- MC driver params & construction --------------
         MonteCarloNVT_MPI::Params mp;
         mp.delta      = delta;
-        mp.halo_every = 1;                               // keep halos fresh (uses incremental queue + periodic flush)
+        mp.halo_every = static_cast<int>(1/delta);                               // keep halos fresh (uses incremental queue + periodic flush)
         mp.out_every  = static_cast<int>(outputFreq);    // write thermo/xyz every 'outputFreq' sweeps (0 disables)
-
+        mp.rebuild_every_attempts = static_cast<int>(cellUpdateFreq);
         MonteCarloNVT_MPI mc(MPI_COMM_WORLD, box, cl, pex, thermo, owned, rng,
                              &traj, &data, mp);
 
