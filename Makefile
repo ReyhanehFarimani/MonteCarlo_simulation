@@ -157,3 +157,71 @@ clean_serial:
 
 clean_mpi:
 	$(RM) $(MPI_LIB_OBJS) $(MPI_TEST_OBJS) $(MPI_RUNNER_OBJ) $(MPI_BIN)
+# -------- Sanity-check mini apps (parallel + serial) --------
+# Build two tiny executables:
+#   - sanity_check/run_parallel  (mpicxx; uses mpi_src/* and sanity_check/main_parallel.cpp)
+#   - sanity_check/run_serial    (g++;    uses serial_src/* and sanity_check/main_serial.cpp)
+# Then sanity_run executes both and verifies with a Python script.
+
+# Compilers/flags (reuse your project include dirs)
+SAN_SER_CXX      := g++
+SAN_SER_CXXFLAGS := -std=c++17 -O3 -Wall -Wextra -Iserial_src -Isanity_check
+
+SAN_MPI_CXX      := mpicxx
+SAN_MPI_CXXFLAGS := -std=c++17 -O2 -Wall -Wextra -Impi_src -Isanity_check
+
+# Binaries
+SAN_PAR_BIN := sanity_check/run_parallel
+SAN_SER_BIN := sanity_check/run_serial
+
+# Mains
+SAN_PAR_MAIN := sanity_check/main_parallel.cpp
+SAN_SER_MAIN := sanity_check/main_serial.cpp
+
+# Objects for mains (compiled with the correct compilers)
+SAN_PAR_MAIN_OBJ := sanity_check/main_parallel.o
+SAN_SER_MAIN_OBJ := sanity_check/main_serial.o
+
+# Reuse your existing project object lists so we link against the same lib code:
+# - $(MPI_LIB_OBJS) comes from the MPI unit-test section (all mpi_src/*.cpp except main*)
+# - $(SER_SRC)      is all serial_src/*.cpp except main*. We need the corresponding .o’s too.
+SAN_SER_LIB_OBJS := $(SER_SRC:.cpp=.o)
+
+# Build both sanity apps
+.PHONY: sanity_build
+sanity_build: $(SAN_PAR_BIN) $(SAN_SER_BIN)
+
+# Parallel sanity exe: link MPI library objects + parallel main object
+$(SAN_PAR_BIN): $(MPI_LIB_OBJS) $(SAN_PAR_MAIN_OBJ)
+	$(SAN_MPI_CXX) $(SAN_MPI_CXXFLAGS) $^ -o $@
+
+# Serial sanity exe: link serial library objects + serial main object
+$(SAN_SER_BIN): $(SAN_SER_LIB_OBJS) $(SAN_SER_MAIN_OBJ)
+	$(SAN_SER_CXX) $(SAN_SER_CXXFLAGS) $^ -o $@
+
+# Compile sanity-check mains with the correct compilers
+sanity_check/main_parallel.o: sanity_check/main_parallel.cpp
+	$(SAN_MPI_CXX) $(SAN_MPI_CXXFLAGS) -c $< -o $@
+
+sanity_check/main_serial.o: sanity_check/main_serial.cpp
+	$(SAN_SER_CXX) $(SAN_SER_CXXFLAGS) -c $< -o $@
+
+# Convenience: run both apps and the Python comparator
+#   - NP controls MPI ranks (defaults to the same NP you set earlier)
+#   - SAN_BASE is the common basename for output files (override if you like)
+NP ?= 7
+SAN_BASE ?= sanity_check/out
+
+.PHONY: sanity_run
+sanity_run: sanity_build
+	@echo "---- Running sanity parallel ($(NP) ranks) ----"
+	mpirun -np $(NP) $(SAN_PAR_BIN) $(SAN_BASE)
+	@echo "---- Running sanity serial ----"
+	$(SAN_SER_BIN) $(SAN_BASE)
+	@echo "---- Python comparison ----"
+	python3 sanity_check/check_sanity.py $(SAN_BASE)
+
+# Clean just the sanity artifacts
+.PHONY: clean_sanity
+clean_sanity:
+	$(RM) $(SAN_PAR_MAIN_OBJ) $(SAN_SER_MAIN_OBJ) $(SAN_PAR_BIN) $(SAN_SER_BIN)
