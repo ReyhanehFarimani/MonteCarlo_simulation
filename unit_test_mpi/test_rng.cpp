@@ -48,10 +48,10 @@ TEST_CASE("RNG_parallel inter-rank correlation is low", "[RNG_parallel][correlat
     MPI_Comm_rank(MPI_COMM_WORLD, &rank);
     MPI_Comm_size(MPI_COMM_WORLD, &size);
 
-    const unsigned seed = 2025;
+    const unsigned seed = 1997;
     RNG_parallel rng(seed, rank);
 
-    const int N = 10000;
+    const int N = 100000;
     std::vector<double> my_seq(N);
     for (int i = 0; i < N; ++i) {
         my_seq[i] = rng.uniform01();
