@@ -1,8 +1,0 @@
-Metadata-Version: 2.2
-Name: gcmc_post_processing
-Version: 0.1
-Requires-Dist: numpy
-Requires-Dist: matplotlib
-Requires-Dist: pandas
-Requires-Dist: scipy
-Dynamic: requires-dist
