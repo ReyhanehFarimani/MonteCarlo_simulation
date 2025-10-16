@@ -171,9 +171,9 @@ int main(int argc, char* argv[]) {
         // -------------- MC driver params & construction --------------
         MonteCarloNVT_MPI::Params mp;
         mp.delta      = delta;
-        mp.halo_every = static_cast<int>(1/delta);                               // keep halos fresh (uses incremental queue + periodic flush)
+        mp.halo_every = static_cast<int>(cellUpdateFreq);                               // keep halos fresh (uses incremental queue + periodic flush)
         mp.out_every  = static_cast<int>(outputFreq);    // write thermo/xyz every 'outputFreq' sweeps (0 disables)
-        mp.rebuild_every_attempts = static_cast<int>(cellUpdateFreq);
+        mp.rebuild_every_attempts = static_cast<int>(cellUpdateFreq * 10);
         MonteCarloNVT_MPI mc(MPI_COMM_WORLD, box, cl, pex, thermo, owned, rng,
                              &traj, &data, mp);
 
